@@ -489,55 +489,74 @@ const loadResultData = async () => {
 
     console.log('Loading result data for assessment:', assessmentId, 'user:', userId)
 
-    // Simulate API call - populate with sample data
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // 從後端 API 取得真實資料
+    const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/responses`, {
+      method: 'GET',
+      params: {
+        answered_by: userId
+      }
+    })
 
-    // Sample data for demonstration
+    if (!response.success) {
+      throw new Error(response.message || '取得填寫結果失敗')
+    }
+
+    const responses = response.data || []
+
+    if (responses.length === 0) {
+      resultData.value = null
+      return
+    }
+
+    // 使用第一筆回答資料（單題模式）
+    const firstResponse = responses[0]
+
     resultData.value = {
-      title: '未命名題目',
+      title: firstResponse.factor_name || firstResponse.topic_name || '未命名題目',
       statistics: {
-        completed_questions: 1,
+        completed_questions: responses.length,
         pending_questions: 0,
         completion_percentage: 100,
-        last_updated: '2024-09-29'
+        last_updated: firstResponse.updated_at?.split(' ')[0]
       }
     }
 
     userInfo.value = {
-      user_name: '測試用戶'
+      user_name: firstResponse.personnel_name || '填寫人員'
     }
 
     assessmentInfo.value = {
-      templateVersion: '測試範本',
-      year: '2024'
+      templateVersion: firstResponse.category_name || '評估範本',
+      year: new Date(firstResponse.created_at).getFullYear().toString()
     }
 
-    // Populate response data with sample answers
+    // 從 response_fields 取得完整的回答資料
+    const fields = firstResponse.response_fields || {}
     responseData.value = {
-      riskFactorDescription: '<p>測試風險因子描述002 - 這是一個關於環境風險的評估題目，主要探討公司在氣候變遷影響下的適應能力。</p>',
-      referenceText: '<p>根據TCFD框架，企業應評估氣候相關的風險與機會。參考最新的科學報告和政策發展。</p>',
-      riskEventChoice: 'yes',
-      riskEventDescription: '公司在2023年面臨了嚴重的洪水災害，導致生產線停工3天，損失約500萬台幣。',
-      counterActionChoice: 'yes',
-      counterActionDescription: '已建立緊急應變計畫，購買相關保險，並投資防洪設施升級。',
-      counterActionCost: '2500000',
-      riskDescription: '氣候變遷可能導致極端天氣事件增加，影響供應鏈穩定性和營運成本。',
-      riskProbability: '高 (3)',
-      riskImpact: '中等 (2)',
-      riskCalculation: '風險值 = 3 × 2 = 6，屬於中高風險等級，需要積極管理。',
-      opportunityDescription: '發展綠色技術產品，開拓新的市場機會，提升品牌形象。',
-      opportunityProbability: '中等 (2)',
-      opportunityImpact: '高 (3)',
-      opportunityCalculation: '機會值 = 2 × 3 = 6，具有良好的發展潛力。',
-      negativeImpactLevel: '中等',
-      negativeImpactDescription: '可能對當地水資源造成輕微污染，影響社區環境品質。',
-      positiveImpactLevel: '高',
-      positiveImpactDescription: '透過綠色轉型創造就業機會，提升當地經濟發展。',
-      answered_at: '2024-09-29T14:30:00Z',
-      updated_at: '2024-09-29T16:45:00Z'
+      riskFactorDescription: firstResponse.question_description || null,
+      referenceText: null, // question_contents 中的 a_content 或 b_content
+      riskEventChoice: fields.riskEventChoice || null,
+      riskEventDescription: fields.riskEventDescription || null,
+      counterActionChoice: fields.counterActionChoice || null,
+      counterActionDescription: fields.counterActionDescription || null,
+      counterActionCost: fields.counterActionCost || null,
+      riskDescription: fields.riskDescription || null,
+      riskProbability: fields.riskProbability || null,
+      riskImpact: fields.riskImpact || null,
+      riskCalculation: fields.riskCalculation || null,
+      opportunityDescription: fields.opportunityDescription || null,
+      opportunityProbability: fields.opportunityProbability || null,
+      opportunityImpact: fields.opportunityImpact || null,
+      opportunityCalculation: fields.opportunityCalculation || null,
+      negativeImpactLevel: fields.negativeImpactLevel || null,
+      negativeImpactDescription: fields.negativeImpactDescription || null,
+      positiveImpactLevel: fields.positiveImpactLevel || null,
+      positiveImpactDescription: fields.positiveImpactDescription || null,
+      answered_at: firstResponse.answered_at || null,
+      updated_at: firstResponse.updated_at || null
     }
 
-    console.log('Result data loaded successfully')
+    console.log('Result data loaded successfully from API')
   } catch (err) {
     console.error('載入填寫結果時發生錯誤:', err)
     error.value = err.message || '載入填寫結果時發生錯誤'
