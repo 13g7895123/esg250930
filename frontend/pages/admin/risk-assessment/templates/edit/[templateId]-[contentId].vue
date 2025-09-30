@@ -278,7 +278,7 @@
           <span class="font_title_white">請依上述資訊，整點公司致富相關之風險情況，並評估未來永續在各風險/機會情境</span>
           <button
             @click="showProbabilityScaleModal = true"
-            class="px-4 py-2 bg-black text-white font-bold rounded-full hover:bg-gray-800 transition-colors duration-200 flex items-center space-x-2 whitespace-nowrap"
+            class="px-4 py-2 bg-white text-black font-bold rounded-full hover:bg-gray-100 transition-colors duration-200 flex items-center space-x-2 whitespace-nowrap"
           >
             <span>可能性量表</span>
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
