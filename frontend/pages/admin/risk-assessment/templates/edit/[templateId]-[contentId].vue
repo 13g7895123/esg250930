@@ -274,8 +274,17 @@
         </div>
 
         <!-- Green Context Bar -->
-        <div class="bg-green-600 text-white px-6 py-3 rounded-2xl">
+        <div class="bg-green-600 text-white px-6 py-3 rounded-2xl flex items-center justify-between">
           <span class="font_title_white">請依上述資訊，整點公司致富相關之風險情況，並評估未來永續在各風險/機會情境</span>
+          <button
+            @click="showProbabilityScaleModal = true"
+            class="px-4 py-2 bg-white text-green-600 font-medium rounded-lg hover:bg-gray-100 transition-colors duration-200 flex items-center space-x-2 whitespace-nowrap"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>可能性量表</span>
+          </button>
         </div>
 
         <!-- Sections E, F, G, H in Grid Layout -->
@@ -611,6 +620,195 @@
       </div>
     </Teleport>
 
+    <!-- Probability Scale Modal -->
+    <Teleport to="body">
+      <div
+        v-if="showProbabilityScaleModal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+        @click.self="showProbabilityScaleModal = false"
+      >
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto m-4">
+          <!-- Modal Header -->
+          <div class="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white">可能性量表編輯</h2>
+            <button
+              @click="showProbabilityScaleModal = false"
+              class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Modal Content -->
+          <div class="px-6 py-6 space-y-8">
+            <!-- 表格一：風險發生可能性量表 -->
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">風險發生可能性量表</h3>
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700">
+                  <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">等級</th>
+                      <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">可能性</th>
+                      <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">說明</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <tr>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="1" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="極低 (1-5%)" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                        <textarea rows="2" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="說明..."></textarea>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="2" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="低 (6-25%)" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                        <textarea rows="2" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="說明..."></textarea>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="3" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="中等 (26-50%)" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                        <textarea rows="2" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="說明..."></textarea>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="4" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="高 (51-75%)" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                        <textarea rows="2" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="說明..."></textarea>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="5" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="極高 (76-100%)" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                        <textarea rows="2" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="說明..."></textarea>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 表格二：風險衝擊程度量表 -->
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">風險衝擊程度量表</h3>
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700">
+                  <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">等級</th>
+                      <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">衝擊程度</th>
+                      <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">說明</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <tr>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="1" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="極低影響" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                        <textarea rows="2" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="說明..."></textarea>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="2" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="低影響" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                        <textarea rows="2" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="說明..."></textarea>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="3" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="中等影響" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                        <textarea rows="2" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="說明..."></textarea>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="4" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="高影響" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                        <textarea rows="2" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="說明..."></textarea>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="5" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        <input type="text" value="極高影響" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                        <textarea rows="2" class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="說明..."></textarea>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                @click="showProbabilityScaleModal = false"
+                class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
+              >
+                取消
+              </button>
+              <button
+                @click="saveProbabilityScale"
+                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
+              >
+                儲存
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
   </div>
 </template>
 
@@ -661,6 +859,9 @@ const hoverTexts = ref({
 const showHoverEditModal = ref(false)
 const editingSection = ref('')
 const editingHoverText = ref('')
+
+// Modal state for probability scale
+const showProbabilityScaleModal = ref(false)
 
 // Get question data
 const questionData = computed(() => {
@@ -1042,6 +1243,17 @@ const cancelHoverEdit = () => {
   showHoverEditModal.value = false
   editingSection.value = ''
   editingHoverText.value = ''
+}
+
+// Save probability scale data
+const saveProbabilityScale = () => {
+  // TODO: 實作儲存可能性量表資料的邏輯
+  // 目前先關閉模態框並顯示成功訊息
+  showProbabilityScaleModal.value = false
+
+  if (window.$swal) {
+    window.$swal.success('成功', '可能性量表已儲存')
+  }
 }
 
 // Methods
