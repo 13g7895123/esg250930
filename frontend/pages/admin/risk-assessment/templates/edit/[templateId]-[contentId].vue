@@ -784,19 +784,78 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex justify-between items-center pt-4 border-t border-gray-200 dark:border-gray-700">
               <button
-                @click="showProbabilityScaleModal = false"
-                class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
+                @click="togglePreview"
+                class="px-4 py-2 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors duration-200"
               >
-                取消
+                {{ showPreview ? '隱藏預覽' : '顯示預覽' }}
               </button>
-              <button
-                @click="saveProbabilityScale"
-                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
-              >
-                儲存
-              </button>
+              <div class="flex space-x-3">
+                <button
+                  @click="showProbabilityScaleModal = false"
+                  class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
+                >
+                  取消
+                </button>
+                <button
+                  @click="saveProbabilityScale"
+                  class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
+                >
+                  儲存
+                </button>
+              </div>
+            </div>
+
+            <!-- Preview Section -->
+            <div v-if="showPreview" class="mt-6 p-6 border-2 border-blue-300 dark:border-blue-600 rounded-lg bg-blue-50 dark:bg-blue-900/10">
+              <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">預覽：可能性量表</h4>
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                  <thead class="bg-gray-100 dark:bg-gray-700">
+                    <tr>
+                      <!-- 變動欄位 header -->
+                      <th
+                        v-for="column in probabilityScaleColumns"
+                        :key="'preview-header-' + column.id"
+                        class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600"
+                      >
+                        {{ column.name || '（未命名）' }}
+                      </th>
+                      <!-- 固定欄位 header -->
+                      <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        發生可能性程度
+                      </th>
+                      <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
+                        分數級距
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    <tr v-for="(row, rowIndex) in probabilityScaleRows" :key="'preview-row-' + rowIndex">
+                      <!-- 變動欄位 cells -->
+                      <td
+                        v-for="column in probabilityScaleColumns"
+                        :key="'preview-cell-' + column.id"
+                        class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600"
+                      >
+                        {{ row.dynamicFields[column.id] || '—' }}
+                      </td>
+                      <!-- 固定欄位 cells -->
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
+                        {{ row.probability || '—' }}
+                      </td>
+                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                        {{ row.scoreRange || '—' }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <!-- Preview Description -->
+              <div v-if="showDescriptionText && descriptionText" class="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded text-sm text-gray-700 dark:text-gray-300">
+                {{ descriptionText }}
+              </div>
             </div>
           </div>
         </div>
@@ -887,6 +946,13 @@ const addDescriptionText = () => {
 const removeDescriptionText = () => {
   showDescriptionText.value = false
   descriptionText.value = ''
+}
+
+// Preview state
+const showPreview = ref(false)
+
+const togglePreview = () => {
+  showPreview.value = !showPreview.value
 }
 
 let nextColumnId = 3
