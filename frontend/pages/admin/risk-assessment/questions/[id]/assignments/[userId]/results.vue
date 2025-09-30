@@ -484,6 +484,33 @@
             </div>
           </div>
 
+          <!-- Action Buttons at Bottom -->
+          <div class="flex items-center justify-between pt-6 pb-4">
+            <button
+              @click="handleEdit"
+              class="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-lg transition-colors duration-200 flex items-center space-x-2"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              <span>修改</span>
+            </button>
+            <button
+              @click="handleConfirm"
+              :disabled="confirming"
+              class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
+            >
+              <svg v-if="confirming" class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span>{{ confirming ? '處理中...' : '確認完成' }}</span>
+            </button>
+          </div>
+
         </div>
       </div>
     </div>
@@ -577,11 +604,52 @@ const responseData = ref({
 
 // 儲存狀態
 const saving = ref(false)
+const confirming = ref(false)
 const currentResponseId = ref(null)
 
 // Toggle section function
 const toggleSection = (section) => {
   expandedSections.value[section] = !expandedSections.value[section]
+}
+
+// 修改按鈕處理
+const handleEdit = () => {
+  // 未來可以切換到編輯模式，目前所有欄位已經是可編輯狀態
+  if (window.$swal) {
+    window.$swal.info('提示', '此頁面已處於可編輯狀態，請直接修改內容後點擊上方的「儲存」按鈕')
+  }
+}
+
+// 確認完成按鈕處理
+const handleConfirm = async () => {
+  try {
+    confirming.value = true
+
+    // 先儲存資料
+    await saveData()
+
+    // 確認完成後可以導航回列表或顯示成功訊息
+    if (window.$swal) {
+      const result = await window.$swal.confirm(
+        '確認完成',
+        '確認完成此評估？完成後將返回列表頁面。',
+        '確認',
+        '取消'
+      )
+
+      if (result) {
+        // 返回上一頁（評估列表）
+        router.back()
+      }
+    }
+  } catch (err) {
+    console.error('確認完成時發生錯誤:', err)
+    if (window.$swal) {
+      window.$swal.error('錯誤', '確認完成失敗，請稍後再試')
+    }
+  } finally {
+    confirming.value = false
+  }
 }
 
 const loadResultData = async () => {
