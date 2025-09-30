@@ -217,7 +217,7 @@
               <div>
                 <label class="text-gray-600 dark:text-gray-400 mt-6 mb-1">*上述對策費用</label>
                 <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
-                  {{ responseData.counterActionCost ? `NT$ ${Number(responseData.counterActionCost).toLocaleString()}` : 'NT$ 2,500,000' }}
+                  {{ responseData.counterActionCost || '尚未填寫' }}
                 </div>
               </div>
             </div>
