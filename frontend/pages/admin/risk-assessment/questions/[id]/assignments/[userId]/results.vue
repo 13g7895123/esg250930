@@ -18,21 +18,37 @@
           </div>
         </div>
 
-        <!-- Refresh Button -->
-        <div class="relative group">
+        <!-- Action Buttons -->
+        <div class="flex items-center space-x-2">
+          <!-- Save Button -->
           <button
-            @click="refreshData"
-            :disabled="loading"
-            :class="{
-              'p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200': !loading,
-              'p-2 text-gray-400 dark:text-gray-600 cursor-not-allowed rounded-lg': loading
-            }"
+            @click="saveData"
+            :disabled="saving || loading"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
           >
-            <ArrowPathIcon :class="['w-5 h-5', { 'animate-spin': loading }]" />
+            <svg v-if="saving" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>{{ saving ? '儲存中...' : '儲存' }}</span>
           </button>
-          <div class="absolute bottom-full right-0 mb-2 px-2 py-1 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-            重新整理
-            <div class="absolute top-full right-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+
+          <!-- Refresh Button -->
+          <div class="relative group">
+            <button
+              @click="refreshData"
+              :disabled="loading"
+              :class="{
+                'p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200': !loading,
+                'p-2 text-gray-400 dark:text-gray-600 cursor-not-allowed rounded-lg': loading
+              }"
+            >
+              <ArrowPathIcon :class="['w-5 h-5', { 'animate-spin': loading }]" />
+            </button>
+            <div class="absolute bottom-full right-0 mb-2 px-2 py-1 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+              重新整理
+              <div class="absolute top-full right-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -474,7 +490,7 @@ const expandedSections = ref({
   sectionB: true
 })
 
-// Sample response data
+// Form data (editable)
 const responseData = ref({
   riskFactorDescription: null,
   referenceText: null,
@@ -498,6 +514,10 @@ const responseData = ref({
   answered_at: null,
   updated_at: null
 })
+
+// 儲存狀態
+const saving = ref(false)
+const currentResponseId = ref(null)
 
 // Toggle section function
 const toggleSection = (section) => {
@@ -557,6 +577,10 @@ const loadResultData = async () => {
 
     // 從 response_fields 取得完整的回答資料
     const fields = firstResponse.response_fields || {}
+
+    // 儲存 response ID 用於更新
+    currentResponseId.value = firstResponse.id
+
     responseData.value = {
       riskFactorDescription: firstResponse.question_description || null,
       referenceText: null, // question_contents 中的 a_content 或 b_content
@@ -587,6 +611,62 @@ const loadResultData = async () => {
     error.value = err.message || '載入填寫結果時發生錯誤'
   } finally {
     loading.value = false
+  }
+}
+
+const saveData = async () => {
+  try {
+    saving.value = true
+
+    const assessmentId = route.params.id
+    const userId = route.params.userId
+
+    // 準備更新資料
+    const updateData = {
+      c_risk_event_choice: responseData.value.riskEventChoice,
+      c_risk_event_description: responseData.value.riskEventDescription,
+      d_counter_action_choice: responseData.value.counterActionChoice,
+      d_counter_action_description: responseData.value.counterActionDescription,
+      d_counter_action_cost: responseData.value.counterActionCost,
+      e1_risk_description: responseData.value.riskDescription,
+      e1_risk_probability: responseData.value.riskProbability,
+      e1_risk_impact: responseData.value.riskImpact,
+      e1_risk_calculation: responseData.value.riskCalculation,
+      f1_opportunity_description: responseData.value.opportunityDescription,
+      f1_opportunity_probability: responseData.value.opportunityProbability,
+      f1_opportunity_impact: responseData.value.opportunityImpact,
+      f1_opportunity_calculation: responseData.value.opportunityCalculation,
+      g1_negative_impact_level: responseData.value.negativeImpactLevel,
+      g1_negative_impact_description: responseData.value.negativeImpactDescription,
+      h1_positive_impact_level: responseData.value.positiveImpactLevel,
+      h1_positive_impact_description: responseData.value.positiveImpactDescription
+    }
+
+    // 呼叫更新 API
+    const response = await $fetch(`/api/v1/question-management/responses/${currentResponseId.value}`, {
+      method: 'PUT',
+      body: updateData
+    })
+
+    if (!response.success) {
+      throw new Error(response.message || '儲存失敗')
+    }
+
+    // 重新載入資料
+    await loadResultData()
+
+    // 顯示成功通知
+    if (window.$swal) {
+      window.$swal.success('成功', '資料已儲存')
+    }
+  } catch (err) {
+    console.error('儲存資料時發生錯誤:', err)
+
+    if (window.$swal) {
+      window.$swal.error('錯誤', err.message || '儲存資料失敗')
+    }
+  } finally {
+    saving.value = false
   }
 }
 
