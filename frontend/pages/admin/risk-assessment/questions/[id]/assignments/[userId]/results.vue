@@ -485,7 +485,7 @@
           </div>
 
           <!-- Action Buttons at Bottom -->
-          <div class="flex items-center justify-between pt-6 pb-4">
+          <div class="flex items-center justify-center gap-4 pt-6 pb-4">
             <button
               @click="handleEdit"
               class="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-lg transition-colors duration-200 flex items-center space-x-2"
