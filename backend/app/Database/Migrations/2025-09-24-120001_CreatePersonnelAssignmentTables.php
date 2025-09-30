@@ -146,7 +146,7 @@ class CreatePersonnelAssignmentTables extends Migration
         $this->forge->createTable('external_personnel', true, [
             'ENGINE' => 'InnoDB',
             'CHARSET' => 'utf8mb4',
-            'COLLATE' => 'utf8mb4_general_ci',
+            'COLLATE' => 'utf8mb4_unicode_ci',
             'COMMENT' => '外部人員資料表 - 儲存從外部API取得的人員基本資料'
         ]);
 
@@ -292,7 +292,7 @@ class CreatePersonnelAssignmentTables extends Migration
         $this->forge->createTable('personnel_assignments', true, [
             'ENGINE' => 'InnoDB',
             'CHARSET' => 'utf8mb4',
-            'COLLATE' => 'utf8mb4_general_ci',
+            'COLLATE' => 'utf8mb4_unicode_ci',
             'COMMENT' => '人員指派表 - 記錄人員對題項內容的指派關係（多對多）'
         ]);
 

@@ -17,6 +17,11 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Copy and setup path fixing script (before switching user)
+COPY fix-nuxt-ui-paths.sh /usr/local/bin/fix-nuxt-ui-paths.sh
+RUN sed -i 's/\r$//' /usr/local/bin/fix-nuxt-ui-paths.sh && \
+    chmod +x /usr/local/bin/fix-nuxt-ui-paths.sh
+
 # Change ownership of the app directory to the node user
 RUN chown -R node:node /app
 
@@ -28,10 +33,6 @@ EXPOSE 3000
 
 ENV HOST=0.0.0.0
 ENV PORT=3000
-
-# Copy and setup path fixing script
-COPY fix-nuxt-ui-paths.sh /usr/local/bin/fix-nuxt-ui-paths.sh
-RUN chmod +x /usr/local/bin/fix-nuxt-ui-paths.sh
 
 # Start development server with automatic path fixing
 CMD ["/usr/local/bin/fix-nuxt-ui-paths.sh", "npm", "run", "dev"]

@@ -40,10 +40,11 @@ services:
 
   mysql:
     image: mysql:8.0
-    container_name: esg_mysql
+    container_name: esg250930_mysql
     restart: always
     ports:
       - "${MYSQL_PORT}:3306"
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -51,13 +52,14 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      # init.sql 已停用，改用 CodeIgniter migrations
+      # - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - esg-network
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
-    container_name: esg_phpmyadmin
+    container_name: esg250930_phpmyadmin
     restart: always
     ports:
       - "${PHPMYADMIN_PORT}:80"

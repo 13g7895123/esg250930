@@ -669,12 +669,8 @@ class QuestionContentModel extends Model
                 'topic_id' => $newTopicId,
                 'factor_id' => $newFactorId,
 
-                // 核心內容欄位
-                'title' => $templateContent['topic'] ?? $templateContent['title'] ?? '',
+                // 核心內容欄位（title, assessment_criteria, scoring_method, weight 已移除）
                 'description' => $templateContent['description'] ?? '',
-                'assessment_criteria' => $templateContent['assessment_criteria'] ?? null,
-                'scoring_method' => $templateContent['scoring_method'] ?? 'scale_1_5',
-                'weight' => $templateContent['weight'] ?? 1.00,
                 'is_required' => $templateContent['is_required'] ?? 1,
                 'sort_order' => $templateContent['sort_order'] ?? 1,
 

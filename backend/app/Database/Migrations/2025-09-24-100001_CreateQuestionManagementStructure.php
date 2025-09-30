@@ -111,7 +111,7 @@ class CreateQuestionManagementStructure extends Migration
         $this->forge->createTable('question_categories', true, [
             'ENGINE' => 'InnoDB',
             'CHARSET' => 'utf8mb4',
-            'COLLATE' => 'utf8mb4_general_ci',
+            'COLLATE' => 'utf8mb4_unicode_ci',
             'COMMENT' => '題項風險分類表 - 為題項管理建立獨立的風險分類系統'
         ]);
 
@@ -200,7 +200,7 @@ class CreateQuestionManagementStructure extends Migration
         $this->forge->createTable('question_topics', true, [
             'ENGINE' => 'InnoDB',
             'CHARSET' => 'utf8mb4',
-            'COLLATE' => 'utf8mb4_general_ci',
+            'COLLATE' => 'utf8mb4_unicode_ci',
             'COMMENT' => '題項風險主題表 - 提供更細緻的風險項目分組'
         ]);
 
@@ -298,7 +298,7 @@ class CreateQuestionManagementStructure extends Migration
         $this->forge->createTable('question_factors', true, [
             'ENGINE' => 'InnoDB',
             'CHARSET' => 'utf8mb4',
-            'COLLATE' => 'utf8mb4_general_ci',
+            'COLLATE' => 'utf8mb4_unicode_ci',
             'COMMENT' => '題項風險因子表 - 提供最詳細的風險評估項目分類'
         ]);
 
@@ -498,7 +498,7 @@ class CreateQuestionManagementStructure extends Migration
         $this->forge->createTable('question_contents', true, [
             'ENGINE' => 'InnoDB',
             'CHARSET' => 'utf8mb4',
-            'COLLATE' => 'utf8mb4_general_ci',
+            'COLLATE' => 'utf8mb4_unicode_ci',
             'COMMENT' => '題項內容表 - 實際的評估題目內容，完全獨立於範本'
         ]);
 
@@ -613,7 +613,7 @@ class CreateQuestionManagementStructure extends Migration
         $this->forge->createTable('question_responses', true, [
             'ENGINE' => 'InnoDB',
             'CHARSET' => 'utf8mb4',
-            'COLLATE' => 'utf8mb4_general_ci',
+            'COLLATE' => 'utf8mb4_unicode_ci',
             'COMMENT' => '題項回答表 - 儲存對題項內容的具體回答和審核狀態'
         ]);
 

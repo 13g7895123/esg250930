@@ -161,17 +161,34 @@ class QuestionManagementController extends BaseController
             $templateContents = $templateContentModel->where('template_id', $templateId)->findAll();
 
             // 複製架構到題項管理
+            error_log('[syncFromTemplate] Starting to copy categories. Template categories count: ' . count($templateCategories));
             $categoryIdMapping = $this->categoryModel->copyFromTemplateCategories($assessmentId, $templateCategories);
+            error_log('[syncFromTemplate] Categories copied: ' . count($categoryIdMapping));
+
+            error_log('[syncFromTemplate] Starting to copy topics. Template topics count: ' . count($templateTopics));
             $topicIdMapping = $this->topicModel->copyFromTemplateTopics($assessmentId, $templateTopics, $categoryIdMapping);
+            error_log('[syncFromTemplate] Topics copied: ' . count($topicIdMapping));
+
+            error_log('[syncFromTemplate] Starting to copy factors. Template factors count: ' . count($templateFactors));
             $factorIdMapping = $this->factorModel->copyFromTemplateFactors($assessmentId, $templateFactors, $topicIdMapping, $categoryIdMapping);
+            error_log('[syncFromTemplate] Factors copied: ' . count($factorIdMapping));
+
+            error_log('[syncFromTemplate] Starting to copy contents. Template contents count: ' . count($templateContents));
             $contentIdMapping = $this->contentModel->copyFromTemplateContents($assessmentId, $templateContents, $categoryIdMapping, $topicIdMapping, $factorIdMapping);
+            error_log('[syncFromTemplate] Contents copied: ' . count($contentIdMapping));
 
             $db->transComplete();
 
             if ($db->transStatus() === false) {
+                // 記錄事務失敗
+                $dbError = $db->error();
+                log_message('error', 'QuestionManagementController::syncFromTemplate - Transaction failed');
+                log_message('error', 'Database error code: ' . ($dbError['code'] ?? 'N/A'));
+                log_message('error', 'Database error message: ' . ($dbError['message'] ?? 'N/A'));
+
                 return $this->response->setStatusCode(500)->setJSON([
                     'success' => false,
-                    'message' => '同步範本架構時發生錯誤'
+                    'message' => '同步範本架構時發生資料庫錯誤: ' . ($dbError['message'] ?? '未知錯誤')
                 ]);
             }
 
@@ -188,9 +205,16 @@ class QuestionManagementController extends BaseController
 
         } catch (\Exception $e) {
             log_message('error', 'QuestionManagementController::syncFromTemplate - ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+
+            // 回滾事務（如果尚未完成）
+            if (isset($db) && $db->transStatus() !== false) {
+                $db->transRollback();
+            }
+
             return $this->response->setStatusCode(500)->setJSON([
                 'success' => false,
-                'message' => '同步範本時發生錯誤'
+                'message' => '同步範本時發生錯誤: ' . $e->getMessage()
             ]);
         }
     }
