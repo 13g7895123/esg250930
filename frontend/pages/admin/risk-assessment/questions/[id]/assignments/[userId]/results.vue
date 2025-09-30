@@ -484,17 +484,6 @@
             </div>
           </div>
 
-          <!-- Response Info -->
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-lg">
-            <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-2">填寫資訊</h4>
-            <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-              <span>填寫時間：{{ responseData.answered_at ? new Date(responseData.answered_at).toLocaleString('zh-TW') : '2024-09-29 22:30:00' }}</span>
-              <span v-if="responseData.updated_at && responseData.updated_at !== responseData.answered_at">
-                最後更新：{{ new Date(responseData.updated_at).toLocaleString('zh-TW') }}
-              </span>
-            </div>
-          </div>
-
         </div>
       </div>
     </div>
