@@ -749,6 +749,38 @@
                   </tbody>
                 </table>
               </div>
+
+              <!-- Description Text Section -->
+              <div v-if="showDescriptionText" class="mt-4 p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700">
+                <div class="flex items-start justify-between mb-2">
+                  <label class="text-sm font-medium text-gray-700 dark:text-gray-300">說明文字</label>
+                  <button
+                    @click="removeDescriptionText"
+                    class="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                    title="刪除說明文字"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+                <textarea
+                  v-model="descriptionText"
+                  rows="3"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="輸入說明文字..."
+                ></textarea>
+              </div>
+
+              <!-- Add Description Button -->
+              <div v-else class="mt-4">
+                <button
+                  @click="addDescriptionText"
+                  class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
+                >
+                  + 新增說明文字
+                </button>
+              </div>
             </div>
 
             <!-- Action Buttons -->
@@ -843,6 +875,19 @@ const probabilityScaleRows = ref([
     scoreRange: ''
   }
 ])
+
+// Description text state
+const showDescriptionText = ref(false)
+const descriptionText = ref('')
+
+const addDescriptionText = () => {
+  showDescriptionText.value = true
+}
+
+const removeDescriptionText = () => {
+  showDescriptionText.value = false
+  descriptionText.value = ''
+}
 
 let nextColumnId = 3
 
