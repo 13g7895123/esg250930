@@ -260,13 +260,13 @@
                     <div>
                       <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*風險發生可能性</label>
                       <div class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 text-center bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
-                        {{ responseData.riskProbability || '高 (3)' }}
+                        {{ probabilityOptions[responseData.riskProbability] || responseData.riskProbability || '尚未選擇' }}
                       </div>
                     </div>
                     <div>
                       <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*風險發生衝擊程度</label>
                       <div class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 text-center bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
-                        {{ responseData.riskImpact || '中等 (2)' }}
+                        {{ impactOptions[responseData.riskImpact] || responseData.riskImpact || '尚未選擇' }}
                       </div>
                     </div>
                   </div>
@@ -310,13 +310,13 @@
                     <div>
                       <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*機會發生可能性</label>
                       <div class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 text-center bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
-                        {{ responseData.opportunityProbability || '中等 (2)' }}
+                        {{ probabilityOptions[responseData.opportunityProbability] || responseData.opportunityProbability || '尚未選擇' }}
                       </div>
                     </div>
                     <div>
                       <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*機會發生衝擊程度</label>
                       <div class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 text-center bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
-                        {{ responseData.opportunityImpact || '高 (3)' }}
+                        {{ impactOptions[responseData.opportunityImpact] || responseData.opportunityImpact || '尚未選擇' }}
                       </div>
                     </div>
                   </div>
@@ -351,7 +351,7 @@
                 <div>
                   <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">負面衝擊程度</label>
                   <div class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 text-center font-medium bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
-                    {{ responseData.negativeImpactLevel || '中等' }}
+                    {{ impactLevelOptions[responseData.negativeImpactLevel] || responseData.negativeImpactLevel || '尚未選擇' }}
                   </div>
                 </div>
                 <div>
@@ -384,7 +384,7 @@
                 <div>
                   <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">正面影響程度</label>
                   <div class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 text-center font-medium bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
-                    {{ responseData.positiveImpactLevel || '高' }}
+                    {{ impactLevelOptions[responseData.positiveImpactLevel] || responseData.positiveImpactLevel || '尚未選擇' }}
                   </div>
                 </div>
                 <div>
@@ -442,6 +442,31 @@ const error = ref(null)
 const resultData = ref(null)
 const userInfo = ref(null)
 const assessmentInfo = ref(null)
+
+// 選項對應表
+const probabilityOptions = {
+  'very-low': '極低 (1-5%)',
+  'low': '低 (6-25%)',
+  'medium': '中等 (26-50%)',
+  'high': '高 (51-75%)',
+  'very-high': '極高 (76-100%)'
+}
+
+const impactOptions = {
+  'very-low': '極低影響',
+  'low': '低影響',
+  'medium': '中等影響',
+  'high': '高影響',
+  'very-high': '極高影響'
+}
+
+const impactLevelOptions = {
+  'level-1': '等級1 - 極輕微',
+  'level-2': '等級2 - 輕微',
+  'level-3': '等級3 - 中等',
+  'level-4': '等級4 - 嚴重',
+  'level-5': '等級5 - 極嚴重'
+}
 
 // Expandable sections state
 const expandedSections = ref({
