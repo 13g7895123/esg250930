@@ -852,9 +852,9 @@
                   </tbody>
                 </table>
               </div>
-              <!-- Preview Description -->
-              <div v-if="showDescriptionText && descriptionText" class="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded text-sm text-gray-700 dark:text-gray-300">
-                {{ descriptionText }}
+              <!-- Preview Description - 與表格緊密連接，無空白 -->
+              <div v-if="showDescriptionText && descriptionText" class="border border-t-0 border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-300">
+                <strong class="font-medium">說明：</strong>{{ descriptionText }}
               </div>
             </div>
           </div>
