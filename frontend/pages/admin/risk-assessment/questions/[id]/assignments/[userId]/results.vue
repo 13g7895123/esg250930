@@ -148,10 +148,11 @@
               </div>
             </div>
             <div class="space-y-4">
-              <!-- 互動式 Radio 選項 (顯示已選擇的狀態) -->
+              <!-- 互動式 Radio 選項 (可點擊) -->
               <div class="grid grid-cols-2 gap-6">
                 <div
-                  class="radio-card-option radio-card-no"
+                  @click="responseData.riskEventChoice = 'yes'"
+                  class="radio-card-option radio-card-no cursor-pointer"
                   :class="{ 'selected': responseData.riskEventChoice === 'yes' }"
                 >
                   <div class="radio-card-content">
@@ -164,7 +165,8 @@
                   </div>
                 </div>
                 <div
-                  class="radio-card-option radio-card-yes"
+                  @click="responseData.riskEventChoice = 'no'"
+                  class="radio-card-option radio-card-yes cursor-pointer"
                   :class="{ 'selected': responseData.riskEventChoice === 'no' }"
                 >
                   <div class="radio-card-content">
@@ -179,9 +181,12 @@
               </div>
               <div>
                 <label class="text-gray-600 dark:text-gray-400 mt-6 mb-1">*請描述</label>
-                <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white min-h-[80px] flex items-start">
-                  {{ responseData.riskEventDescription || '公司在2023年面臨了嚴重的洪水災害，導致生產線停工3天，損失約500萬台幣。' }}
-                </div>
+                <textarea
+                  v-model="responseData.riskEventDescription"
+                  rows="3"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="請描述風險/負面衝擊事件"
+                ></textarea>
               </div>
             </div>
           </div>
@@ -195,10 +200,11 @@
               </div>
             </div>
             <div class="space-y-4">
-              <!-- 互動式 Radio 選項 (顯示已選擇的狀態) -->
+              <!-- 互動式 Radio 選項 (可點擊) -->
               <div class="grid grid-cols-2 gap-6">
                 <div
-                  class="radio-card-option radio-card-no"
+                  @click="responseData.counterActionChoice = 'yes'"
+                  class="radio-card-option radio-card-no cursor-pointer"
                   :class="{ 'selected': responseData.counterActionChoice === 'yes' }"
                 >
                   <div class="radio-card-content">
@@ -211,7 +217,8 @@
                   </div>
                 </div>
                 <div
-                  class="radio-card-option radio-card-yes"
+                  @click="responseData.counterActionChoice = 'no'"
+                  class="radio-card-option radio-card-yes cursor-pointer"
                   :class="{ 'selected': responseData.counterActionChoice === 'no' }"
                 >
                   <div class="radio-card-content">
@@ -226,15 +233,21 @@
               </div>
               <div>
                 <label class="text-gray-600 dark:text-gray-400 mt-6 mb-1">*請描述</label>
-                <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white min-h-[80px] flex items-start">
-                  {{ responseData.counterActionDescription || '已建立緊急應變計畫，購買相關保險，並投資防洪設施升級。' }}
-                </div>
+                <textarea
+                  v-model="responseData.counterActionDescription"
+                  rows="3"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="請描述相關對應作為"
+                ></textarea>
               </div>
               <div>
                 <label class="text-gray-600 dark:text-gray-400 mt-6 mb-1">*上述對策費用</label>
-                <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
-                  {{ responseData.counterActionCost || '尚未填寫' }}
-                </div>
+                <input
+                  v-model="responseData.counterActionCost"
+                  type="text"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="請輸入對策費用"
+                />
               </div>
             </div>
           </div>
@@ -267,30 +280,52 @@
                 <p class="text-base text-gray-600 dark:text-gray-400">公司未來潛在相關風險營清說明，未來潛在風險（收入減少）、費用增加於損益</p>
                 <div>
                   <label class="text-gray-600 dark:text-gray-400 mt-6 mb-1">風險描述</label>
-                  <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white min-h-[80px] flex items-start">
-                    {{ responseData.riskDescription || '氣候變遷可能導致極端天氣事件增加，影響供應鏈穩定性和營運成本。' }}
-                  </div>
+                  <textarea
+                    v-model="responseData.riskDescription"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="請描述風險"
+                  ></textarea>
                 </div>
                 <div class="border border-gray-300 dark:border-gray-600 rounded-2xl p-4 space-y-3">
                   <div class="grid grid-cols-2 gap-4">
                     <div>
                       <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*風險發生可能性</label>
-                      <div class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 text-center bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
-                        {{ probabilityOptions[responseData.riskProbability] || responseData.riskProbability || '尚未選擇' }}
-                      </div>
+                      <select
+                        v-model="responseData.riskProbability"
+                        class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">請選擇</option>
+                        <option value="very-low">極低 (1-5%)</option>
+                        <option value="low">低 (6-25%)</option>
+                        <option value="medium">中等 (26-50%)</option>
+                        <option value="high">高 (51-75%)</option>
+                        <option value="very-high">極高 (76-100%)</option>
+                      </select>
                     </div>
                     <div>
                       <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*風險發生衝擊程度</label>
-                      <div class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 text-center bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
-                        {{ impactOptions[responseData.riskImpact] || responseData.riskImpact || '尚未選擇' }}
-                      </div>
+                      <select
+                        v-model="responseData.riskImpact"
+                        class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">請選擇</option>
+                        <option value="very-low">極低影響</option>
+                        <option value="low">低影響</option>
+                        <option value="medium">中等影響</option>
+                        <option value="high">高影響</option>
+                        <option value="very-high">極高影響</option>
+                      </select>
                     </div>
                   </div>
                   <div>
                     <label class="flex items-center text-base text-gray-600 dark:text-gray-400 mb-1">*計算說明</label>
-                    <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white min-h-[80px] flex items-start">
-                      {{ responseData.riskCalculation || '風險值 = 3 × 2 = 6，屬於中高風險等級，需要積極管理。' }}
-                    </div>
+                    <textarea
+                      v-model="responseData.riskCalculation"
+                      rows="3"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="請說明計算方式"
+                    ></textarea>
                   </div>
                 </div>
               </div>
@@ -317,30 +352,52 @@
                 <p class="text-base text-gray-600 dark:text-gray-400">公司未來潛在相關機會營清說明，未來潛在機會（收入增加）、費用減少於收益等不會定</p>
                 <div>
                   <label class="text-gray-600 dark:text-gray-400 mt-6 mb-1">機會描述</label>
-                  <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white min-h-[80px] flex items-start">
-                    {{ responseData.opportunityDescription || '發展綠色技術產品，開拓新的市場機會，提升品牌形象。' }}
-                  </div>
+                  <textarea
+                    v-model="responseData.opportunityDescription"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="請描述機會"
+                  ></textarea>
                 </div>
                 <div class="border border-gray-300 dark:border-gray-600 rounded-2xl p-4 space-y-3">
                   <div class="grid grid-cols-2 gap-4">
                     <div>
                       <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*機會發生可能性</label>
-                      <div class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 text-center bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
-                        {{ probabilityOptions[responseData.opportunityProbability] || responseData.opportunityProbability || '尚未選擇' }}
-                      </div>
+                      <select
+                        v-model="responseData.opportunityProbability"
+                        class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">請選擇</option>
+                        <option value="very-low">極低 (1-5%)</option>
+                        <option value="low">低 (6-25%)</option>
+                        <option value="medium">中等 (26-50%)</option>
+                        <option value="high">高 (51-75%)</option>
+                        <option value="very-high">極高 (76-100%)</option>
+                      </select>
                     </div>
                     <div>
                       <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*機會發生衝擊程度</label>
-                      <div class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 text-center bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
-                        {{ impactOptions[responseData.opportunityImpact] || responseData.opportunityImpact || '尚未選擇' }}
-                      </div>
+                      <select
+                        v-model="responseData.opportunityImpact"
+                        class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">請選擇</option>
+                        <option value="very-low">極低影響</option>
+                        <option value="low">低影響</option>
+                        <option value="medium">中等影響</option>
+                        <option value="high">高影響</option>
+                        <option value="very-high">極高影響</option>
+                      </select>
                     </div>
                   </div>
                   <div>
                     <label class="flex items-center text-base text-gray-600 dark:text-gray-400 mb-1">*計算說明</label>
-                    <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white min-h-[80px] flex items-start">
-                      {{ responseData.opportunityCalculation || '機會值 = 2 × 3 = 6，具有良好的發展潜力。' }}
-                    </div>
+                    <textarea
+                      v-model="responseData.opportunityCalculation"
+                      rows="3"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="請說明計算方式"
+                    ></textarea>
                   </div>
                 </div>
               </div>
@@ -366,15 +423,26 @@
               <div class="space-y-4">
                 <div>
                   <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">負面衝擊程度</label>
-                  <div class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 text-center font-medium bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
-                    {{ impactLevelOptions[responseData.negativeImpactLevel] || responseData.negativeImpactLevel || '尚未選擇' }}
-                  </div>
+                  <select
+                    v-model="responseData.negativeImpactLevel"
+                    class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">請選擇</option>
+                    <option value="level-1">等級1 - 極輕微</option>
+                    <option value="level-2">等級2 - 輕微</option>
+                    <option value="level-3">等級3 - 中等</option>
+                    <option value="level-4">等級4 - 嚴重</option>
+                    <option value="level-5">等級5 - 極嚴重</option>
+                  </select>
                 </div>
                 <div>
                   <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">評分說明</label>
-                  <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white min-h-[100px] flex items-start">
-                    {{ responseData.negativeImpactDescription || '可能對當地水資源造成輕微污染，影響社區環境品質。' }}
-                  </div>
+                  <textarea
+                    v-model="responseData.negativeImpactDescription"
+                    rows="4"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="請說明負面衝擊"
+                  ></textarea>
                 </div>
               </div>
             </div>
@@ -399,15 +467,26 @@
               <div class="space-y-4">
                 <div>
                   <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">正面影響程度</label>
-                  <div class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 text-center font-medium bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
-                    {{ impactLevelOptions[responseData.positiveImpactLevel] || responseData.positiveImpactLevel || '尚未選擇' }}
-                  </div>
+                  <select
+                    v-model="responseData.positiveImpactLevel"
+                    class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">請選擇</option>
+                    <option value="level-1">等級1 - 極輕微</option>
+                    <option value="level-2">等級2 - 輕微</option>
+                    <option value="level-3">等級3 - 中等</option>
+                    <option value="level-4">等級4 - 嚴重</option>
+                    <option value="level-5">等級5 - 極嚴重</option>
+                  </select>
                 </div>
                 <div>
                   <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">評分說明</label>
-                  <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white min-h-[100px] flex items-start">
-                    {{ responseData.positiveImpactDescription || '透過綠色轉型創造就業機會，提升當地經濟發展。' }}
-                  </div>
+                  <textarea
+                    v-model="responseData.positiveImpactDescription"
+                    rows="4"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="請說明正面影響"
+                  ></textarea>
                 </div>
               </div>
             </div>
