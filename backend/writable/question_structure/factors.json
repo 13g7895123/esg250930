@@ -1,0 +1,38 @@
+[
+    {
+        "id": "12",
+        "assessment_id": "5",
+        "topic_id": "16",
+        "category_id": "6",
+        "factor_name": "Carbon Emissions",
+        "factor_code": "CE001",
+        "description": "Carbon footprint assessment",
+        "sort_order": "1",
+        "copied_from_template_factor": null,
+        "created_at": "2025-09-24 06:16:41",
+        "updated_at": "2025-09-24 06:16:41",
+        "topic_name": "Climate Change",
+        "topic_code": "CC001",
+        "category_name": "Environmental Risk",
+        "category_code": "ENV",
+        "content_count": 0
+    },
+    {
+        "id": "13",
+        "assessment_id": "5",
+        "topic_id": "16",
+        "category_id": "6",
+        "factor_name": "Energy Efficiency",
+        "factor_code": "EE001",
+        "description": "Energy consumption analysis",
+        "sort_order": "2",
+        "copied_from_template_factor": null,
+        "created_at": "2025-09-24 06:16:41",
+        "updated_at": "2025-09-24 06:16:41",
+        "topic_name": "Climate Change",
+        "topic_code": "CC001",
+        "category_name": "Environmental Risk",
+        "category_code": "ENV",
+        "content_count": 0
+    }
+]

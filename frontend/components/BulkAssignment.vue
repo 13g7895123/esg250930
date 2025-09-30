@@ -1,0 +1,328 @@
+<template>
+  <div class="space-y-4">
+    <!-- Personnel Selection -->
+    <div>
+      <h4 class="font-medium text-gray-900 dark:text-white mb-3">選擇參與指派的人員</h4>
+      
+      <!-- Search -->
+      <div class="relative mb-3">
+        <input
+          v-model="userSearchQuery"
+          type="text"
+          placeholder="搜尋人員姓名、部門或職位..."
+          class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+        />
+        <MagnifyingGlassIcon class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+      </div>
+
+      <!-- Select All/None -->
+      <div class="flex items-center space-x-4 mb-3">
+        <button
+          @click="selectAllUsers"
+          class="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+        >
+          全選人員
+        </button>
+        <button
+          @click="deselectAllUsers"
+          class="text-sm text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+        >
+          全部取消
+        </button>
+        <div class="text-sm text-gray-500 dark:text-gray-400">
+          已選擇 {{ selectedUserIds.length }} / {{ filteredAvailableUsers.length }} 人
+        </div>
+      </div>
+
+      <!-- User List -->
+      <div class="max-h-48 overflow-y-auto space-y-2">
+        <div
+          v-for="user in filteredAvailableUsers"
+          :key="user.id"
+          class="border border-gray-200 dark:border-gray-600 rounded-lg p-3"
+        >
+          <label class="flex items-center space-x-3 cursor-pointer">
+            <input
+              v-model="selectedUserIds"
+              :value="user.id"
+              type="checkbox"
+              class="form-checkbox h-4 w-4 text-primary-600"
+            />
+            <div class="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
+              <span class="text-gray-600 dark:text-gray-300 font-medium text-sm">
+                {{ user.name.charAt(0) }}
+              </span>
+            </div>
+            <div class="flex-1">
+              <p class="font-medium text-gray-900 dark:text-white">{{ user.name }}</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ user.department }} - {{ user.position }}
+              </p>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content Selection -->
+    <div>
+      <h4 class="font-medium text-gray-900 dark:text-white mb-3">選擇要指派的題項內容</h4>
+      
+      <!-- Select All/None -->
+      <div class="flex items-center space-x-4 mb-3">
+        <button
+          @click="selectAllContent"
+          class="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+        >
+          全選內容
+        </button>
+        <button
+          @click="deselectAllContent"
+          class="text-sm text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+        >
+          全部取消
+        </button>
+        <div class="text-sm text-gray-500 dark:text-gray-400">
+          已選擇 {{ selectedContentIds.length }} / {{ sortedContentSummary.length }} 項
+        </div>
+      </div>
+
+      <!-- Content List -->
+      <div class="max-h-48 overflow-y-auto space-y-2">
+        <div
+          v-for="content in sortedContentSummary"
+          :key="content.contentId"
+          class="border border-gray-200 dark:border-gray-600 rounded-lg p-3"
+        >
+          <label class="flex items-start space-x-3 cursor-pointer">
+            <input
+              v-model="selectedContentIds"
+              :value="content.contentId"
+              type="checkbox"
+              class="mt-1 form-checkbox h-4 w-4 text-primary-600"
+            />
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <p class="font-medium text-gray-900 dark:text-white">{{ content.topic }}</p>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                  {{ getCategoryName(content.categoryId) }}
+                </span>
+              </div>
+              <p class="text-sm text-gray-600 dark:text-gray-400">{{ content.description }}</p>
+              <div v-if="content.assignmentCount > 0" class="mt-1">
+                <span class="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 rounded-full">
+                  已有 {{ content.assignmentCount }} 人指派
+                </span>
+              </div>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assignment Preview -->
+    <div v-if="previewAssignments.length > 0" class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+      <h5 class="font-medium text-blue-900 dark:text-blue-200 mb-2">指派預覽</h5>
+      <div class="text-sm text-blue-800 dark:text-blue-300 mb-3">
+        將建立 <strong>{{ previewAssignments.length }}</strong> 個新指派
+      </div>
+      
+      <div class="text-sm text-blue-700 dark:text-blue-300">
+        每人都將分配到所有 {{ selectedContentIds.length }} 個題項內容
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex justify-end space-x-3 pt-4">
+      <button
+        @click="$emit('close')"
+        class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors duration-200"
+      >
+        取消
+      </button>
+      <button
+        :disabled="!canPerformBulkAssignment"
+        @click="performBulkAssignment"
+        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-200"
+      >
+        執行批量指派
+      </button>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
+
+const props = defineProps({
+  companyId: {
+    type: [String, Number],
+    required: true
+  },
+  questionId: {
+    type: [String, Number],
+    required: true
+  },
+  contentSummary: {
+    type: Array,
+    default: () => []
+  },
+  availableUsers: {
+    type: Array,
+    default: () => []
+  }
+})
+
+const emit = defineEmits(['assignment-completed', 'close'])
+
+// Assignment composable
+const { assignUserToContent } = useQuestionAssignments()
+
+// Reactive data
+const userSearchQuery = ref('')
+const selectedUserIds = ref([])
+const selectedContentIds = ref([])
+
+// Computed properties
+const filteredAvailableUsers = computed(() => {
+  if (!userSearchQuery.value) return props.availableUsers
+  
+  const query = userSearchQuery.value.toLowerCase()
+  return props.availableUsers.filter(user => 
+    user.name.toLowerCase().includes(query) ||
+    user.department.toLowerCase().includes(query) ||
+    user.position.toLowerCase().includes(query)
+  )
+})
+
+const selectedUsers = computed(() => 
+  props.availableUsers.filter(user => selectedUserIds.value.includes(user.id))
+)
+
+const sortedContentSummary = computed(() => {
+  return [...props.contentSummary].sort((a, b) => {
+    const orderA = getCategoryOrder(a.categoryId)
+    const orderB = getCategoryOrder(b.categoryId)
+    return orderA - orderB
+  })
+})
+
+const selectedContents = computed(() => 
+  props.contentSummary.filter(content => selectedContentIds.value.includes(content.contentId))
+)
+
+const canPerformBulkAssignment = computed(() => 
+  selectedUserIds.value.length > 0 && selectedContentIds.value.length > 0
+)
+
+const previewAssignments = computed(() => {
+  if (!canPerformBulkAssignment.value) return []
+  
+  const assignments = []
+  const users = selectedUsers.value
+  const contents = selectedContents.value
+  
+  // Always use all-to-all assignment strategy
+  users.forEach(user => {
+    contents.forEach(content => {
+      assignments.push({
+        user: user,
+        content: content
+      })
+    })
+  })
+  
+  return assignments
+})
+
+// Methods
+const selectAllUsers = () => {
+  selectedUserIds.value = filteredAvailableUsers.value.map(user => user.id)
+}
+
+const deselectAllUsers = () => {
+  selectedUserIds.value = []
+}
+
+const selectAllContent = () => {
+  selectedContentIds.value = sortedContentSummary.value.map(content => content.contentId)
+}
+
+const deselectAllContent = () => {
+  selectedContentIds.value = []
+}
+
+const performBulkAssignment = () => {
+  if (!canPerformBulkAssignment.value) return
+  
+  let assignedCount = 0
+  
+  previewAssignments.value.forEach(assignment => {
+    if (assignUserToContent(
+      props.companyId,
+      props.questionId,
+      assignment.content.contentId,
+      assignment.user
+    )) {
+      assignedCount++
+    }
+  })
+  
+  if (assignedCount > 0) {
+    // Reset form
+    selectedUserIds.value = []
+    selectedContentIds.value = []
+    userSearchQuery.value = ''
+    
+    // Notify parent
+    emit('assignment-completed')
+  }
+}
+
+// Helper method to get category name
+const getCategoryName = (categoryId) => {
+  if (!categoryId || !props.questionId) return '未分類'
+  
+  // Try to load categories from question content context
+  if (process.client) {
+    try {
+      const contentKey = `question_${props.companyId}_${props.questionId}`
+      const questionCategoriesKey = `esg-question-categories-${contentKey}`
+      const storedCategories = localStorage.getItem(questionCategoriesKey)
+      
+      if (storedCategories) {
+        const categories = JSON.parse(storedCategories)
+        const category = categories.find(cat => cat.id === categoryId)
+        return category ? category.category : '未知類別'
+      }
+    } catch (error) {
+      console.error('Error loading categories for bulk assignment:', error)
+    }
+  }
+  
+  return '未分類'
+}
+
+// Helper method to get category order (index in the categories array)
+const getCategoryOrder = (categoryId) => {
+  if (!categoryId || !props.questionId) return 999 // Put uncategorized items at the end
+  
+  if (process.client) {
+    try {
+      const contentKey = `question_${props.companyId}_${props.questionId}`
+      const questionCategoriesKey = `esg-question-categories-${contentKey}`
+      const storedCategories = localStorage.getItem(questionCategoriesKey)
+      
+      if (storedCategories) {
+        const categories = JSON.parse(storedCategories)
+        const categoryIndex = categories.findIndex(cat => cat.id === categoryId)
+        return categoryIndex !== -1 ? categoryIndex : 999
+      }
+    } catch (error) {
+      console.error('Error loading categories for bulk assignment:', error)
+    }
+  }
+  
+  return 999
+}
+</script>

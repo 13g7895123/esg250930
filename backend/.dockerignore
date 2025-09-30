@@ -1,0 +1,15 @@
+vendor
+.env
+.env.local
+.env.*.local
+.git
+.gitignore
+README.md
+.DS_Store
+*.log
+.vscode
+.idea
+node_modules
+composer.phar
+phpunit.xml
+tests

@@ -1,0 +1,38 @@
+{
+  "name": "admin-template",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "build:clean": "rm -rf .nuxt .output node_modules/.cache && nuxt build",
+    "dev": "nuxt dev",
+    "dev:clean": "rm -rf .nuxt .output node_modules/.cache && nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "prepare": "nuxt prepare",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@heroicons/vue": "^2.1.5",
+    "@nuxt/ui": "^2.18.7",
+    "@pinia/nuxt": "^0.10.0",
+    "apexcharts": "^5.3.3",
+    "nuxt": "^3.13.0",
+    "pinia": "^3.0.1",
+    "pinia-plugin-persistedstate": "^4.5.0",
+    "sweetalert2": "^11.23.0",
+    "vue": "latest",
+    "vue3-apexcharts": "^1.8.0"
+  },
+  "devDependencies": {
+    "@nuxt/devtools": "^1.5.2",
+    "@nuxt/kit": "^3.13.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/test-utils": "^2.4.6",
+    "happy-dom": "^18.0.1",
+    "typescript": "^5.6.3",
+    "vitest": "^3.2.4"
+  }
+}

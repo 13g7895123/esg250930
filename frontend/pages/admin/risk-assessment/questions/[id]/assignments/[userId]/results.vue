@@ -1,0 +1,664 @@
+<template>
+  <div class="p-6">
+    <!-- Page Header -->
+    <div class="mb-6">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <button
+            @click="$router.back()"
+            class="p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
+          >
+            <ArrowLeftIcon class="w-5 h-5" />
+          </button>
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">填寫結果詳情</h1>
+            <p v-if="userInfo && assessmentInfo" class="text-gray-600 dark:text-gray-400">
+              {{ userInfo.user_name }} - {{ assessmentInfo.templateVersion }} ({{ assessmentInfo.year }}年)
+            </p>
+          </div>
+        </div>
+
+        <!-- Refresh Button -->
+        <div class="relative group">
+          <button
+            @click="refreshData"
+            :disabled="loading"
+            :class="{
+              'p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200': !loading,
+              'p-2 text-gray-400 dark:text-gray-600 cursor-not-allowed rounded-lg': loading
+            }"
+          >
+            <ArrowPathIcon :class="['w-5 h-5', { 'animate-spin': loading }]" />
+          </button>
+          <div class="absolute bottom-full right-0 mb-2 px-2 py-1 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+            重新整理
+            <div class="absolute top-full right-2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="loading" class="flex items-center justify-center py-12">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      <span class="ml-3 text-gray-600 dark:text-gray-400">載入中...</span>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+      <div class="flex items-start">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-red-800 dark:text-red-200">載入失敗</h3>
+          <div class="mt-2 text-sm text-red-700 dark:text-red-300">
+            <p>{{ error }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Content -->
+    <div v-else-if="resultData" class="min-h-screen bg-gray-50 dark:bg-gray-900 -m-6 p-6">
+      <!-- Main Content -->
+      <div class="w-full px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Page Title Section -->
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">風險評估作答檢視</h1>
+          <p class="mt-1 text-base text-gray-500 dark:text-gray-400">
+            {{ resultData.title || '未命名題目' }} - 已填寫內容檢視模式
+          </p>
+        </div>
+
+        <!-- User-Facing Content -->
+        <div class="space-y-6">
+
+          <!-- Section A: 風險因子議題描述 (可收折) -->
+          <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <button
+              @click="toggleSection('sectionA')"
+              class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              <div class="flex items-center space-x-3">
+                <span class="font-bold text-gray-900 dark:text-white text-xl">風險因子議題描述</span>
+                <span class="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-base font-medium">A</span>
+              </div>
+              <ChevronUpIcon v-if="expandedSections.sectionA" class="w-5 h-5 text-gray-400" />
+              <ChevronDownIcon v-else class="w-5 h-5 text-gray-400" />
+            </button>
+            <div v-show="expandedSections.sectionA" class="px-6 pb-6">
+              <div class="mb-3">
+                <div class="border-t-2 border-gray-300 dark:border-gray-600 mb-4 rounded-full"></div>
+              </div>
+              <!-- 顯示富文本內容，HTML格式 -->
+              <div class="prose max-w-none text-gray-700 dark:text-gray-300" v-html="responseData.riskFactorDescription || '測試風險因子描述002 - 這是一個關於環境風險的評估題目，主要探討公司在氣候變遷影響下的適應能力。'">
+              </div>
+            </div>
+          </div>
+
+          <!-- Section B: 參考文字&模組工具評估結果 (可收折) -->
+          <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <button
+              @click="toggleSection('sectionB')"
+              class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              <div class="flex items-center space-x-3">
+                <span class="font-bold text-gray-900 dark:text-white text-xl">參考文字&模組工具評估結果</span>
+                <span class="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-base font-medium">B</span>
+              </div>
+              <ChevronUpIcon v-if="expandedSections.sectionB" class="w-5 h-5 text-gray-400" />
+              <ChevronDownIcon v-else class="w-5 h-5 text-gray-400" />
+            </button>
+            <div v-show="expandedSections.sectionB" class="px-6 pb-6">
+              <div class="mb-3">
+                <div class="border-t-2 border-gray-300 dark:border-gray-600 mb-4 rounded-full"></div>
+              </div>
+              <!-- 顯示富文本內容，HTML格式 -->
+              <div class="prose max-w-none text-gray-700 dark:text-gray-300" v-html="responseData.referenceText || '根據TCFD框架，企業應評估氣候相關的風險與機會。參考最新的科學報告和政策發展。'">
+              </div>
+            </div>
+          </div>
+
+          <!-- Section C: 公司報導年度是否有發生實際風險/負面衝擊事件 -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 rounded-2xl">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-3">
+                <span class="font-bold text-gray-900 dark:text-white text-xl">公司報導年度是否有發生實際風險/負面衝擊事件</span>
+                <span class="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-base font-medium">C</span>
+              </div>
+            </div>
+            <div class="space-y-4">
+              <!-- 互動式 Radio 選項 (顯示已選擇的狀態) -->
+              <div class="grid grid-cols-2 gap-6">
+                <div
+                  class="radio-card-option radio-card-no"
+                  :class="{ 'selected': responseData.riskEventChoice === 'yes' }"
+                >
+                  <div class="radio-card-content">
+                    <div class="radio-card-icon">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                    </div>
+                    <span class="radio-card-text">是</span>
+                  </div>
+                </div>
+                <div
+                  class="radio-card-option radio-card-yes"
+                  :class="{ 'selected': responseData.riskEventChoice === 'no' }"
+                >
+                  <div class="radio-card-content">
+                    <div class="radio-card-icon">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
+                    </div>
+                    <span class="radio-card-text">否</span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label class="text-gray-600 dark:text-gray-400 mt-6 mb-1">*請描述</label>
+                <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white min-h-[80px] flex items-start">
+                  {{ responseData.riskEventDescription || '公司在2023年面臨了嚴重的洪水災害，導致生產線停工3天，損失約500萬台幣。' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section D: 公司報導年度是否有相關對應作為 -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 rounded-2xl">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-3">
+                <span class="font-bold text-gray-900 dark:text-white text-xl">公司報導年度是否有相關對應作為</span>
+                <span class="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-2 py-1 rounded text-base font-medium">D</span>
+              </div>
+            </div>
+            <div class="space-y-4">
+              <!-- 互動式 Radio 選項 (顯示已選擇的狀態) -->
+              <div class="grid grid-cols-2 gap-6">
+                <div
+                  class="radio-card-option radio-card-no"
+                  :class="{ 'selected': responseData.counterActionChoice === 'yes' }"
+                >
+                  <div class="radio-card-content">
+                    <div class="radio-card-icon">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                    </div>
+                    <span class="radio-card-text">是</span>
+                  </div>
+                </div>
+                <div
+                  class="radio-card-option radio-card-yes"
+                  :class="{ 'selected': responseData.counterActionChoice === 'no' }"
+                >
+                  <div class="radio-card-content">
+                    <div class="radio-card-icon">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
+                    </div>
+                    <span class="radio-card-text">否</span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label class="text-gray-600 dark:text-gray-400 mt-6 mb-1">*請描述</label>
+                <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white min-h-[80px] flex items-start">
+                  {{ responseData.counterActionDescription || '已建立緊急應變計畫，購買相關保險，並投資防洪設施升級。' }}
+                </div>
+              </div>
+              <div>
+                <label class="text-gray-600 dark:text-gray-400 mt-6 mb-1">*上述對策費用</label>
+                <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
+                  {{ responseData.counterActionCost ? `NT$ ${Number(responseData.counterActionCost).toLocaleString()}` : 'NT$ 2,500,000' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Green Context Bar -->
+          <div class="bg-green-600 text-white px-6 py-3 rounded-2xl">
+            <span class="font-bold text-white text-xl">請依上述資訊，整點公司致富相關之風險情況，並評估未來永續在各風險/機會情境</span>
+          </div>
+
+          <!-- Sections E, F, G, H in Grid Layout -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Section E-1: 相關風險 -->
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 rounded-2xl">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                  <span class="font-bold text-gray-900 dark:text-white text-xl">相關風險</span>
+                  <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 px-2 py-1 rounded text-base font-medium flex items-center">E-1</span>
+                  <div
+                    class="relative group w-5 h-5 ml-2 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-serif font-bold cursor-pointer hover:scale-110 transition-transform duration-200"
+                  >
+                    <span class="italic">i</span>
+                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
+                      相關風險說明：企業面臨的風險評估相關資訊
+                      <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800 dark:border-t-gray-700"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-4">
+                <p class="text-base text-gray-600 dark:text-gray-400">公司未來潛在相關風險營清說明，未來潛在風險（收入減少）、費用增加於損益</p>
+                <div>
+                  <label class="text-gray-600 dark:text-gray-400 mt-6 mb-1">風險描述</label>
+                  <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white min-h-[80px] flex items-start">
+                    {{ responseData.riskDescription || '氣候變遷可能導致極端天氣事件增加，影響供應鏈穩定性和營運成本。' }}
+                  </div>
+                </div>
+                <div class="border border-gray-300 dark:border-gray-600 rounded-2xl p-4 space-y-3">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*風險發生可能性</label>
+                      <div class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 text-center bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
+                        {{ responseData.riskProbability || '高 (3)' }}
+                      </div>
+                    </div>
+                    <div>
+                      <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*風險發生衝擊程度</label>
+                      <div class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 text-center bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
+                        {{ responseData.riskImpact || '中等 (2)' }}
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="flex items-center text-base text-gray-600 dark:text-gray-400 mb-1">*計算說明</label>
+                    <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white min-h-[80px] flex items-start">
+                      {{ responseData.riskCalculation || '風險值 = 3 × 2 = 6，屬於中高風險等級，需要積極管理。' }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section F-1: 相關機會 -->
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 rounded-2xl">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                  <span class="font-bold text-gray-900 dark:text-white text-xl">相關機會</span>
+                  <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 px-2 py-1 rounded text-base font-medium flex items-center">F-1</span>
+                  <div
+                    class="relative group w-5 h-5 ml-2 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-serif font-bold cursor-pointer hover:scale-110 transition-transform duration-200"
+                  >
+                    <span class="italic">i</span>
+                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
+                      相關機會說明：企業可能的機會評估相關資訊
+                      <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800 dark:border-t-gray-700"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-4">
+                <p class="text-base text-gray-600 dark:text-gray-400">公司未來潛在相關機會營清說明，未來潛在機會（收入增加）、費用減少於收益等不會定</p>
+                <div>
+                  <label class="text-gray-600 dark:text-gray-400 mt-6 mb-1">機會描述</label>
+                  <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white min-h-[80px] flex items-start">
+                    {{ responseData.opportunityDescription || '發展綠色技術產品，開拓新的市場機會，提升品牌形象。' }}
+                  </div>
+                </div>
+                <div class="border border-gray-300 dark:border-gray-600 rounded-2xl p-4 space-y-3">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*機會發生可能性</label>
+                      <div class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 text-center bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
+                        {{ responseData.opportunityProbability || '中等 (2)' }}
+                      </div>
+                    </div>
+                    <div>
+                      <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*機會發生衝擊程度</label>
+                      <div class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 text-center bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
+                        {{ responseData.opportunityImpact || '高 (3)' }}
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="flex items-center text-base text-gray-600 dark:text-gray-400 mb-1">*計算說明</label>
+                    <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white min-h-[80px] flex items-start">
+                      {{ responseData.opportunityCalculation || '機會值 = 2 × 3 = 6，具有良好的發展潜力。' }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section G-1: 對外負面衝擊 -->
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 rounded-2xl">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                  <span class="font-bold text-gray-900 dark:text-white text-xl">對外負面衝擊</span>
+                  <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 px-2 py-1 rounded text-base font-medium flex items-center">G-1</span>
+                  <div
+                    class="relative group w-5 h-5 ml-2 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-serif font-bold cursor-pointer hover:scale-110 transition-transform duration-200"
+                  >
+                    <span class="italic">i</span>
+                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
+                      對外負面衝擊說明：企業對外部環境可能造成的負面影響
+                      <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800 dark:border-t-gray-700"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">負面衝擊程度</label>
+                  <div class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 text-center font-medium bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
+                    {{ responseData.negativeImpactLevel || '中等' }}
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">評分說明</label>
+                  <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white min-h-[100px] flex items-start">
+                    {{ responseData.negativeImpactDescription || '可能對當地水資源造成輕微污染，影響社區環境品質。' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section H-1: 對外正面影響 -->
+            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 rounded-2xl">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                  <span class="font-bold text-gray-900 dark:text-white text-xl">對外正面影響</span>
+                  <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 px-2 py-1 rounded text-base font-medium flex items-center">H-1</span>
+                  <div
+                    class="relative group w-5 h-5 ml-2 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-serif font-bold cursor-pointer hover:scale-110 transition-transform duration-200"
+                  >
+                    <span class="italic">i</span>
+                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
+                      對外正面影響說明：企業對外部環境可能產生的正面影響
+                      <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800 dark:border-t-gray-700"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">正面影響程度</label>
+                  <div class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 text-center font-medium bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
+                    {{ responseData.positiveImpactLevel || '高' }}
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">評分說明</label>
+                  <div class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white min-h-[100px] flex items-start">
+                    {{ responseData.positiveImpactDescription || '透過綠色轉型創造就業機會，提升當地經濟發展。' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Response Info -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-lg">
+            <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-2">填寫資訊</h4>
+            <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+              <span>填寫時間：{{ responseData.answered_at ? new Date(responseData.answered_at).toLocaleString('zh-TW') : '2024-09-29 22:30:00' }}</span>
+              <span v-if="responseData.updated_at && responseData.updated_at !== responseData.answered_at">
+                最後更新：{{ new Date(responseData.updated_at).toLocaleString('zh-TW') }}
+              </span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else class="text-center py-12">
+      <div class="mx-auto h-12 w-12 text-gray-400">
+        <DocumentIcon class="h-12 w-12" />
+      </div>
+      <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">沒有找到填寫結果</h3>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">該用戶尚未開始填寫此評估表</p>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import {
+  ArrowLeftIcon,
+  ArrowPathIcon,
+  DocumentIcon,
+  ChevronUpIcon,
+  ChevronDownIcon
+} from '@heroicons/vue/24/outline'
+
+const route = useRoute()
+const router = useRouter()
+
+const loading = ref(true)
+const error = ref(null)
+const resultData = ref(null)
+const userInfo = ref(null)
+const assessmentInfo = ref(null)
+
+// Expandable sections state
+const expandedSections = ref({
+  sectionA: true,
+  sectionB: true
+})
+
+// Sample response data
+const responseData = ref({
+  riskFactorDescription: null,
+  referenceText: null,
+  riskEventChoice: 'yes',
+  riskEventDescription: null,
+  counterActionChoice: 'yes',
+  counterActionDescription: null,
+  counterActionCost: null,
+  riskDescription: null,
+  riskProbability: null,
+  riskImpact: null,
+  riskCalculation: null,
+  opportunityDescription: null,
+  opportunityProbability: null,
+  opportunityImpact: null,
+  opportunityCalculation: null,
+  negativeImpactLevel: null,
+  negativeImpactDescription: null,
+  positiveImpactLevel: null,
+  positiveImpactDescription: null,
+  answered_at: null,
+  updated_at: null
+})
+
+// Toggle section function
+const toggleSection = (section) => {
+  expandedSections.value[section] = !expandedSections.value[section]
+}
+
+const loadResultData = async () => {
+  try {
+    loading.value = true
+    error.value = null
+
+    const assessmentId = route.params.id
+    const userId = route.params.userId
+
+    console.log('Loading result data for assessment:', assessmentId, 'user:', userId)
+
+    // Simulate API call - populate with sample data
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    // Sample data for demonstration
+    resultData.value = {
+      title: '未命名題目',
+      statistics: {
+        completed_questions: 1,
+        pending_questions: 0,
+        completion_percentage: 100,
+        last_updated: '2024-09-29'
+      }
+    }
+
+    userInfo.value = {
+      user_name: '測試用戶'
+    }
+
+    assessmentInfo.value = {
+      templateVersion: '測試範本',
+      year: '2024'
+    }
+
+    // Populate response data with sample answers
+    responseData.value = {
+      riskFactorDescription: '<p>測試風險因子描述002 - 這是一個關於環境風險的評估題目，主要探討公司在氣候變遷影響下的適應能力。</p>',
+      referenceText: '<p>根據TCFD框架，企業應評估氣候相關的風險與機會。參考最新的科學報告和政策發展。</p>',
+      riskEventChoice: 'yes',
+      riskEventDescription: '公司在2023年面臨了嚴重的洪水災害，導致生產線停工3天，損失約500萬台幣。',
+      counterActionChoice: 'yes',
+      counterActionDescription: '已建立緊急應變計畫，購買相關保險，並投資防洪設施升級。',
+      counterActionCost: '2500000',
+      riskDescription: '氣候變遷可能導致極端天氣事件增加，影響供應鏈穩定性和營運成本。',
+      riskProbability: '高 (3)',
+      riskImpact: '中等 (2)',
+      riskCalculation: '風險值 = 3 × 2 = 6，屬於中高風險等級，需要積極管理。',
+      opportunityDescription: '發展綠色技術產品，開拓新的市場機會，提升品牌形象。',
+      opportunityProbability: '中等 (2)',
+      opportunityImpact: '高 (3)',
+      opportunityCalculation: '機會值 = 2 × 3 = 6，具有良好的發展潛力。',
+      negativeImpactLevel: '中等',
+      negativeImpactDescription: '可能對當地水資源造成輕微污染，影響社區環境品質。',
+      positiveImpactLevel: '高',
+      positiveImpactDescription: '透過綠色轉型創造就業機會，提升當地經濟發展。',
+      answered_at: '2024-09-29T14:30:00Z',
+      updated_at: '2024-09-29T16:45:00Z'
+    }
+
+    console.log('Result data loaded successfully')
+  } catch (err) {
+    console.error('載入填寫結果時發生錯誤:', err)
+    error.value = err.message || '載入填寫結果時發生錯誤'
+  } finally {
+    loading.value = false
+  }
+}
+
+const refreshData = async () => {
+  try {
+    await loadResultData()
+
+    // 顯示成功通知
+    if (window.$swal && !error.value) {
+      window.$swal.success('成功', '資料已重新載入')
+    }
+  } catch (err) {
+    console.error('重新載入資料時發生錯誤:', err)
+
+    if (window.$swal) {
+      window.$swal.error('錯誤', '重新載入資料失敗')
+    }
+  }
+}
+
+// Watch for route parameter changes and reload data
+watch([() => route.params.id, () => route.params.userId], ([newId, newUserId], [oldId, oldUserId]) => {
+  // Only reload if the parameters actually changed
+  if ((newId !== oldId || newUserId !== oldUserId) && newId && newUserId) {
+    console.log('Route parameters changed, reloading data:', { newId, newUserId, oldId, oldUserId })
+    loadResultData()
+  }
+}, { immediate: false })
+
+onMounted(() => {
+  loadResultData()
+})
+
+// SEO - Dynamic title based on data
+useHead(() => ({
+  title: userInfo.value && assessmentInfo.value
+    ? `${userInfo.value.user_name} - ${assessmentInfo.value.templateVersion} 填寫結果 - 風險評估管理系統`
+    : '填寫結果詳情 - 風險評估管理系統'
+}))
+</script>
+
+<style scoped>
+/* Custom styling for the ESG form results view */
+.bg-green-600 {
+  background-color: #059669;
+}
+
+/* 精緻的卡片式 Radio 樣式 - 顯示選中狀態 */
+.radio-card-option {
+  @apply relative block border rounded-2xl px-4 py-3 transition-all duration-200 ease-in-out;
+  @apply bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600;
+}
+
+.radio-card-option.radio-card-yes {
+  @apply border-red-400 dark:border-red-500;
+}
+
+.radio-card-option.radio-card-no {
+  @apply border-green-400 dark:border-green-500;
+}
+
+.radio-card-content {
+  @apply flex items-center justify-center space-x-3;
+}
+
+.radio-card-icon {
+  @apply w-7 h-7 flex items-center justify-center rounded-full;
+  @apply transition-all duration-200 border;
+  @apply bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400;
+}
+
+.radio-card-text {
+  @apply text-lg font-semibold text-gray-700 dark:text-gray-300;
+}
+
+/* 選中狀態樣式 */
+.radio-card-option.selected.radio-card-yes {
+  @apply border-red-500 bg-red-50 dark:bg-red-900/20;
+}
+
+.radio-card-option.selected.radio-card-no {
+  @apply border-green-500 bg-green-50 dark:bg-green-900/20;
+}
+
+.radio-card-option.selected .radio-card-icon {
+  @apply bg-white dark:bg-gray-800 border-current;
+}
+
+.radio-card-option.selected.radio-card-yes .radio-card-icon {
+  @apply text-red-600 dark:text-red-400;
+}
+
+.radio-card-option.selected.radio-card-no .radio-card-icon {
+  @apply text-green-600 dark:text-green-400;
+}
+
+.radio-card-option.selected .radio-card-text {
+  @apply text-current;
+}
+
+.radio-card-option.selected.radio-card-yes .radio-card-text {
+  @apply text-red-700 dark:text-red-300;
+}
+
+.radio-card-option.selected.radio-card-no .radio-card-text {
+  @apply text-green-700 dark:text-green-300;
+}
+
+/* 響應式設計 */
+@media (max-width: 640px) {
+  .radio-card-content {
+    @apply flex-col space-x-0 space-y-2;
+  }
+
+  .radio-card-text {
+    @apply text-base;
+  }
+}
+</style>

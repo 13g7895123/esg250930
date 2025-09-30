@@ -1,0 +1,15 @@
+[
+    {
+        "id": "6",
+        "assessment_id": "5",
+        "category_name": "Environmental Risk",
+        "category_code": "ENV",
+        "description": null,
+        "sort_order": "1",
+        "copied_from_template_category": null,
+        "created_at": "2025-09-24 06:00:48",
+        "updated_at": "2025-09-24 06:00:48",
+        "content_count": 0,
+        "topic_count": 2
+    }
+]

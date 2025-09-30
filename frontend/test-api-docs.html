@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue API 文檔測試</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        [v-cloak] { display: none; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app" v-cloak>
+        <div class="min-h-screen">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-8">
+                <div class="container mx-auto px-4">
+                    <h1 class="text-4xl font-bold mb-2">風險評估管理系統</h1>
+                    <p class="text-xl opacity-90">API 文檔與測試工具 (Vue 實作版本)</p>
+                </div>
+            </div>
+
+            <div class="container mx-auto px-4 py-8">
+                <!-- Search Box -->
+                <div class="mb-6">
+                    <input
+                        v-model="searchQuery"
+                        placeholder="搜尋 API 端點..."
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                </div>
+
+                <!-- Navigation Tabs -->
+                <div class="mb-8">
+                    <div class="flex space-x-1 bg-white p-1 rounded-lg shadow">
+                        <button
+                            v-for="(tab, index) in tabs"
+                            :key="tab.key"
+                            @click="selectedTab = index"
+                            :class="[
+                                'flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors',
+                                selectedTab === index
+                                    ? 'bg-blue-600 text-white'
+                                    : 'text-gray-600 hover:bg-gray-100'
+                            ]"
+                        >
+                            {{ tab.label }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab Content -->
+                <div v-if="selectedTab === 0" class="space-y-6">
+                    <!-- Risk Assessment APIs -->
+                    <api-group
+                        title="範本管理 API"
+                        description="風險評估範本的增刪改查操作"
+                        :endpoints="riskAssessmentAPIs.templates"
+                        :search-query="searchQuery"
+                    />
+
+                    <api-group
+                        title="範本分類管理 API"
+                        description="風險評估範本分類的管理操作"
+                        :endpoints="riskAssessmentAPIs.categories"
+                        :search-query="searchQuery"
+                    />
+                </div>
+
+                <div v-if="selectedTab === 1" class="space-y-6">
+                    <!-- Question Management APIs -->
+                    <api-group
+                        title="題項管理 API"
+                        description="獨立的題項管理系統，用於評估問題的組織和管理"
+                        :endpoints="questionManagementAPIs"
+                        :search-query="searchQuery"
+                    />
+                </div>
+
+                <div v-if="selectedTab === 2" class="space-y-6">
+                    <!-- Personnel APIs -->
+                    <api-group
+                        title="人員管理 API"
+                        description="公司人員信息管理和指派操作"
+                        :endpoints="personnelAPIs"
+                        :search-query="searchQuery"
+                    />
+                </div>
+
+                <div v-if="selectedTab === 3" class="space-y-6">
+                    <!-- Companies APIs -->
+                    <api-group
+                        title="公司管理 API"
+                        description="公司基本資料的增刪改查操作"
+                        :endpoints="companiesAPIs"
+                        :search-query="searchQuery"
+                    />
+                </div>
+
+                <div v-if="selectedTab === 4" class="space-y-6">
+                    <!-- Admin APIs -->
+                    <api-group
+                        title="檔案上傳 API"
+                        description="範本檔案上傳和處理功能"
+                        :endpoints="adminAPIs.upload"
+                        :search-query="searchQuery"
+                    />
+
+                    <api-group
+                        title="NAS 整合 API"
+                        description="網路附加儲存系統整合功能"
+                        :endpoints="adminAPIs.nas"
+                        :search-query="searchQuery"
+                    />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+
+        // API Group Component
+        const APIGroup = {
+            props: ['title', 'description', 'endpoints', 'searchQuery'],
+            template: `
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">{{ title }}</h3>
+                            <p class="text-sm text-gray-600 mt-1">{{ description }}</p>
+                        </div>
+                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                            {{ filteredEndpoints.length }} APIs
+                        </span>
+                    </div>
+
+                    <div class="space-y-4">
+                        <api-endpoint
+                            v-for="(endpoint, index) in filteredEndpoints"
+                            :key="endpoint.method + '-' + endpoint.path"
+                            :endpoint="endpoint"
+                            :search-query="searchQuery"
+                        />
+
+                        <div v-if="filteredEndpoints.length === 0 && searchQuery"
+                             class="text-center py-8 text-gray-500">
+                            <p>沒有找到符合 "{{ searchQuery }}" 的 API 端點</p>
+                        </div>
+                    </div>
+                </div>
+            `,
+            computed: {
+                filteredEndpoints() {
+                    if (!this.searchQuery) {
+                        return this.endpoints;
+                    }
+
+                    const query = this.searchQuery.toLowerCase();
+                    return this.endpoints.filter(endpoint => {
+                        const searchableText = [
+                            endpoint.method,
+                            endpoint.path,
+                            endpoint.title,
+                            endpoint.description
+                        ].join(' ').toLowerCase();
+
+                        return searchableText.includes(query);
+                    });
+                }
+            }
+        };
+
+        // API Endpoint Component
+        const APIEndpoint = {
+            props: ['endpoint', 'searchQuery'],
+            data() {
+                return {
+                    isExpanded: false,
+                    isTesting: false,
+                    apiResponse: null,
+                    pathParamsData: {},
+                    requestData: {}
+                };
+            },
+            template: `
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <!-- Endpoint Header -->
+                    <div class="flex items-center justify-between cursor-pointer" @click="isExpanded = !isExpanded">
+                        <div class="flex items-center space-x-4 flex-1">
+                            <span :class="[
+                                'px-3 py-1 rounded text-xs font-mono font-medium text-white min-w-[60px] text-center',
+                                methodColor
+                            ]">
+                                {{ endpoint.method }}
+                            </span>
+
+                            <div class="flex-1">
+                                <div class="font-mono text-sm font-medium text-gray-900">
+                                    {{ endpoint.path }}
+                                </div>
+                                <div class="text-sm text-gray-600 mt-1">
+                                    {{ endpoint.title }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-x-2">
+                            <button
+                                v-if="!isExpanded"
+                                @click.stop="testAPI"
+                                :disabled="isTesting"
+                                class="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
+                            >
+                                {{ isTesting ? '測試中...' : '快速測試' }}
+                            </button>
+
+                            <span class="text-gray-400">
+                                {{ isExpanded ? '▲' : '▼' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Expanded Content -->
+                    <div v-if="isExpanded" class="mt-6 border-t border-gray-200 pt-6">
+                        <!-- Description -->
+                        <div class="mb-6">
+                            <h4 class="font-medium text-gray-900 mb-2">描述</h4>
+                            <p class="text-sm text-gray-600">{{ endpoint.description }}</p>
+                        </div>
+
+                        <!-- Path Parameters -->
+                        <div v-if="endpoint.pathParams && endpoint.pathParams.length > 0" class="mb-6">
+                            <h4 class="font-medium text-gray-900 mb-3">路徑參數</h4>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">參數名稱</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">類型</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">必填</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">說明</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <tr v-for="param in endpoint.pathParams" :key="param.name">
+                                            <td class="px-4 py-2 text-sm font-mono text-gray-900">{{ param.name }}</td>
+                                            <td class="px-4 py-2 text-sm text-gray-600">{{ param.type }}</td>
+                                            <td class="px-4 py-2 text-sm">
+                                                <span :class="[
+                                                    'px-2 py-1 text-xs rounded',
+                                                    param.required ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                                                ]">
+                                                    {{ param.required ? '必填' : '選填' }}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-gray-600">{{ param.description }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Request Parameters -->
+                        <div v-if="endpoint.parameters && endpoint.parameters.length > 0" class="mb-6">
+                            <h4 class="font-medium text-gray-900 mb-3">請求參數</h4>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">參數名稱</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">類型</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">必填</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">說明</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <tr v-for="param in endpoint.parameters" :key="param.name">
+                                            <td class="px-4 py-2 text-sm font-mono text-gray-900">{{ param.name }}</td>
+                                            <td class="px-4 py-2 text-sm text-gray-600">{{ param.type }}</td>
+                                            <td class="px-4 py-2 text-sm">
+                                                <span :class="[
+                                                    'px-2 py-1 text-xs rounded',
+                                                    param.required ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                                                ]">
+                                                    {{ param.required ? '必填' : '選填' }}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-2 text-sm text-gray-600">{{ param.description }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Example Response -->
+                        <div v-if="endpoint.example" class="mb-6">
+                            <h4 class="font-medium text-gray-900 mb-3">回應範例</h4>
+                            <pre class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm overflow-x-auto"><code>{{ JSON.stringify(endpoint.example, null, 2) }}</code></pre>
+                        </div>
+
+                        <!-- API Testing Section -->
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h4 class="font-medium text-gray-900 mb-4 flex items-center">
+                                🔧 測試 API
+                            </h4>
+
+                            <form @submit.prevent="testAPI" class="space-y-4">
+                                <!-- Path Parameters Input -->
+                                <div v-if="endpoint.pathParams && endpoint.pathParams.length > 0">
+                                    <h5 class="text-sm font-medium text-gray-700 mb-2">路徑參數</h5>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div v-for="param in endpoint.pathParams" :key="param.name">
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                                {{ param.name }} {{ param.required ? '*' : '' }}
+                                            </label>
+                                            <input
+                                                v-model="pathParamsData[param.name]"
+                                                :placeholder="'輸入 ' + param.description + '...'"
+                                                :required="param.required"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Request Parameters Input -->
+                                <div v-if="endpoint.parameters && endpoint.parameters.length > 0">
+                                    <h5 class="text-sm font-medium text-gray-700 mb-2">
+                                        {{ endpoint.method === 'GET' ? '查詢參數' : '請求參數' }}
+                                    </h5>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div v-for="param in endpoint.parameters" :key="param.name">
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                                {{ param.name }} {{ param.required ? '*' : '' }}
+                                            </label>
+                                            <input
+                                                v-model="requestData[param.name]"
+                                                :type="getInputType(param.type)"
+                                                :placeholder="'輸入 ' + param.description + '...'"
+                                                :required="param.required"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Submit Button -->
+                                <div class="flex justify-end">
+                                    <button
+                                        type="submit"
+                                        :disabled="isTesting"
+                                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {{ isTesting ? '測試中...' : '執行測試' }}
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- API Response -->
+                            <div v-if="apiResponse" class="mt-6">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h5 class="text-sm font-medium text-gray-700">API 回應</h5>
+                                    <span :class="[
+                                        'px-2 py-1 text-xs rounded',
+                                        getStatusColor(apiResponse.status)
+                                    ]">
+                                        {{ apiResponse.status }} {{ getStatusText(apiResponse.status) }}
+                                    </span>
+                                </div>
+
+                                <pre class="bg-white border border-gray-200 rounded-lg p-4 text-sm overflow-x-auto max-h-96"><code>{{ formatResponse(apiResponse.data) }}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            computed: {
+                methodColor() {
+                    const colors = {
+                        GET: 'bg-green-600',
+                        POST: 'bg-blue-600',
+                        PUT: 'bg-yellow-600',
+                        DELETE: 'bg-red-600',
+                        PATCH: 'bg-purple-600'
+                    };
+                    return colors[this.endpoint.method] || 'bg-gray-600';
+                }
+            },
+            methods: {
+                getInputType(paramType) {
+                    const types = {
+                        integer: 'number',
+                        decimal: 'number',
+                        email: 'email',
+                        password: 'password'
+                    };
+                    return types[paramType] || 'text';
+                },
+
+                buildApiUrl() {
+                    let url = this.endpoint.path;
+
+                    // Replace path parameters
+                    if (this.endpoint.pathParams) {
+                        this.endpoint.pathParams.forEach(param => {
+                            const value = this.pathParamsData[param.name];
+                            if (value) {
+                                url = url.replace(\`{\${param.name}}\`, encodeURIComponent(value));
+                            }
+                        });
+                    }
+
+                    // Add query parameters for GET requests
+                    if (this.endpoint.method === 'GET' && this.endpoint.parameters) {
+                        const queryParams = new URLSearchParams();
+                        this.endpoint.parameters.forEach(param => {
+                            const value = this.requestData[param.name];
+                            if (value) {
+                                queryParams.append(param.name, value);
+                            }
+                        });
+
+                        if (queryParams.toString()) {
+                            url += '?' + queryParams.toString();
+                        }
+                    }
+
+                    return url;
+                },
+
+                async testAPI() {
+                    this.isTesting = true;
+                    this.apiResponse = null;
+
+                    try {
+                        const url = this.buildApiUrl();
+                        const fullUrl = \`\${window.location.origin}\${url}\`;
+
+                        const options = {
+                            method: this.endpoint.method,
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        };
+
+                        // Handle request body for non-GET requests
+                        if (this.endpoint.method !== 'GET') {
+                            options.headers['Content-Type'] = 'application/json';
+
+                            const body = {};
+                            if (this.endpoint.parameters) {
+                                this.endpoint.parameters.forEach(param => {
+                                    if (this.requestData[param.name]) {
+                                        body[param.name] = this.requestData[param.name];
+                                    }
+                                });
+                            }
+
+                            if (Object.keys(body).length > 0) {
+                                options.body = JSON.stringify(body);
+                            }
+                        }
+
+                        const response = await fetch(fullUrl, options);
+                        const responseText = await response.text();
+
+                        let responseData;
+                        try {
+                            responseData = JSON.parse(responseText);
+                        } catch (e) {
+                            responseData = responseText;
+                        }
+
+                        this.apiResponse = {
+                            status: response.status,
+                            data: responseData
+                        };
+
+                    } catch (error) {
+                        this.apiResponse = {
+                            status: 'ERROR',
+                            data: { error: error.message }
+                        };
+                    } finally {
+                        this.isTesting = false;
+                    }
+                },
+
+                getStatusColor(status) {
+                    if (status >= 200 && status < 300) return 'bg-green-100 text-green-800';
+                    if (status >= 400 && status < 500) return 'bg-yellow-100 text-yellow-800';
+                    if (status >= 500) return 'bg-red-100 text-red-800';
+                    return 'bg-gray-100 text-gray-800';
+                },
+
+                getStatusText(status) {
+                    const statusTexts = {
+                        200: 'OK',
+                        201: 'Created',
+                        400: 'Bad Request',
+                        401: 'Unauthorized',
+                        403: 'Forbidden',
+                        404: 'Not Found',
+                        422: 'Unprocessable Entity',
+                        500: 'Internal Server Error',
+                        'ERROR': 'Network Error'
+                    };
+                    return statusTexts[status] || 'Unknown';
+                },
+
+                formatResponse(data) {
+                    if (typeof data === 'string') {
+                        return data;
+                    }
+                    return JSON.stringify(data, null, 2);
+                }
+            }
+        };
+
+        createApp({
+            components: {
+                'api-group': APIGroup,
+                'api-endpoint': APIEndpoint
+            },
+            setup() {
+                const searchQuery = ref('');
+                const selectedTab = ref(0);
+
+                const tabs = [
+                    { key: 'risk-assessment', label: '風險評估' },
+                    { key: 'question-management', label: '題項管理' },
+                    { key: 'personnel', label: '人員管理' },
+                    { key: 'companies', label: '公司管理' },
+                    { key: 'admin', label: '管理功能' }
+                ];
+
+                // API definitions (same as in the main Vue component)
+                const riskAssessmentAPIs = {
+                    templates: [
+                        {
+                            method: 'GET',
+                            path: '/api/v1/risk-assessment/templates',
+                            title: '取得範本列表',
+                            description: '取得所有風險評估範本列表，包含範本基本資訊和統計數據',
+                            parameters: [
+                                { name: 'search', type: 'string', required: false, description: '搜尋範本名稱' },
+                                { name: 'page', type: 'integer', required: false, description: '頁數 (預設: 1)' },
+                                { name: 'limit', type: 'integer', required: false, description: '每頁筆數 (預設: 10)' }
+                            ],
+                            example: {
+                                success: true,
+                                data: {
+                                    templates: [{
+                                        id: 1,
+                                        version_name: "2024年度風險評估範本",
+                                        description: "年度標準風險評估範本",
+                                        status: "active",
+                                        content_count: 25,
+                                        category_count: 5,
+                                        created_at: "2024-01-01 00:00:00"
+                                    }],
+                                    pagination: { total: 1, page: 1, limit: 10 }
+                                }
+                            }
+                        },
+                        {
+                            method: 'POST',
+                            path: '/api/v1/risk-assessment/templates',
+                            title: '建立範本',
+                            description: '建立新的風險評估範本',
+                            parameters: [
+                                { name: 'version_name', type: 'string', required: true, description: '範本名稱' },
+                                { name: 'description', type: 'string', required: false, description: '範本描述' },
+                                { name: 'assessment_year', type: 'integer', required: false, description: '評估年度' }
+                            ]
+                        }
+                    ],
+                    categories: [
+                        {
+                            method: 'GET',
+                            path: '/api/v1/risk-assessment/templates/{id}/categories',
+                            title: '取得分類列表',
+                            description: '取得指定範本的風險分類列表',
+                            pathParams: [
+                                { name: 'id', type: 'integer', required: true, description: '範本 ID' }
+                            ]
+                        },
+                        {
+                            method: 'POST',
+                            path: '/api/v1/risk-assessment/templates/{id}/categories',
+                            title: '建立分類',
+                            description: '為指定範本建立新的風險分類',
+                            pathParams: [
+                                { name: 'id', type: 'integer', required: true, description: '範本 ID' }
+                            ],
+                            parameters: [
+                                { name: 'category_name', type: 'string', required: true, description: '分類名稱' },
+                                { name: 'category_code', type: 'string', required: false, description: '分類代碼' },
+                                { name: 'description', type: 'string', required: false, description: '分類描述' },
+                                { name: 'sort_order', type: 'integer', required: false, description: '排序順序' }
+                            ]
+                        }
+                    ]
+                };
+
+                const questionManagementAPIs = [
+                    {
+                        method: 'GET',
+                        path: '/api/v1/question-management/assessment/{id}/structure',
+                        title: '取得評估結構',
+                        description: '取得指定評估的完整結構，包含分類、主題、因子等',
+                        pathParams: [
+                            { name: 'id', type: 'integer', required: true, description: '評估 ID' }
+                        ]
+                    }
+                ];
+
+                const personnelAPIs = [
+                    {
+                        method: 'GET',
+                        path: '/api/v1/personnel/companies',
+                        title: '取得公司列表',
+                        description: '取得所有公司基本資訊列表'
+                    }
+                ];
+
+                const companiesAPIs = [
+                    {
+                        method: 'GET',
+                        path: '/api/companies',
+                        title: '取得公司列表',
+                        description: '取得所有公司列表'
+                    }
+                ];
+
+                const adminAPIs = {
+                    upload: [
+                        {
+                            method: 'POST',
+                            path: '/admin/api/template/upload_file',
+                            title: '上傳檔案',
+                            description: '上傳範本檔案進行處理',
+                            contentType: 'multipart/form-data',
+                            parameters: [
+                                { name: 'file', type: 'file', required: true, description: '要上傳的檔案' }
+                            ]
+                        }
+                    ],
+                    nas: [
+                        {
+                            method: 'GET',
+                            path: '/api/nas/test',
+                            title: 'NAS 連線測試',
+                            description: '測試 NAS 系統連線狀態'
+                        }
+                    ]
+                };
+
+                return {
+                    searchQuery,
+                    selectedTab,
+                    tabs,
+                    riskAssessmentAPIs,
+                    questionManagementAPIs,
+                    personnelAPIs,
+                    companiesAPIs,
+                    adminAPIs
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

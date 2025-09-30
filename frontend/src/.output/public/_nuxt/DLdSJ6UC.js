@@ -1,0 +1,1 @@
+import{V as s,n as o,W as i,G as r}from"./BxfpjSiT.js";const u=s(async n=>{let e,t;const a=o();if([e,t]=i(()=>a.initializeAuth()),await e,t(),a.isLoggedIn)return console.log("[Guest Middleware] User is authenticated, redirecting to dashboard"),r("/dashboard/analytics")});export{u as default};
