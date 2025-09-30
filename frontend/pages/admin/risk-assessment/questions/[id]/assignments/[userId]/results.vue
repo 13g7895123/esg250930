@@ -488,7 +488,7 @@
           <div class="flex items-center justify-center gap-4 pt-6 pb-4">
             <button
               @click="handleEdit"
-              class="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-lg transition-colors duration-200 flex items-center space-x-2"
+              class="px-6 py-3 bg-yellow-500 text-white font-medium rounded-lg transition-all duration-200 flex items-center space-x-2 hover:bg-yellow-600 hover:shadow-lg hover:scale-105"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -498,7 +498,7 @@
             <button
               @click="handleConfirm"
               :disabled="confirming"
-              class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
+              class="px-6 py-3 bg-green-600 text-white font-medium rounded-lg transition-all duration-200 flex items-center space-x-2 disabled:bg-gray-400 disabled:cursor-not-allowed enabled:hover:bg-green-700 enabled:hover:shadow-lg enabled:hover:scale-105"
             >
               <svg v-if="confirming" class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
