@@ -11,7 +11,7 @@
             <ArrowLeftIcon class="w-5 h-5" />
           </button>
           <div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">填寫結果詳情</h1>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">風險評估作答檢視</h1>
             <p v-if="userInfo && assessmentInfo" class="text-gray-600 dark:text-gray-400">
               {{ userInfo.user_name }} - {{ assessmentInfo.templateVersion }} ({{ assessmentInfo.year }}年)
             </p>
@@ -81,14 +81,6 @@
     <div v-else-if="resultData" class="min-h-screen bg-gray-50 dark:bg-gray-900 -m-6 p-6">
       <!-- Main Content -->
       <div class="w-full px-4 sm:px-6 lg:px-8 py-8">
-
-        <!-- Page Title Section -->
-        <div class="mb-6">
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">風險評估作答檢視</h1>
-          <p class="mt-1 text-base text-gray-500 dark:text-gray-400">
-            {{ resultData.title || '未命名題目' }} - 已填寫內容檢視模式
-          </p>
-        </div>
 
         <!-- User-Facing Content -->
         <div class="space-y-6">
@@ -799,13 +791,7 @@ useHead(() => ({
   @apply bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600;
 }
 
-.radio-card-option.radio-card-yes {
-  @apply border-red-400 dark:border-red-500;
-}
-
-.radio-card-option.radio-card-no {
-  @apply border-green-400 dark:border-green-500;
-}
+/* 未選擇時使用灰色邊框（已在上方 .radio-card-option 定義） */
 
 .radio-card-content {
   @apply flex items-center justify-center space-x-3;
