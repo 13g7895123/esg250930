@@ -167,8 +167,14 @@ $routes->group('api/v1/risk-assessment', function($routes) {
     $routes->put('templates/(:num)/contents/(:num)', 'Api\V1\RiskAssessment\TemplateContentController::update/$1/$2');
     $routes->delete('templates/(:num)/contents/(:num)', 'Api\V1\RiskAssessment\TemplateContentController::delete/$1/$2');
     $routes->put('templates/(:num)/contents/reorder', 'Api\V1\RiskAssessment\TemplateContentController::reorder/$1');
-    
-    // Template copy route - Put this before resource routes 
+
+    // Scale Management routes - Probability and Impact Scales
+    $routes->post('templates/(:num)/scales/probability', 'Api\V1\RiskAssessment\ScaleController::saveProbabilityScale/$1');
+    $routes->get('templates/(:num)/scales/probability', 'Api\V1\RiskAssessment\ScaleController::getProbabilityScale/$1');
+    $routes->post('templates/(:num)/scales/impact', 'Api\V1\RiskAssessment\ScaleController::saveImpactScale/$1');
+    $routes->get('templates/(:num)/scales/impact', 'Api\V1\RiskAssessment\ScaleController::getImpactScale/$1');
+
+    // Template copy route - Put this before resource routes
     $routes->post('templates/(:num)/copy', 'Api\V1\RiskAssessment\TemplateController::copy/$1');
     
     // Company Assessments routes - Put these before template resource routes

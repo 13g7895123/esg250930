@@ -201,8 +201,23 @@
         </div>
 
         <!-- Green Context Bar -->
-        <div class="bg-green-600 text-white px-6 py-3 rounded-2xl">
+        <div class="bg-green-600 text-white px-6 py-3 rounded-2xl flex items-center justify-between">
           <span class="font-bold text-white text-xl">請依上述資訊，整點公司致富相關之風險情況，並評估未來永續在各風險/機會情境</span>
+          <button
+            @click="showProbabilityScaleModal = true"
+            :disabled="isCompactMode"
+            :class="[
+              'px-4 py-2 bg-white text-black font-bold rounded-full transition-colors duration-200 flex items-center space-x-2 whitespace-nowrap',
+              isCompactMode
+                ? 'opacity-50 cursor-not-allowed'
+                : 'hover:bg-gray-100'
+            ]"
+          >
+            <span>可能性量表</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
         </div>
 
         <!-- Sections E, F, G, H in Grid Layout -->
@@ -441,6 +456,254 @@
       </div>
     </div>
   </div>
+
+  <!-- Probability Scale Modal (Read-only) -->
+  <Teleport to="body">
+    <div
+      v-if="showProbabilityScaleModal"
+      :class="[
+        'fixed z-50',
+        isCompactMode ? '' : 'inset-0 flex items-center justify-center bg-black bg-opacity-50'
+      ]"
+      :style="isCompactMode ? { top: modalPosition.y + 'px', left: modalPosition.x + 'px' } : {}"
+      @click.self="!isCompactMode && closeModal()"
+    >
+      <div
+        :class="[
+          'bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-y-auto modal-draggable',
+          isCompactMode ? 'max-w-3xl' : 'w-full max-w-6xl max-h-[90vh] m-4'
+        ]"
+        :style="isCompactMode ? { maxHeight: '80vh' } : {}"
+      >
+        <!-- Modal Header -->
+        <div
+          :class="[
+            'flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700',
+            isCompactMode ? 'cursor-move bg-gray-50 dark:bg-gray-700' : ''
+          ]"
+          @mousedown="startDrag"
+        >
+          <h2 class="text-xl font-bold text-gray-900 dark:text-white">量表檢視</h2>
+          <div class="flex items-center space-x-2">
+            <!-- 切換精簡模式按鈕 -->
+            <button
+              @click="toggleCompactMode"
+              class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+              :title="isCompactMode ? '展開' : '精簡化'"
+            >
+              <svg v-if="!isCompactMode" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+            </button>
+            <!-- 關閉按鈕 -->
+            <button
+              @click="closeModal"
+              class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div v-if="isLoadingScales" class="flex items-center justify-center p-12">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+
+        <!-- Modal Content (Tabs) -->
+        <div v-else class="p-6">
+          <!-- Tab Navigation (完整模式) -->
+          <div v-if="!isCompactMode" class="border-b border-gray-200 dark:border-gray-700 mb-6">
+            <nav class="-mb-px flex space-x-8">
+              <button
+                @click="activeTab = 'probability'"
+                :class="[
+                  activeTab === 'probability'
+                    ? 'border-green-600 text-green-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                  'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
+                ]"
+              >
+                風險發生可能性量表
+              </button>
+              <button
+                @click="activeTab = 'impact'"
+                :class="[
+                  activeTab === 'impact'
+                    ? 'border-green-600 text-green-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                  'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
+                ]"
+              >
+                財務衝擊量表
+              </button>
+            </nav>
+          </div>
+
+          <!-- 精簡模式切換按鈕 -->
+          <div v-else class="flex justify-center mb-4">
+            <div class="inline-flex rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 p-1">
+              <button
+                @click="activeTab = 'probability'"
+                :class="[
+                  'px-4 py-2 rounded-md text-sm font-medium transition-all duration-200',
+                  activeTab === 'probability'
+                    ? 'bg-green-600 text-white shadow-sm'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                ]"
+              >
+                可能性量表
+              </button>
+              <button
+                @click="activeTab = 'impact'"
+                :class="[
+                  'px-4 py-2 rounded-md text-sm font-medium transition-all duration-200',
+                  activeTab === 'impact'
+                    ? 'bg-green-600 text-white shadow-sm'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                ]"
+              >
+                財務衝擊量表
+              </button>
+            </div>
+          </div>
+
+          <!-- Probability Scale Tab Content -->
+          <div v-show="activeTab === 'probability'">
+            <div v-if="probabilityScaleColumns.length === 0 && probabilityScaleRows.length === 0" class="p-6 border-2 border-yellow-300 dark:border-yellow-600 rounded-lg bg-yellow-50 dark:bg-yellow-900/10">
+              <div class="text-center text-gray-600 dark:text-gray-400">
+                <svg class="mx-auto h-12 w-12 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <h3 class="mt-2 text-lg font-medium text-gray-900 dark:text-white">尚未設定量表資料</h3>
+                <p class="mt-1 text-sm">請先在編輯頁面中設定並儲存可能性量表資料</p>
+              </div>
+            </div>
+            <div v-else class="p-6 border-2 border-blue-300 dark:border-blue-600 rounded-lg bg-blue-50 dark:bg-blue-900/10">
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                  <thead class="bg-gray-100 dark:bg-gray-700">
+                    <tr>
+                      <th
+                        v-for="col in probabilityScaleColumns"
+                        :key="col.id"
+                        class="px-4 py-3 text-left text-base font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700"
+                      >
+                        {{ col.name }}
+                      </th>
+                      <th class="px-4 py-3 text-left text-base font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
+                        發生可能性程度
+                      </th>
+                      <th class="px-4 py-3 text-left text-base font-semibold text-gray-900 dark:text-white">
+                        分數級距
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <tr v-for="(row, index) in probabilityScaleRows" :key="index">
+                      <td
+                        v-for="col in probabilityScaleColumns"
+                        :key="col.id"
+                        class="px-4 py-3 text-base text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700"
+                      >
+                        {{ row.dynamicFields[col.id] || '-' }}
+                      </td>
+                      <td class="px-4 py-3 text-base text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">
+                        {{ row.probability || '-' }}
+                      </td>
+                      <td class="px-4 py-3 text-base text-gray-700 dark:text-gray-300">
+                        {{ row.scoreRange || '-' }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Description Text Display (if exists) -->
+              <div v-if="showDescriptionText && descriptionText" class="mt-0 p-4 bg-gray-50 dark:bg-gray-900/50 border border-t-0 border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300">
+                <div class="whitespace-pre-wrap">{{ descriptionText }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Impact Scale Tab Content -->
+          <div v-show="activeTab === 'impact'">
+            <div v-if="impactScaleColumns.length === 0 && impactScaleRows.length === 0" class="p-6 border-2 border-yellow-300 dark:border-yellow-600 rounded-lg bg-yellow-50 dark:bg-yellow-900/10">
+              <div class="text-center text-gray-600 dark:text-gray-400">
+                <svg class="mx-auto h-12 w-12 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <h3 class="mt-2 text-lg font-medium text-gray-900 dark:text-white">尚未設定量表資料</h3>
+                <p class="mt-1 text-sm">請先在編輯頁面中設定並儲存財務衝擊量表資料</p>
+              </div>
+            </div>
+            <div v-else class="p-6 border-2 border-blue-300 dark:border-blue-600 rounded-lg bg-blue-50 dark:bg-blue-900/10">
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                  <thead class="bg-gray-100 dark:bg-gray-700">
+                    <tr>
+                      <!-- 變動欄位 header -->
+                      <th
+                        v-for="col in impactScaleColumns"
+                        :key="col.id"
+                        class="px-4 py-3 text-left text-base font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700"
+                      >
+                        <div>{{ col.name }}</div>
+                        <div v-if="col.amountNote" class="text-sm font-normal text-blue-600 dark:text-blue-400 mt-1">
+                          {{ col.amountNote }}
+                        </div>
+                      </th>
+                      <!-- 固定欄位 header -->
+                      <th class="px-4 py-3 text-left text-base font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
+                        財務衝擊程度
+                      </th>
+                      <th class="px-4 py-3 text-left text-base font-semibold text-gray-900 dark:text-white">
+                        分數級距
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <tr v-for="(row, index) in impactScaleRows" :key="index">
+                      <!-- 變動欄位 cells -->
+                      <td
+                        v-for="col in impactScaleColumns"
+                        :key="col.id"
+                        class="px-4 py-3 text-base text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700"
+                      >
+                        {{ row.dynamicFields[col.id] || '-' }}
+                      </td>
+                      <!-- 固定欄位 cells -->
+                      <td class="px-4 py-3 text-base text-gray-700 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">
+                        {{ row.impactLevel || '-' }}
+                      </td>
+                      <td class="px-4 py-3 text-base text-gray-700 dark:text-gray-300">
+                        {{ row.scoreRange || '-' }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Close Button (隱藏於精簡模式) -->
+          <div v-if="!isCompactMode" class="flex justify-end items-center pt-6 border-t border-gray-200 dark:border-gray-700 mt-6">
+            <button
+              @click="closeModal"
+              class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
+            >
+              關閉
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -448,6 +711,7 @@ import {
   ChevronUpIcon,
   ChevronDownIcon
 } from '@heroicons/vue/24/outline'
+import apiClient from '~/utils/api.js'
 
 definePageMeta({
   middleware: 'auth'
@@ -476,6 +740,30 @@ const expandedSections = ref({
 const toggleSection = (sectionKey) => {
   expandedSections.value[sectionKey] = !expandedSections.value[sectionKey]
 }
+
+// Probability Scale Modal state
+const showProbabilityScaleModal = ref(false)
+const activeTab = ref('probability')
+const isLoadingScales = ref(false)
+const isCompactMode = ref(false) // 精簡模式狀態
+const modalPosition = ref({ x: 0, y: 0 }) // 視窗位置
+const isDragging = ref(false) // 是否正在拖曳
+const dragOffset = ref({ x: 0, y: 0 }) // 拖曳偏移量
+
+// Scale data structures (with default values, will be loaded from database if exists)
+const probabilityScaleColumns = ref([
+  { id: 1, name: '如風險不曾發生過', removable: true },
+  { id: 2, name: '如風險曾經發生過', removable: true }
+])
+const probabilityScaleRows = ref([])
+const impactScaleColumns = ref([
+  { id: 1, name: '股東權益金額', removable: true, amountNote: '' },
+  { id: 2, name: '股東權益金額百分比', removable: true, amountNote: '' },
+  { id: 3, name: '實際權益金額(分配後)', removable: true, amountNote: '' }
+])
+const impactScaleRows = ref([])
+const showDescriptionText = ref(false)
+const descriptionText = ref('')
 
 // Get preview data from route query or default values
 const previewData = computed(() => {
@@ -576,6 +864,50 @@ const goBackToEdit = () => {
   router.push(`/admin/risk-assessment/templates/edit/${templateId}-${contentId}`)
 }
 
+// 切換精簡模式
+const toggleCompactMode = () => {
+  isCompactMode.value = !isCompactMode.value
+}
+
+// 拖曳功能
+const startDrag = (event) => {
+  if (!isCompactMode.value) return // 只有精簡模式才能拖曳
+
+  isDragging.value = true
+  const modalElement = event.target.closest('.modal-draggable')
+  const rect = modalElement.getBoundingClientRect()
+
+  dragOffset.value = {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top
+  }
+
+  document.addEventListener('mousemove', onDrag)
+  document.addEventListener('mouseup', stopDrag)
+}
+
+const onDrag = (event) => {
+  if (!isDragging.value) return
+
+  modalPosition.value = {
+    x: event.clientX - dragOffset.value.x,
+    y: event.clientY - dragOffset.value.y
+  }
+}
+
+const stopDrag = () => {
+  isDragging.value = false
+  document.removeEventListener('mousemove', onDrag)
+  document.removeEventListener('mouseup', stopDrag)
+}
+
+// 關閉視窗時重置狀態
+const closeModal = () => {
+  showProbabilityScaleModal.value = false
+  isCompactMode.value = false
+  modalPosition.value = { x: 0, y: 0 }
+}
+
 // Lifecycle
 onMounted(async () => {
   console.log('Template preview page mounted for template:', templateId, 'content:', contentId)
@@ -598,12 +930,94 @@ onMounted(async () => {
   // Fetch hover text data
   await fetchHoverTexts()
 
+  // Load scale data for probability and impact scales
+  await loadScaleData()
+
   // Initialize radio button values with default values from previewData
   await nextTick(() => {
     riskEventChoice.value = previewData.value.riskEventChoice
     counterActionChoice.value = previewData.value.counterActionChoice
   })
 })
+
+// Load scale data from backend
+const loadScaleData = async () => {
+  isLoadingScales.value = true
+  try {
+    // Load probability scale
+    const probabilityResponse = await apiClient.request(
+      `/templates/${templateId}/scales/probability`,
+      {
+        method: 'GET'
+      }
+    )
+
+    if (probabilityResponse.success && probabilityResponse.data) {
+      const { scale, columns, rows } = probabilityResponse.data
+
+      // Update probability scale main settings
+      if (scale) {
+        descriptionText.value = scale.description_text || ''
+        showDescriptionText.value = !!scale.show_description
+      }
+
+      // Update column definitions
+      if (columns && columns.length > 0) {
+        probabilityScaleColumns.value = columns.map(col => ({
+          id: col.column_id,
+          name: col.name,
+          removable: !!col.removable
+        }))
+      }
+
+      // Update data rows
+      if (rows && rows.length > 0) {
+        probabilityScaleRows.value = rows.map(row => ({
+          dynamicFields: row.dynamicFields || {},
+          probability: row.probability || '',
+          scoreRange: row.score_range || ''
+        }))
+      }
+    }
+
+    // Load impact scale
+    const impactResponse = await apiClient.request(
+      `/templates/${templateId}/scales/impact`,
+      {
+        method: 'GET'
+      }
+    )
+
+    if (impactResponse.success && impactResponse.data) {
+      const { scale, columns, rows } = impactResponse.data
+
+      // Update column definitions
+      if (columns && columns.length > 0) {
+        impactScaleColumns.value = columns.map(col => ({
+          id: col.column_id,
+          name: col.name,
+          amountNote: col.amount_note || '',
+          removable: !!col.removable
+        }))
+      }
+
+      // Update data rows
+      if (rows && rows.length > 0) {
+        impactScaleRows.value = rows.map(row => ({
+          dynamicFields: row.dynamicFields || {},
+          impactLevel: row.impact_level || '',
+          scoreRange: row.score_range || ''
+        }))
+      }
+    }
+
+    console.log('量表資料載入成功（預覽模式）')
+  } catch (error) {
+    console.error('載入量表資料失敗:', error)
+  } finally {
+    isLoadingScales.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -690,5 +1104,19 @@ onMounted(async () => {
   .radio-card-text {
     @apply text-base;
   }
+}
+
+/* 拖曳相關樣式 */
+.modal-draggable {
+  user-select: none;
+}
+
+.cursor-move {
+  cursor: move;
+}
+
+/* 精簡模式時的陰影效果 */
+.modal-draggable.shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 </style>
