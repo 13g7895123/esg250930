@@ -17,7 +17,7 @@
                 :placeholder="columnPlaceholder"
               />
               <button
-                v-if="column.removable"
+                v-if="column.removable && !readonly"
                 @click="$emit('remove-column', column.id)"
                 class="ml-2 p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
               >
@@ -40,7 +40,7 @@
           </th>
 
           <!-- 操作欄 -->
-          <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600">
+          <th v-if="!readonly" class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600">
             操作
           </th>
         </tr>
@@ -77,7 +77,7 @@
           </td>
 
           <!-- 操作欄 -->
-          <td class="px-4 py-3 text-sm text-center">
+          <td v-if="!readonly" class="px-4 py-3 text-sm text-center">
             <button
               @click="$emit('remove-row', rowIndex)"
               :disabled="rows.length <= 1"
@@ -95,7 +95,7 @@
 </template>
 
 <script setup>
-defineProps({
+const props = defineProps({
   columns: {
     type: Array,
     required: true,
@@ -118,6 +118,10 @@ defineProps({
   columnPlaceholder: {
     type: String,
     default: '欄位名稱'
+  },
+  readonly: {
+    type: Boolean,
+    default: false
   }
 })
 

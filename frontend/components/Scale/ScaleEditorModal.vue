@@ -59,7 +59,7 @@
           <div v-show="activeTab === 'probability' && !isLoading">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">風險發生可能性量表</h3>
-              <div class="flex items-center space-x-2">
+              <div v-if="isEditable" class="flex items-center space-x-2">
                 <button
                   @click="$emit('add-probability-column')"
                   class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors duration-200"
@@ -75,8 +75,8 @@
               </div>
             </div>
 
-            <!-- Display Column Selector -->
-            <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+            <!-- Display Column Selector (only in editor mode) -->
+            <div v-if="isEditable" class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 下拉選單預設顯示欄位
               </label>
@@ -100,49 +100,53 @@
               :columns="probabilityColumns"
               :rows="probabilityRows"
               :fixed-columns="probabilityFixedColumns"
+              :readonly="!isEditable"
               @remove-column="$emit('remove-probability-column', $event)"
               @remove-row="$emit('remove-probability-row', $event)"
             />
 
             <!-- Description Text Section -->
-            <div v-if="showProbabilityDescription" class="mt-4 p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700">
-              <div class="flex items-start justify-between mb-2">
-                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">說明文字</label>
+            <!-- Description Text (only in editor mode) -->
+            <template v-if="isEditable">
+              <div v-if="showProbabilityDescription" class="mt-4 p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700">
+                <div class="flex items-start justify-between mb-2">
+                  <label class="text-sm font-medium text-gray-700 dark:text-gray-300">說明文字</label>
+                  <button
+                    @click="$emit('remove-probability-description')"
+                    class="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                    title="刪除說明文字"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+                <textarea
+                  :value="probabilityDescriptionText"
+                  @input="$emit('update:probability-description-text', $event.target.value)"
+                  rows="3"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="輸入說明文字"
+                />
+              </div>
+
+              <!-- Add Description Button -->
+              <div v-else class="mt-4">
                 <button
-                  @click="$emit('remove-probability-description')"
-                  class="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                  title="刪除說明文字"
+                  @click="$emit('add-probability-description')"
+                  class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
                 >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
+                  + 新增說明文字
                 </button>
               </div>
-              <textarea
-                :value="probabilityDescriptionText"
-                @input="$emit('update:probability-description-text', $event.target.value)"
-                rows="3"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                placeholder="輸入說明文字"
-              />
-            </div>
-
-            <!-- Add Description Button -->
-            <div v-else class="mt-4">
-              <button
-                @click="$emit('add-probability-description')"
-                class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
-              >
-                + 新增說明文字
-              </button>
-            </div>
+            </template>
           </div>
 
           <!-- Impact Scale Tab -->
           <div v-show="activeTab === 'impact' && !isLoading">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">財務衝擊量表</h3>
-              <div class="flex items-center space-x-2">
+              <div v-if="isEditable" class="flex items-center space-x-2">
                 <button
                   @click="$emit('add-impact-column')"
                   class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors duration-200"
@@ -158,8 +162,8 @@
               </div>
             </div>
 
-            <!-- Display Column Selector -->
-            <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
+            <!-- Display Column Selector (only in editor mode) -->
+            <div v-if="isEditable" class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 下拉選單預設顯示欄位
               </label>
@@ -183,42 +187,45 @@
               :columns="impactColumns"
               :rows="impactRows"
               :fixed-columns="impactFixedColumns"
+              :readonly="!isEditable"
               @remove-column="$emit('remove-impact-column', $event)"
               @remove-row="$emit('remove-impact-row', $event)"
             />
 
-            <!-- Description Text Section -->
-            <div v-if="showImpactDescription" class="mt-4 p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700">
-              <div class="flex items-start justify-between mb-2">
-                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">說明文字</label>
+            <!-- Description Text (only in editor mode) -->
+            <template v-if="isEditable">
+              <div v-if="showImpactDescription" class="mt-4 p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700">
+                <div class="flex items-start justify-between mb-2">
+                  <label class="text-sm font-medium text-gray-700 dark:text-gray-300">說明文字</label>
+                  <button
+                    @click="$emit('remove-impact-description')"
+                    class="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                    title="刪除說明文字"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+                <textarea
+                  :value="impactDescriptionText"
+                  @input="$emit('update:impact-description-text', $event.target.value)"
+                  rows="3"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="輸入說明文字"
+                />
+              </div>
+
+              <!-- Add Description Button -->
+              <div v-else class="mt-4">
                 <button
-                  @click="$emit('remove-impact-description')"
-                  class="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                  title="刪除說明文字"
+                  @click="$emit('add-impact-description')"
+                  class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
                 >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
+                  + 新增說明文字
                 </button>
               </div>
-              <textarea
-                :value="impactDescriptionText"
-                @input="$emit('update:impact-description-text', $event.target.value)"
-                rows="3"
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                placeholder="輸入說明文字"
-              />
-            </div>
-
-            <!-- Add Description Button -->
-            <div v-else class="mt-4">
-              <button
-                @click="$emit('add-impact-description')"
-                class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
-              >
-                + 新增說明文字
-              </button>
-            </div>
+            </template>
           </div>
         </div>
 
@@ -228,9 +235,10 @@
             @click="closeModal"
             class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
           >
-            取消
+            {{ isViewerMode ? '關閉' : '取消' }}
           </button>
           <button
+            v-if="isEditable"
             @click="$emit('save')"
             class="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors duration-200"
           >
@@ -300,6 +308,12 @@ const props = defineProps({
   impactDescriptionText: {
     type: String,
     default: ''
+  },
+  // Mode prop to control edit/view behavior
+  mode: {
+    type: String,
+    default: 'editor', // 'editor' | 'viewer' | 'viewer-compact'
+    validator: (value) => ['editor', 'viewer', 'viewer-compact'].includes(value)
   }
 })
 
@@ -325,6 +339,10 @@ const emit = defineEmits([
 ])
 
 const activeTab = ref('probability')
+
+// Check if current mode allows editing
+const isEditable = computed(() => props.mode === 'editor')
+const isViewerMode = computed(() => props.mode === 'viewer' || props.mode === 'viewer-compact')
 
 const probabilityFixedColumns = [
   { key: 'probability', label: '發生可能性程度', placeholder: '例：極低 (1-5%)', type: 'text' },
