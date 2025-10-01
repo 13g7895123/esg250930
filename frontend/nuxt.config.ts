@@ -103,20 +103,5 @@ export default defineNuxtConfig({
   // Disable problematic nuxt-icon server bundle to prevent SSR issues
   icon: {
     serverBundle: false
-  },
-  // Route redirects for editor page integration
-  routeRules: {
-    // Redirect old template edit pages to new unified editor
-    '/admin/risk-assessment/templates/edit/:templateId-:contentId': {
-      redirect: '/admin/risk-assessment/editor/template-:templateId-:contentId'
-    },
-    // Redirect old template preview pages to new unified editor preview mode
-    '/admin/risk-assessment/templates/edit/:templateId-:contentId-preview': {
-      redirect: '/admin/risk-assessment/editor/preview-:templateId-:contentId'
-    },
-    // Redirect old question edit pages to new unified editor
-    '/admin/risk-assessment/questions/edit/:templateId-:contentId': {
-      redirect: '/admin/risk-assessment/editor/question-:templateId-:contentId'
-    }
   }
 })
