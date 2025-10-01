@@ -234,6 +234,7 @@
       v-if="showScaleModal && features.scaleMode !== 'editor'"
       v-model="showScaleModal"
       :loading="isLoadingScales"
+      :default-compact-mode="features.scaleMode === 'viewer-compact'"
       :probability-scale-columns="probabilityScaleColumns"
       :probability-scale-rows="probabilityScaleRows"
       :description-text="descriptionText"

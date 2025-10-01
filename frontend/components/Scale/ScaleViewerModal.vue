@@ -282,6 +282,10 @@ const props = defineProps({
   descriptionText: {
     type: String,
     default: ''
+  },
+  defaultCompactMode: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -294,9 +298,41 @@ const modalPosition = ref({ x: 0, y: 0 })
 const isDragging = ref(false)
 const dragOffset = ref({ x: 0, y: 0 })
 
+// 計算畫面中間位置
+const centerModal = () => {
+  const modalWidth = 768 // max-w-3xl = 768px
+  const modalHeight = window.innerHeight * 0.8 // 80vh
+
+  modalPosition.value = {
+    x: (window.innerWidth - modalWidth) / 2,
+    y: (window.innerHeight - modalHeight) / 2
+  }
+}
+
+// 監聽 modal 開啟，設定預設模式和重置狀態
+watch(() => props.modelValue, (newValue) => {
+  if (newValue) {
+    // 重置 tab 到可能性量表
+    activeTab.value = 'probability'
+
+    // 根據 defaultCompactMode 設定初始模式
+    isCompactMode.value = props.defaultCompactMode
+
+    // 如果是精簡模式，設定在畫面中間
+    if (props.defaultCompactMode) {
+      centerModal()
+    }
+  }
+}, { immediate: true })
+
 // 切換精簡模式
 const toggleCompactMode = () => {
   isCompactMode.value = !isCompactMode.value
+
+  // 切換到精簡模式時，設定在畫面中間
+  if (isCompactMode.value) {
+    centerModal()
+  }
 }
 
 // 拖曳功能
@@ -331,19 +367,11 @@ const stopDrag = () => {
   document.removeEventListener('mouseup', stopDrag)
 }
 
-// 關閉視窗時重置狀態
+// 關閉視窗
 const closeModal = () => {
   emit('update:modelValue', false)
-  isCompactMode.value = false
-  modalPosition.value = { x: 0, y: 0 }
+  // 不重置狀態，保持使用者偏好，下次開啟時會重新初始化
 }
-
-// 監聽 modelValue 變化，重置 tab
-watch(() => props.modelValue, (newValue) => {
-  if (newValue) {
-    activeTab.value = 'probability'
-  }
-})
 </script>
 
 <style scoped>
