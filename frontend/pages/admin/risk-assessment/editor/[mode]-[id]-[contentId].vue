@@ -234,15 +234,12 @@
       v-if="showScaleModal && features.scaleMode !== 'editor'"
       v-model="showScaleModal"
       :loading="isLoadingScales"
-      :compact-mode="features.scaleMode === 'viewer-compact'"
-      :probability-columns="probabilityScaleColumns"
-      :probability-rows="probabilityScaleRows"
-      :probability-description-text="descriptionText"
-      :show-probability-description="showDescriptionText"
-      :impact-columns="impactScaleColumns"
-      :impact-rows="impactScaleRows"
-      :impact-description-text="impactDescriptionText"
-      :show-impact-description="showImpactDescriptionText"
+      :probability-scale-columns="probabilityScaleColumns"
+      :probability-scale-rows="probabilityScaleRows"
+      :description-text="descriptionText"
+      :show-description-text="showDescriptionText"
+      :impact-scale-columns="impactScaleColumns"
+      :impact-scale-rows="impactScaleRows"
     />
   </div>
 </template>
