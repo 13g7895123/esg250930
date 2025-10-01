@@ -808,11 +808,11 @@ const editQuestions = (content) => {
   const router = useRouter()
 
   if (props.contentType === 'template') {
-    // Navigate to template content editing page
-    router.push(`/admin/risk-assessment/templates/edit/${props.parentId}-${content.id}`)
+    // Navigate to unified editor with template mode
+    router.push(`/admin/risk-assessment/editor/template-${props.parentId}-${content.id}`)
   } else {
-    // Navigate to question editing page (original behavior)
-    router.push(`/admin/risk-assessment/questions/edit/${props.parentId}-${content.id}`)
+    // Navigate to unified editor with question mode
+    router.push(`/admin/risk-assessment/editor/question-${props.parentId}-${content.id}`)
   }
 }
 
