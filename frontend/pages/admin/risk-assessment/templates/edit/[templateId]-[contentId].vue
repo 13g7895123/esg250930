@@ -906,10 +906,10 @@ watch(questionData, (newData) => {
       counterActionDescription: newData.d_placeholder_1 || newData.counter_action_description || '',
       counterActionCost: newData.d_placeholder_2 || newData.counter_action_cost || '',
       riskDescription: newData.e1_placeholder_1 || newData.risk_description || '',
-      // E-2 uses new fields, fallback to old e1 fields for backward compatibility
-      riskProbability: newData.e2_select_1 ? parseInt(newData.e2_select_1) : (newData.e1_select_1 ? parseInt(newData.e1_select_1) : (newData.risk_probability || 1)),
-      riskImpactLevel: newData.e2_select_2 ? parseInt(newData.e2_select_2) : (newData.e1_select_2 ? parseInt(newData.e1_select_2) : (newData.risk_impact_level || 1)),
-      riskCalculation: newData.e2_placeholder || newData.e1_placeholder_2 || newData.risk_calculation || '致使相關風險、衝擊程度低',
+      // E-2 uses dedicated fields
+      riskProbability: newData.e2_select_1 ? parseInt(newData.e2_select_1) : (newData.risk_probability || 1),
+      riskImpactLevel: newData.e2_select_2 ? parseInt(newData.e2_select_2) : (newData.risk_impact_level || 1),
+      riskCalculation: newData.e2_placeholder || newData.risk_calculation || '致使相關風險、衝擊程度低',
       opportunityProbability: newData.opportunity_probability || 1,
       opportunityImpactLevel: newData.opportunity_impact_level || 3,
       opportunityCalculation: newData.opportunity_calculation || '因持續符合客戶ESG要求，可望獲加公司營收機會以帶年增加5%計算，約可帶來30億的正面效益',
