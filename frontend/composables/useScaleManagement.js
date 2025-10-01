@@ -169,7 +169,7 @@ export const useScaleManagement = () => {
 
       return {
         value: value,
-        label: text ? `${value} (${text})` : value
+        text: text ? `${value} (${text})` : value
       }
     }).filter(opt => opt.value) // 過濾掉空的選項
   })
@@ -192,7 +192,7 @@ export const useScaleManagement = () => {
 
       return {
         value: value,
-        label: text ? `${value} (${text})` : value
+        text: text ? `${value} (${text})` : value
       }
     }).filter(opt => opt.value) // 過濾掉空的選項
   })
