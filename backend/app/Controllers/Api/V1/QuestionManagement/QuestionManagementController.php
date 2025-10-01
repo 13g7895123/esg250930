@@ -689,8 +689,8 @@ class QuestionManagementController extends BaseController
                     $answerFields = [
                         'c_risk_event_choice', 'c_risk_event_description',
                         'd_counter_action_choice', 'd_counter_action_description', 'd_counter_action_cost',
-                        'e1_risk_description', 'e1_risk_probability', 'e1_risk_impact', 'e1_risk_calculation',
-                        'f1_opportunity_description', 'f1_opportunity_probability', 'f1_opportunity_impact', 'f1_opportunity_calculation',
+                        'e1_risk_description', 'e2_risk_probability', 'e2_risk_impact', 'e2_risk_calculation',
+                        'f1_opportunity_description', 'f2_opportunity_probability', 'f2_opportunity_impact', 'f2_opportunity_calculation',
                         'g1_negative_impact_level', 'g1_negative_impact_description',
                         'h1_positive_impact_level', 'h1_positive_impact_description'
                     ];
@@ -848,8 +848,8 @@ class QuestionManagementController extends BaseController
                     $answerFields = [
                         'c_risk_event_choice', 'c_risk_event_description',
                         'd_counter_action_choice', 'd_counter_action_description', 'd_counter_action_cost',
-                        'e1_risk_description', 'e1_risk_probability', 'e1_risk_impact', 'e1_risk_calculation',
-                        'f1_opportunity_description', 'f1_opportunity_probability', 'f1_opportunity_impact', 'f1_opportunity_calculation',
+                        'e1_risk_description', 'e2_risk_probability', 'e2_risk_impact', 'e2_risk_calculation',
+                        'f1_opportunity_description', 'f2_opportunity_probability', 'f2_opportunity_impact', 'f2_opportunity_calculation',
                         'g1_negative_impact_level', 'g1_negative_impact_description',
                         'h1_positive_impact_level', 'h1_positive_impact_description'
                     ];
@@ -1111,13 +1111,13 @@ class QuestionManagementController extends BaseController
                     $responseData['d_counter_action_description'] = $responseValue['counterActionDescription'] ?? null;
                     $responseData['d_counter_action_cost'] = $responseValue['counterActionCost'] ?? null;
                     $responseData['e1_risk_description'] = $responseValue['riskDescription'] ?? null;
-                    $responseData['e1_risk_probability'] = $responseValue['riskProbability'] ?? null;
-                    $responseData['e1_risk_impact'] = $responseValue['riskImpact'] ?? null;
-                    $responseData['e1_risk_calculation'] = $responseValue['riskCalculation'] ?? null;
+                    $responseData['e2_risk_probability'] = $responseValue['riskProbability'] ?? null;
+                    $responseData['e2_risk_impact'] = $responseValue['riskImpact'] ?? null;
+                    $responseData['e2_risk_calculation'] = $responseValue['riskCalculation'] ?? null;
                     $responseData['f1_opportunity_description'] = $responseValue['opportunityDescription'] ?? null;
-                    $responseData['f1_opportunity_probability'] = $responseValue['opportunityProbability'] ?? null;
-                    $responseData['f1_opportunity_impact'] = $responseValue['opportunityImpact'] ?? null;
-                    $responseData['f1_opportunity_calculation'] = $responseValue['opportunityCalculation'] ?? null;
+                    $responseData['f2_opportunity_probability'] = $responseValue['opportunityProbability'] ?? null;
+                    $responseData['f2_opportunity_impact'] = $responseValue['opportunityImpact'] ?? null;
+                    $responseData['f2_opportunity_calculation'] = $responseValue['opportunityCalculation'] ?? null;
                     $responseData['g1_negative_impact_level'] = $responseValue['negativeImpactLevel'] ?? null;
                     $responseData['g1_negative_impact_description'] = $responseValue['negativeImpactDescription'] ?? null;
                     $responseData['h1_positive_impact_level'] = $responseValue['positiveImpactLevel'] ?? null;
@@ -1127,8 +1127,8 @@ class QuestionManagementController extends BaseController
                     $answerFields = [
                         'c_risk_event_choice', 'c_risk_event_description',
                         'd_counter_action_choice', 'd_counter_action_description', 'd_counter_action_cost',
-                        'e1_risk_description', 'e1_risk_probability', 'e1_risk_impact', 'e1_risk_calculation',
-                        'f1_opportunity_description', 'f1_opportunity_probability', 'f1_opportunity_impact', 'f1_opportunity_calculation',
+                        'e1_risk_description', 'e2_risk_probability', 'e2_risk_impact', 'e2_risk_calculation',
+                        'f1_opportunity_description', 'f2_opportunity_probability', 'f2_opportunity_impact', 'f2_opportunity_calculation',
                         'g1_negative_impact_level', 'g1_negative_impact_description',
                         'h1_positive_impact_level', 'h1_positive_impact_description'
                     ];
@@ -1532,17 +1532,19 @@ class QuestionManagementController extends BaseController
                     'd_counter_action_description' => $response['d_counter_action_description'] ?? '',
                     'd_counter_action_cost' => $response['d_counter_action_cost'] ?? '',
 
-                    // E1 欄位 - 風險評估
+                    // E1 欄位 - 風險描述
                     'e1_risk_description' => $response['e1_risk_description'] ?? '',
-                    'e1_risk_probability' => $response['e1_risk_probability'] ?? '',
-                    'e1_risk_impact' => $response['e1_risk_impact'] ?? '',
-                    'e1_risk_calculation' => $response['e1_risk_calculation'] ?? '',
+                    // E2 欄位 - 風險財務評估
+                    'e2_risk_probability' => $response['e2_risk_probability'] ?? '',
+                    'e2_risk_impact' => $response['e2_risk_impact'] ?? '',
+                    'e2_risk_calculation' => $response['e2_risk_calculation'] ?? '',
 
-                    // F1 欄位 - 機會評估
+                    // F1 欄位 - 機會描述
                     'f1_opportunity_description' => $response['f1_opportunity_description'] ?? '',
-                    'f1_opportunity_probability' => $response['f1_opportunity_probability'] ?? '',
-                    'f1_opportunity_impact' => $response['f1_opportunity_impact'] ?? '',
-                    'f1_opportunity_calculation' => $response['f1_opportunity_calculation'] ?? '',
+                    // F2 欄位 - 機會財務評估
+                    'f2_opportunity_probability' => $response['f2_opportunity_probability'] ?? '',
+                    'f2_opportunity_impact' => $response['f2_opportunity_impact'] ?? '',
+                    'f2_opportunity_calculation' => $response['f2_opportunity_calculation'] ?? '',
 
                     // G1 欄位 - 負面衝擊
                     'g1_negative_impact_level' => $response['g1_negative_impact_level'] ?? '',

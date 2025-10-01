@@ -63,14 +63,16 @@ class QuestionResponseModel extends Model
         'd_counter_action_cost',
         // E-1區域欄位
         'e1_risk_description',
-        'e1_risk_probability',
-        'e1_risk_impact',
-        'e1_risk_calculation',
+        // E-2區域欄位
+        'e2_risk_probability',
+        'e2_risk_impact',
+        'e2_risk_calculation',
         // F-1區域欄位
         'f1_opportunity_description',
-        'f1_opportunity_probability',
-        'f1_opportunity_impact',
-        'f1_opportunity_calculation',
+        // F-2區域欄位
+        'f2_opportunity_probability',
+        'f2_opportunity_impact',
+        'f2_opportunity_calculation',
         // G-1區域欄位
         'g1_negative_impact_level',
         'g1_negative_impact_description',
