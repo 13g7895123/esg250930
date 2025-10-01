@@ -32,6 +32,12 @@ class TemplateContentModel extends Model
         'e1_select_1',
         'e1_select_2',
         'e1_placeholder_2',
+        'e2_select_1',
+        'e2_select_2',
+        'e2_placeholder',
+        'f2_select_1',
+        'f2_select_2',
+        'f2_placeholder',
         // 資訊圖示懸浮文字欄位
         'e1_info',
         'f1_info',

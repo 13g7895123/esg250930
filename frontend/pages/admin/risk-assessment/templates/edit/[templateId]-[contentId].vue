@@ -320,53 +320,58 @@
                   placeholder="致使集團對外資源、石油、天然氣、動植物資源、海洋魚類供給、土壤、植木等依賴不高，威脅相關風險"
                 />
               </div>
+            </div>
+          </div>
 
-              <!-- E-2 說明文字（在框框外面） -->
-              <div class="mb-3">
-                <p class="text-xl font-bold text-gray-900">
-                  請依上述公司盤點之風險情境評估一旦發生風險對公司之財務影響
-                  <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-sm font-medium ml-2">E-2</span>
-                </p>
+          <!-- Section E-2: 風險財務影響評估 -->
+          <div class="bg-white assessment-rounded border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-3">
+                <span class="font_title">請依上述公司盤點之風險情境評估一旦發生風險對公司之財務影響</span>
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-base font-medium flex items-center">
+                  E-2
+                </span>
+              </div>
+              <button class="px-3 py-1 bg-green-600 text-white text-base rounded-full">紀錄</button>
+            </div>
+
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-base text-gray-600 mb-1">*風險發生可能性</label>
+                  <select
+                    v-model="formData.riskProbability"
+                    class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option v-for="option in probabilityScaleOptions" :key="option.value" :value="option.value">
+                      {{ option.text }}
+                    </option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-base text-gray-600 mb-1">*風險發生衝擊程度</label>
+                  <select
+                    v-model="formData.riskImpactLevel"
+                    class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option v-for="option in impactScaleOptions" :key="option.value" :value="option.value">
+                      {{ option.text }}
+                    </option>
+                  </select>
+                </div>
               </div>
 
-              <div class="border border-gray-300 rounded-2xl p-4 space-y-3">
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-base text-gray-600 mb-1">*風險發生可能性</label>
-                    <select
-                      v-model="formData.riskProbability"
-                      class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    >
-                      <option v-for="option in probabilityScaleOptions" :key="option.value" :value="option.value">
-                        {{ option.text }}
-                      </option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="block text-base text-gray-600 mb-1">*風險發生衝擊程度</label>
-                    <select
-                      v-model="formData.riskImpactLevel"
-                      class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    >
-                      <option v-for="option in impactScaleOptions" :key="option.value" :value="option.value">
-                        {{ option.text }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label class="flex items-center text-base text-gray-600 mb-1">
-                    *計算說明
-                    <InformationCircleIcon class="w-4 h-4 ml-1" />
-                  </label>
-                  <textarea
-                    v-model="formData.riskCalculation"
-                    rows="3"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-base"
-                    placeholder="致使相關風險、衝擊程度低"
-                  />
-                </div>
+              <div>
+                <label class="flex items-center text-base text-gray-600 mb-1">
+                  *計算說明
+                  <InformationCircleIcon class="w-4 h-4 ml-1" />
+                </label>
+                <textarea
+                  v-model="formData.riskCalculation"
+                  rows="3"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-base"
+                  placeholder="致使相關風險、衝擊程度低"
+                />
               </div>
             </div>
           </div>
@@ -402,53 +407,58 @@
                   placeholder="集團持續導入資源效率管理、循環經濟及生物保護措施，以降低風險並最終可能導致業務擴張，可帶來更多客戶期待"
                 />
               </div>
+            </div>
+          </div>
 
-              <!-- F-2 說明文字（在框框外面） -->
-              <div class="mb-3">
-                <p class="text-xl font-bold text-gray-900">
-                  請依上述公司盤點之機會情境評估一旦發生機會對公司之財務影響
-                  <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-sm font-medium ml-2">F-2</span>
-                </p>
+          <!-- Section F-2: 機會財務影響評估 -->
+          <div class="bg-white assessment-rounded border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-3">
+                <span class="font_title">請依上述公司盤點之機會情境評估一旦發生機會對公司之財務影響</span>
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-base font-medium flex items-center">
+                  F-2
+                </span>
+              </div>
+              <button class="px-3 py-1 bg-green-600 text-white text-base rounded-full">紀錄</button>
+            </div>
+
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-base text-gray-600 mb-1">*機會發生可能性</label>
+                  <select
+                    v-model="formData.opportunityProbability"
+                    class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option v-for="option in probabilityScaleOptions" :key="option.value" :value="option.value">
+                      {{ option.text }}
+                    </option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-base text-gray-600 mb-1">*機會發生衝擊程度</label>
+                  <select
+                    v-model="formData.opportunityImpactLevel"
+                    class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option v-for="option in impactScaleOptions" :key="option.value" :value="option.value">
+                      {{ option.text }}
+                    </option>
+                  </select>
+                </div>
               </div>
 
-              <div class="border border-gray-300 rounded-2xl p-4 space-y-3">
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-base text-gray-600 mb-1">*機會發生可能性</label>
-                    <select
-                      v-model="formData.opportunityProbability"
-                      class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    >
-                      <option v-for="option in probabilityScaleOptions" :key="option.value" :value="option.value">
-                        {{ option.text }}
-                      </option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="block text-base text-gray-600 mb-1">*機會發生衝擊程度</label>
-                    <select
-                      v-model="formData.opportunityImpactLevel"
-                      class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    >
-                      <option v-for="option in impactScaleOptions" :key="option.value" :value="option.value">
-                        {{ option.text }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label class="flex items-center text-base text-gray-600 mb-1">
-                    *計算說明
-                    <InformationCircleIcon class="w-4 h-4 ml-1" />
-                  </label>
-                  <textarea
-                    v-model="formData.opportunityCalculation"
-                    rows="3"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-base"
-                    placeholder="因持續符合客戶ESG要求，可望獲加公司營收機會以帶年增加5%計算，約可帶來30億的正面效益"
-                  />
-                </div>
+              <div>
+                <label class="flex items-center text-base text-gray-600 mb-1">
+                  *計算說明
+                  <InformationCircleIcon class="w-4 h-4 ml-1" />
+                </label>
+                <textarea
+                  v-model="formData.opportunityCalculation"
+                  rows="3"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-base"
+                  placeholder="因持續符合客戶ESG要求，可望獲加公司營收機會以帶年增加5%計算，約可帶來30億的正面效益"
+                />
               </div>
             </div>
           </div>
@@ -832,11 +842,13 @@ const formData = ref({
   counterActionCost: '',
   // Section E-1
   riskDescription: '',
+  // Section E-2
   riskProbability: 1,
   riskImpactLevel: 1,
   riskCalculation: '',
   // Section F-1
   opportunityDescription: '',
+  // Section F-2
   opportunityProbability: 1,
   opportunityImpactLevel: 3,
   opportunityCalculation: '',
@@ -894,9 +906,10 @@ watch(questionData, (newData) => {
       counterActionDescription: newData.d_placeholder_1 || newData.counter_action_description || '',
       counterActionCost: newData.d_placeholder_2 || newData.counter_action_cost || '',
       riskDescription: newData.e1_placeholder_1 || newData.risk_description || '',
-      riskProbability: newData.e1_select_1 ? parseInt(newData.e1_select_1) : (newData.risk_probability || 1),
-      riskImpactLevel: newData.e1_select_2 ? parseInt(newData.e1_select_2) : (newData.risk_impact_level || 1),
-      riskCalculation: newData.e1_placeholder_2 || newData.risk_calculation || '致使相關風險、衝擊程度低',
+      // E-2 uses new fields, fallback to old e1 fields for backward compatibility
+      riskProbability: newData.e2_select_1 ? parseInt(newData.e2_select_1) : (newData.e1_select_1 ? parseInt(newData.e1_select_1) : (newData.risk_probability || 1)),
+      riskImpactLevel: newData.e2_select_2 ? parseInt(newData.e2_select_2) : (newData.e1_select_2 ? parseInt(newData.e1_select_2) : (newData.risk_impact_level || 1)),
+      riskCalculation: newData.e2_placeholder || newData.e1_placeholder_2 || newData.risk_calculation || '致使相關風險、衝擊程度低',
       opportunityProbability: newData.opportunity_probability || 1,
       opportunityImpactLevel: newData.opportunity_impact_level || 3,
       opportunityCalculation: newData.opportunity_calculation || '因持續符合客戶ESG要求，可望獲加公司營收機會以帶年增加5%計算，約可帶來30億的正面效益',
@@ -1360,9 +1373,10 @@ const saveQuestion = async () => {
       d_placeholder_1: formData.value.counterActionDescription, // Section D 占位符 1
       d_placeholder_2: formData.value.counterActionCost, // Section D 占位符 2
       e1_placeholder_1: formData.value.riskDescription, // Section E1 占位符 1
-      e1_select_1: formData.value.riskProbability.toString(), // Section E1 選擇項 1
-      e1_select_2: formData.value.riskImpactLevel.toString(), // Section E1 選擇項 2
-      e1_placeholder_2: formData.value.riskCalculation, // Section E1 占位符 2
+      // E-2 now uses dedicated fields
+      e2_select_1: formData.value.riskProbability.toString(), // Section E2 選擇項 1
+      e2_select_2: formData.value.riskImpactLevel.toString(), // Section E2 選擇項 2
+      e2_placeholder: formData.value.riskCalculation, // Section E2 占位符
       // 資訊圖示提示文字
       e1_info: hoverTexts.value.E1, // E-1 資訊圖示提示文字
       f1_info: hoverTexts.value.F1, // F-1 資訊圖示提示文字
