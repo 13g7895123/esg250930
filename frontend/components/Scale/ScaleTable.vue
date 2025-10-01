@@ -13,7 +13,10 @@
               <input
                 v-model="column.name"
                 type="text"
+                :readonly="readonly"
+                :disabled="readonly"
                 class="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-500 rounded bg-white dark:bg-gray-600 text-gray-900 dark:text-white text-sm"
+                :class="{ 'cursor-not-allowed opacity-60': readonly }"
                 :placeholder="columnPlaceholder"
               />
               <button
@@ -57,7 +60,10 @@
             <input
               v-model="row.dynamicFields[column.id]"
               type="text"
+              :readonly="readonly"
+              :disabled="readonly"
               class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              :class="{ 'cursor-not-allowed opacity-60': readonly }"
               placeholder="輸入值"
             />
           </td>
@@ -71,7 +77,10 @@
             <input
               v-model="row[fixedColumn.key]"
               :type="fixedColumn.type || 'text'"
+              :readonly="readonly"
+              :disabled="readonly"
               class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              :class="{ 'cursor-not-allowed opacity-60': readonly }"
               :placeholder="fixedColumn.placeholder"
             />
           </td>
