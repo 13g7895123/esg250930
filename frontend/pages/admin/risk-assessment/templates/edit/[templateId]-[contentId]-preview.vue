@@ -252,52 +252,53 @@
                   disabled
                 ></textarea>
               </div>
+            </div>
+          </div>
 
-              <!-- E-2 說明文字（在框框外面） -->
-              <div class="mb-3">
-                <p class="text-xl font-bold text-gray-900">
-                  請依上述公司盤點之風險情境評估一旦發生風險對公司之財務影響
-                  <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-sm font-medium ml-2">E-2</span>
-                </p>
+          <!-- Section E-2: 風險財務影響評估 -->
+          <div class="bg-white border border-gray-200 p-6 rounded-2xl">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-3">
+                <span class="font-bold text-gray-900 text-xl">請依上述公司盤點之風險情境評估一旦發生風險對公司之財務影響</span>
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-base font-medium flex items-center">E-2</span>
               </div>
-
-              <div class="border border-gray-300 rounded-2xl p-4 space-y-3">
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-base text-gray-600 mb-1">*風險發生可能性</label>
-                    <select
-                      v-model="riskProbability"
-                      class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    >
-                      <option value="" disabled>請選擇可能性等級</option>
-                      <option v-for="option in probabilityOptions" :key="option.value" :value="option.value">
-                        {{ option.label }}
-                      </option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="block text-base text-gray-600 mb-1">*風險發生衝擊程度</label>
-                    <select
-                      v-model="riskImpact"
-                      class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    >
-                      <option value="" disabled>請選擇衝擊程度</option>
-                      <option v-for="option in impactOptions" :key="option.value" :value="option.value">
-                        {{ option.label }}
-                      </option>
-                    </select>
-                  </div>
+            </div>
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-base text-gray-600 mb-1">*風險發生可能性</label>
+                  <select
+                    v-model="riskProbability"
+                    class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  >
+                    <option value="" disabled>請選擇可能性等級</option>
+                    <option v-for="option in probabilityOptions" :key="option.value" :value="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
                 </div>
                 <div>
-                  <label class="flex items-center text-base text-gray-600 mb-1">*計算說明</label>
-                  <textarea
-                    rows="3"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-2xl bg-gray-50 text-gray-600 cursor-not-allowed text-base"
-                    :placeholder="previewData.riskCalculation || '請輸入風險計算說明'"
-                    readonly
-                    disabled
-                  ></textarea>
+                  <label class="block text-base text-gray-600 mb-1">*風險發生衝擊程度</label>
+                  <select
+                    v-model="riskImpact"
+                    class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  >
+                    <option value="" disabled>請選擇衝擊程度</option>
+                    <option v-for="option in impactOptions" :key="option.value" :value="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
                 </div>
+              </div>
+              <div>
+                <label class="flex items-center text-base text-gray-600 mb-1">*計算說明</label>
+                <textarea
+                  rows="3"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-2xl bg-gray-50 text-gray-600 cursor-not-allowed text-base"
+                  :placeholder="previewData.riskCalculation || '請輸入風險計算說明'"
+                  readonly
+                  disabled
+                ></textarea>
               </div>
             </div>
           </div>
@@ -332,52 +333,53 @@
                   disabled
                 ></textarea>
               </div>
+            </div>
+          </div>
 
-              <!-- F-2 說明文字（在框框外面） -->
-              <div class="mb-3">
-                <p class="text-xl font-bold text-gray-900">
-                  請依上述公司盤點之機會情境評估一旦發生機會對公司之財務影響
-                  <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-sm font-medium ml-2">F-2</span>
-                </p>
+          <!-- Section F-2: 機會財務影響評估 -->
+          <div class="bg-white border border-gray-200 p-6 rounded-2xl">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-3">
+                <span class="font-bold text-gray-900 text-xl">請依上述公司盤點之機會情境評估一旦發生機會對公司之財務影響</span>
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-base font-medium flex items-center">F-2</span>
               </div>
-
-              <div class="border border-gray-300 rounded-2xl p-4 space-y-3">
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-base text-gray-600 mb-1">*機會發生可能性</label>
-                    <select
-                      v-model="opportunityProbability"
-                      class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    >
-                      <option value="" disabled>請選擇可能性等級</option>
-                      <option v-for="option in probabilityOptions" :key="option.value" :value="option.value">
-                        {{ option.label }}
-                      </option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="block text-base text-gray-600 mb-1">*機會發生衝擊程度</label>
-                    <select
-                      v-model="opportunityImpact"
-                      class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    >
-                      <option value="" disabled>請選擇衝擊程度</option>
-                      <option v-for="option in impactOptions" :key="option.value" :value="option.value">
-                        {{ option.label }}
-                      </option>
-                    </select>
-                  </div>
+            </div>
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-base text-gray-600 mb-1">*機會發生可能性</label>
+                  <select
+                    v-model="opportunityProbability"
+                    class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  >
+                    <option value="" disabled>請選擇可能性等級</option>
+                    <option v-for="option in probabilityOptions" :key="option.value" :value="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
                 </div>
                 <div>
-                  <label class="flex items-center text-base text-gray-600 mb-1">*計算說明</label>
-                  <textarea
-                    rows="3"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-2xl bg-gray-50 text-gray-600 cursor-not-allowed text-base"
-                    :placeholder="previewData.opportunityCalculation || '請輸入機會計算說明'"
-                    readonly
-                    disabled
-                  ></textarea>
+                  <label class="block text-base text-gray-600 mb-1">*機會發生衝擊程度</label>
+                  <select
+                    v-model="opportunityImpact"
+                    class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  >
+                    <option value="" disabled>請選擇衝擊程度</option>
+                    <option v-for="option in impactOptions" :key="option.value" :value="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
                 </div>
+              </div>
+              <div>
+                <label class="flex items-center text-base text-gray-600 mb-1">*計算說明</label>
+                <textarea
+                  rows="3"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-2xl bg-gray-50 text-gray-600 cursor-not-allowed text-base"
+                  :placeholder="previewData.opportunityCalculation || '請輸入機會計算說明'"
+                  readonly
+                  disabled
+                ></textarea>
               </div>
             </div>
           </div>
