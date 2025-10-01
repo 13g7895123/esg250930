@@ -1,0 +1,247 @@
+/**
+ * 編輯器功能開關管理 Composable
+ *
+ * 用途: 根據不同編輯模式 (template/question/preview) 控制功能顯示與行為
+ *
+ * @param {Ref<string>} mode - 編輯器模式
+ * @returns {Object} 功能開關配置
+ */
+export const useEditorFeatures = (mode) => {
+  /**
+   * 功能開關配置
+   * 根據不同模式返回對應的功能啟用狀態
+   */
+  const features = computed(() => {
+    const currentMode = unref(mode)
+
+    return {
+      // ========== 按鈕與操作功能 ==========
+
+      /**
+       * 顯示「填入測試資料」按鈕
+       * 僅在 template 模式顯示，方便開發測試
+       */
+      showTestDataButton: currentMode === 'template',
+
+      /**
+       * 顯示「儲存」按鈕
+       * preview 模式不顯示儲存功能
+       */
+      showSaveButton: currentMode !== 'preview',
+
+      /**
+       * 顯示「預覽」按鈕
+       * preview 模式本身就是預覽，不需要此按鈕
+       */
+      showPreviewButton: currentMode !== 'preview',
+
+      /**
+       * 顯示「返回」按鈕
+       * 所有模式都需要
+       */
+      showBackButton: true,
+
+      // ========== 資訊與編輯功能 ==========
+
+      /**
+       * 啟用資訊圖示 (i) 編輯功能
+       * 僅在 template 模式可以編輯 hover 文字
+       */
+      enableHoverTextEdit: currentMode === 'template',
+
+      /**
+       * 顯示資訊圖示 (i)
+       * template 和 preview 模式都顯示，但只有 template 可編輯
+       */
+      showHoverIcons: currentMode === 'template' || currentMode === 'preview',
+
+      /**
+       * 顯示基本資訊區塊 (類別、主題、因子選擇)
+       * question 模式和 preview 模式隱藏此區塊
+       */
+      showBasicInfo: currentMode === 'template',
+
+      // ========== 量表功能 ==========
+
+      /**
+       * 量表功能模式
+       * - 'editor': 完整編輯模式 (可新增/刪除/編輯列與欄)
+       * - 'viewer': 唯讀檢視模式 (只能看，不能編輯)
+       * - 'viewer-compact': 精簡檢視模式 (可拖曳、精簡化的檢視視窗)
+       */
+      scaleMode: currentMode === 'preview'
+        ? 'viewer-compact'
+        : currentMode === 'question'
+          ? 'viewer'
+          : 'editor',
+
+      /**
+       * 顯示量表按鈕
+       * 所有模式都顯示
+       */
+      showScaleButton: true,
+
+      /**
+       * 量表按鈕文字
+       */
+      scaleButtonText: currentMode === 'preview'
+        ? '可能性量表'
+        : currentMode === 'question'
+          ? '檢視量表'
+          : '可能性量表',
+
+      // ========== 表單欄位狀態 ==========
+
+      /**
+       * 表單欄位唯讀狀態
+       * preview 模式所有欄位都是唯讀
+       */
+      readonly: currentMode === 'preview',
+
+      /**
+       * Section 區塊可收折
+       * 僅在 preview 模式下 Section A 和 B 可以收折
+       */
+      collapsibleSections: currentMode === 'preview',
+
+      /**
+       * 預設展開的 Section
+       * preview 模式: Section A 展開, Section B 收折
+       * 其他模式: 全部展開
+       */
+      defaultExpandedSections: currentMode === 'preview'
+        ? { sectionA: true, sectionB: false }
+        : { sectionA: true, sectionB: true },
+
+      // ========== 預覽功能 ==========
+
+      /**
+       * 預覽模式類型
+       * - 'inline': 內建預覽 modal (question 模式)
+       * - 'navigation': 跳轉到獨立預覽頁面 (template 模式)
+       * - 'none': 不提供預覽功能 (preview 模式)
+       */
+      previewMode: currentMode === 'preview'
+        ? 'none'
+        : currentMode === 'question'
+          ? 'inline'
+          : 'navigation',
+
+      // ========== UI 顯示差異 ==========
+
+      /**
+       * 頁面標題文字
+       */
+      pageTitle: currentMode === 'preview'
+        ? '使用者表單預覽'
+        : currentMode === 'question'
+          ? '題目編輯'
+          : '題目編輯',
+
+      /**
+       * 頁面副標題
+       */
+      pageSubtitle: currentMode === 'preview'
+        ? '檢視使用者將看到的表單內容'
+        : currentMode === 'question'
+          ? '編輯完整的ESG評估題目內容'
+          : '類別：{category} | 編輯完整的ESG評估題目內容',
+
+      /**
+       * 「紀錄」按鈕顯示
+       * preview 模式不顯示紀錄按鈕
+       */
+      showRecordButtons: currentMode !== 'preview',
+
+      /**
+       * 結束按鈕文字
+       */
+      backButtonText: currentMode === 'preview' ? '結束預覽' : '返回',
+
+      // ========== 當前模式資訊 ==========
+
+      /**
+       * 當前模式
+       */
+      currentMode,
+
+      /**
+       * 是否為模板模式
+       */
+      isTemplateMode: currentMode === 'template',
+
+      /**
+       * 是否為問卷模式
+       */
+      isQuestionMode: currentMode === 'question',
+
+      /**
+       * 是否為預覽模式
+       */
+      isPreviewMode: currentMode === 'preview'
+    }
+  })
+
+  /**
+   * 檢查特定功能是否啟用
+   * @param {string} featureName - 功能名稱
+   * @returns {boolean}
+   */
+  const isFeatureEnabled = (featureName) => {
+    return features.value[featureName] || false
+  }
+
+  /**
+   * 取得功能相關的 CSS class
+   * @param {string} baseClass - 基礎 class
+   * @returns {string} 根據模式調整的 class
+   */
+  const getFeatureClass = (baseClass) => {
+    const currentMode = unref(mode)
+    return `${baseClass} ${baseClass}--${currentMode}`
+  }
+
+  /**
+   * 取得導航路徑
+   * 根據不同模式返回正確的返回路徑
+   * @param {number} id - templateId 或 assessmentId
+   * @returns {string} 路由路徑
+   */
+  const getBackPath = (id) => {
+    const currentMode = unref(mode)
+
+    if (currentMode === 'template' || currentMode === 'preview') {
+      return `/admin/risk-assessment/templates/${id}/content`
+    } else if (currentMode === 'question') {
+      return `/admin/risk-assessment/questions/${id}/management`
+    }
+
+    return '/admin/risk-assessment'
+  }
+
+  /**
+   * 取得預覽路徑
+   * @param {number} id - templateId 或 assessmentId
+   * @param {number} contentId - 題目內容 ID
+   * @returns {string|null} 預覽路由路徑，如果不支援預覽則返回 null
+   */
+  const getPreviewPath = (id, contentId) => {
+    const currentMode = unref(mode)
+
+    if (currentMode === 'template') {
+      return `/admin/risk-assessment/editor/preview-${id}-${contentId}`
+    } else if (currentMode === 'question') {
+      return null // question 模式使用 inline modal
+    }
+
+    return null
+  }
+
+  return {
+    features,
+    isFeatureEnabled,
+    getFeatureClass,
+    getBackPath,
+    getPreviewPath
+  }
+}
