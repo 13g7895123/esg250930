@@ -612,507 +612,40 @@
       </div>
     </Teleport>
 
+
     <!-- Probability Scale Modal -->
-    <Teleport to="body">
-      <div
-        v-if="showProbabilityScaleModal"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
-        @click.self="showProbabilityScaleModal = false"
-      >
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto m-4">
-          <!-- Modal Header -->
-          <div class="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
-            <h2 class="text-xl font-bold text-gray-900 dark:text-white">量表編輯</h2>
-            <button
-              @click="showProbabilityScaleModal = false"
-              class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-            >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          <!-- Tabs -->
-          <div class="border-b border-gray-200 dark:border-gray-700">
-            <nav class="flex px-6" aria-label="Tabs">
-              <button
-                @click="activeTab = 'probability'"
-                :class="[
-                  'py-4 px-6 text-sm font-medium border-b-2 transition-colors duration-200',
-                  activeTab === 'probability'
-                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                ]"
-              >
-                風險發生可能性量表
-              </button>
-              <button
-                @click="activeTab = 'impact'"
-                :class="[
-                  'py-4 px-6 text-sm font-medium border-b-2 transition-colors duration-200',
-                  activeTab === 'impact'
-                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                ]"
-              >
-                財務衝擊量表
-              </button>
-            </nav>
-          </div>
-
-          <!-- Modal Content -->
-          <div class="px-6 py-6">
-            <!-- Loading Spinner -->
-            <div v-if="isLoadingScales" class="flex items-center justify-center py-12">
-              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              <span class="ml-3 text-gray-600 dark:text-gray-400">載入量表資料中...</span>
-            </div>
-
-            <!-- 表格一：風險發生可能性量表 -->
-            <div v-show="activeTab === 'probability' && !isLoadingScales">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">風險發生可能性量表</h3>
-                <div class="flex items-center space-x-2">
-                  <button
-                    @click="addColumn"
-                    class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors duration-200"
-                  >
-                    + 新增欄位
-                  </button>
-                  <button
-                    @click="addRow"
-                    class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors duration-200"
-                  >
-                    + 新增列
-                  </button>
-                </div>
-              </div>
-
-              <!-- 欄位選擇下拉選單 -->
-              <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  下拉選單預設顯示欄位
-                </label>
-                <select
-                  v-model="selectedProbabilityDisplayColumn"
-                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="probability">發生可能性程度</option>
-                  <option v-for="column in probabilityScaleColumns" :key="column.id" :value="column.id.toString()">
-                    {{ column.name || '（未命名）' }}
-                  </option>
-                </select>
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  此欄位將顯示在 E-1 和 F-1 的「風險/機會發生可能性」下拉選單中
-                </p>
-              </div>
-              <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700">
-                  <thead class="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <!-- 變動欄位 header -->
-                      <th
-                        v-for="column in probabilityScaleColumns"
-                        :key="column.id"
-                        class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600"
-                      >
-                        <div class="flex items-center justify-between">
-                          <input
-                            v-model="column.name"
-                            type="text"
-                            class="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-500 rounded bg-white dark:bg-gray-600 text-gray-900 dark:text-white text-sm"
-                            placeholder="欄位名稱"
-                          />
-                          <button
-                            v-if="column.removable"
-                            @click="removeColumn(column.id)"
-                            class="ml-2 p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                          >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                      </th>
-                      <!-- 固定欄位 header -->
-                      <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-600">
-                        發生可能性程度
-                      </th>
-                      <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-600">
-                        分數級距
-                      </th>
-                      <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600">
-                        操作
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    <tr v-for="(row, rowIndex) in probabilityScaleRows" :key="rowIndex">
-                      <!-- 變動欄位 cells -->
-                      <td
-                        v-for="column in probabilityScaleColumns"
-                        :key="column.id"
-                        class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600"
-                      >
-                        <input
-                          v-model="row.dynamicFields[column.id]"
-                          type="text"
-                          class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          placeholder="輸入值"
-                        />
-                      </td>
-                      <!-- 固定欄位 cells -->
-                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
-                        <input
-                          v-model="row.probability"
-                          type="text"
-                          class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          placeholder="例：極低 (1-5%)"
-                        />
-                      </td>
-                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
-                        <input
-                          v-model="row.scoreRange"
-                          type="number"
-                          class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          placeholder="數字"
-                        />
-                      </td>
-                      <td class="px-4 py-3 text-sm text-center">
-                        <button
-                          @click="removeRow(rowIndex)"
-                          :disabled="probabilityScaleRows.length <= 1"
-                          class="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-30 disabled:cursor-not-allowed"
-                        >
-                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <!-- Description Text Section -->
-              <div v-if="showDescriptionText" class="mt-4 p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700">
-                <div class="flex items-start justify-between mb-2">
-                  <label class="text-sm font-medium text-gray-700 dark:text-gray-300">說明文字</label>
-                  <button
-                    @click="removeDescriptionText"
-                    class="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                    title="刪除說明文字"
-                  >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-                <textarea
-                  v-model="descriptionText"
-                  rows="3"
-                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="輸入說明文字..."
-                ></textarea>
-              </div>
-
-              <!-- Add Description Button -->
-              <div v-else class="mt-4">
-                <button
-                  @click="addDescriptionText"
-                  class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
-                >
-                  + 新增說明文字
-                </button>
-              </div>
-
-              <!-- Preview Toggle Button -->
-              <div class="mt-6 flex justify-center">
-                <button
-                  @click="togglePreview"
-                  class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center space-x-2"
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  <span>{{ showPreview ? '隱藏預覽' : '顯示預覽' }}</span>
-                </button>
-              </div>
-
-              <!-- Preview Section -->
-              <div v-if="showPreview" class="mt-6 p-6 border-2 border-blue-300 dark:border-blue-600 rounded-lg bg-blue-50 dark:bg-blue-900/10">
-                <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">預覽：風險發生可能性量表</h4>
-                <div class="overflow-x-auto">
-                  <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                    <thead class="bg-gray-100 dark:bg-gray-700">
-                      <tr>
-                        <!-- 變動欄位 header -->
-                        <th
-                          v-for="column in probabilityScaleColumns"
-                          :key="'preview-header-' + column.id"
-                          class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600"
-                        >
-                          {{ column.name || '（未命名）' }}
-                        </th>
-                        <!-- 固定欄位 header -->
-                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
-                          發生可能性程度
-                        </th>
-                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
-                          分數級距
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      <tr v-for="(row, rowIndex) in probabilityScaleRows" :key="'preview-row-' + rowIndex">
-                        <!-- 變動欄位 cells -->
-                        <td
-                          v-for="column in probabilityScaleColumns"
-                          :key="'preview-cell-' + column.id"
-                          class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600"
-                        >
-                          {{ row.dynamicFields[column.id] || '—' }}
-                        </td>
-                        <!-- 固定欄位 cells -->
-                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
-                          {{ row.probability || '—' }}
-                        </td>
-                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                          {{ row.scoreRange || '—' }}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <!-- Preview Description - 與表格緊密連接，無空白 -->
-                <div v-if="showDescriptionText && descriptionText" class="border border-t-0 border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-300">
-                  <strong class="font-medium">說明：</strong>{{ descriptionText }}
-                </div>
-              </div>
-            </div>
-
-            <!-- 表格二：財務衝擊量表 -->
-            <div v-show="activeTab === 'impact' && !isLoadingScales">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">財務衝擊量表</h3>
-                <div class="flex items-center space-x-2">
-                  <button
-                    @click="addImpactColumn"
-                    class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors duration-200"
-                  >
-                    + 新增欄位
-                  </button>
-                  <button
-                    @click="addImpactRow"
-                    class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors duration-200"
-                  >
-                    + 新增列
-                  </button>
-                </div>
-              </div>
-
-              <!-- 欄位選擇下拉選單 -->
-              <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  下拉選單預設顯示欄位
-                </label>
-                <select
-                  v-model="selectedImpactDisplayColumn"
-                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="impactLevel">財務衝擊程度</option>
-                  <option v-for="column in impactScaleColumns" :key="column.id" :value="column.id.toString()">
-                    {{ column.name || '（未命名）' }}
-                  </option>
-                </select>
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  此欄位將顯示在 E-1 和 F-1 的「風險/機會發生衝擊程度」下拉選單中
-                </p>
-              </div>
-
-              <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700">
-                  <thead class="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <!-- 變動欄位 header -->
-                      <th
-                        v-for="column in impactScaleColumns"
-                        :key="column.id"
-                        class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600"
-                      >
-                        <div class="flex items-center justify-between">
-                          <input
-                            v-model="column.name"
-                            type="text"
-                            class="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-500 rounded bg-white dark:bg-gray-600 text-gray-900 dark:text-white text-sm"
-                            placeholder="欄位名稱"
-                          />
-                          <button
-                            v-if="column.removable"
-                            @click="removeImpactColumn(column.id)"
-                            class="ml-2 p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                          >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                        <!-- 藍色金額編輯欄（只有「實際權益金額(分配後)」欄位才顯示） -->
-                        <div v-if="column.name === '實際權益金額(分配後)'" class="mt-2">
-                          <input
-                            v-model="column.amountNote"
-                            type="text"
-                            class="w-full px-2 py-1 border border-blue-300 dark:border-blue-500 rounded bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs"
-                            placeholder="金額說明"
-                          />
-                        </div>
-                      </th>
-                      <!-- 固定欄位 header -->
-                      <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-600">
-                        財務衝擊程度
-                      </th>
-                      <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-600">
-                        分數級距
-                      </th>
-                      <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-600">
-                        操作
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    <tr v-for="(row, rowIndex) in impactScaleRows" :key="rowIndex">
-                      <!-- 變動欄位 cells -->
-                      <td
-                        v-for="column in impactScaleColumns"
-                        :key="column.id"
-                        class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600"
-                      >
-                        <input
-                          v-model="row.dynamicFields[column.id]"
-                          type="text"
-                          class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          placeholder="輸入值"
-                        />
-                      </td>
-                      <!-- 固定欄位 cells -->
-                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
-                        <input
-                          v-model="row.impactLevel"
-                          type="text"
-                          class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          placeholder="例：極低衝擊"
-                        />
-                      </td>
-                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
-                        <input
-                          v-model="row.scoreRange"
-                          type="number"
-                          class="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          placeholder="數字"
-                        />
-                      </td>
-                      <td class="px-4 py-3 text-sm text-center">
-                        <button
-                          @click="removeImpactRow(rowIndex)"
-                          :disabled="impactScaleRows.length <= 1"
-                          class="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-30 disabled:cursor-not-allowed"
-                        >
-                          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <!-- Preview Toggle Button -->
-              <div class="mt-6 flex justify-center">
-                <button
-                  @click="togglePreview"
-                  class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center space-x-2"
-                >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  <span>{{ showPreview ? '隱藏預覽' : '顯示預覽' }}</span>
-                </button>
-              </div>
-
-              <!-- Preview Section -->
-              <div v-if="showPreview" class="mt-6 p-6 border-2 border-blue-300 dark:border-blue-600 rounded-lg bg-blue-50 dark:bg-blue-900/10">
-                <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">預覽：財務衝擊量表</h4>
-                <div class="overflow-x-auto">
-                  <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                    <thead class="bg-gray-100 dark:bg-gray-700">
-                      <tr>
-                        <!-- 變動欄位 header -->
-                        <th
-                          v-for="column in impactScaleColumns"
-                          :key="'preview-impact-header-' + column.id"
-                          class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600"
-                        >
-                          <div>{{ column.name || '（未命名）' }}</div>
-                          <div v-if="column.amountNote" class="mt-1 text-xs font-normal text-blue-600 dark:text-blue-400">
-                            {{ column.amountNote }}
-                          </div>
-                        </th>
-                        <!-- 固定欄位 header -->
-                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
-                          財務衝擊程度
-                        </th>
-                        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">
-                          分數級距
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      <tr v-for="(row, rowIndex) in impactScaleRows" :key="'preview-impact-row-' + rowIndex">
-                        <!-- 變動欄位 cells -->
-                        <td
-                          v-for="column in impactScaleColumns"
-                          :key="'preview-impact-cell-' + column.id"
-                          class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600"
-                        >
-                          {{ row.dynamicFields[column.id] || '—' }}
-                        </td>
-                        <!-- 固定欄位 cells -->
-                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-600">
-                          {{ row.impactLevel || '—' }}
-                        </td>
-                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                          {{ row.scoreRange || '—' }}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="flex justify-end items-center pt-6 border-t border-gray-200 dark:border-gray-700 space-x-3">
-              <button
-                @click="showProbabilityScaleModal = false"
-                class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
-              >
-                取消
-              </button>
-              <button
-                @click="saveProbabilityScale"
-                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
-              >
-                儲存
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <ScaleEditorModal
+      v-model="showProbabilityScaleModal"
+      title="量表編輯"
+      :is-loading="isLoadingScales"
+      :probability-columns="probabilityScaleColumns"
+      :probability-rows="probabilityScaleRows"
+      :selected-probability-display-column="selectedProbabilityDisplayColumn"
+      :show-probability-description="showDescriptionText"
+      :probability-description-text="descriptionText"
+      :impact-columns="impactScaleColumns"
+      :impact-rows="impactScaleRows"
+      :selected-impact-display-column="selectedImpactDisplayColumn"
+      :show-impact-description="showImpactDescriptionText"
+      :impact-description-text="impactDescriptionText"
+      @update:selected-probability-display-column="selectedProbabilityDisplayColumn = $event"
+      @update:selected-impact-display-column="selectedImpactDisplayColumn = $event"
+      @update:probability-description-text="descriptionText = $event"
+      @update:impact-description-text="impactDescriptionText = $event"
+      @add-probability-column="addProbabilityColumn"
+      @remove-probability-column="removeProbabilityColumn"
+      @add-probability-row="addProbabilityRow"
+      @remove-probability-row="removeProbabilityRow"
+      @add-probability-description="addProbabilityDescriptionText"
+      @remove-probability-description="removeProbabilityDescriptionText"
+      @add-impact-column="addImpactColumn"
+      @remove-impact-column="removeImpactColumn"
+      @add-impact-row="addImpactRow"
+      @remove-impact-row="removeImpactRow"
+      @add-impact-description="addImpactDescriptionText"
+      @remove-impact-description="removeImpactDescriptionText"
+      @save="saveProbabilityScale"
+    />
 
   </div>
 </template>
@@ -1126,6 +659,8 @@ import {
 } from '@heroicons/vue/24/outline'
 import RichTextEditor from '~/components/RichTextEditor.vue'
 import apiClient from '~/utils/api.js'
+import { useScaleManagement } from '~/composables/useScaleManagement'
+import ScaleEditorModal from '~/components/Scale/ScaleEditorModal.vue'
 
 definePageMeta({
   middleware: 'auth'
@@ -1170,32 +705,48 @@ const showProbabilityScaleModal = ref(false)
 const activeTab = ref('probability')
 const isLoadingScales = ref(false)
 
-// Probability scale data structure (default column names and 2 default rows, data will be loaded from database)
-const probabilityScaleColumns = ref([
-  { id: 1, name: '如風險不曾發生過', removable: true },
-  { id: 2, name: '如風險曾經發生過', removable: true }
-])
-const probabilityScaleRows = ref([
-  { dynamicFields: { 1: '', 2: '' }, probability: '', scoreRange: '' },
-  { dynamicFields: { 1: '', 2: '' }, probability: '', scoreRange: '' }
-])
+// Use scale management composable
+const {
+  // Probability Scale State
+  probabilityScaleColumns,
+  probabilityScaleRows,
+  probabilityScaleId,
+  selectedProbabilityDisplayColumn,
+  showDescriptionText,
+  descriptionText,
 
-// Description text state
-const showDescriptionText = ref(false)
-const descriptionText = ref('')
+  // Impact Scale State
+  impactScaleColumns,
+  impactScaleRows,
+  impactScaleId,
+  selectedImpactDisplayColumn,
+  showImpactDescriptionText,
+  impactDescriptionText,
 
-// 預設顯示的欄位 (預設為 probability - 分數級距旁邊的欄位)
-const selectedProbabilityDisplayColumn = ref('probability')
-const selectedImpactDisplayColumn = ref('impactLevel')
+  // Probability Scale Methods
+  addProbabilityColumn,
+  removeProbabilityColumn,
+  addProbabilityRow,
+  removeProbabilityRow,
+  addProbabilityDescriptionText,
+  removeProbabilityDescriptionText,
 
-const addDescriptionText = () => {
-  showDescriptionText.value = true
-}
+  // Impact Scale Methods
+  addImpactColumn,
+  removeImpactColumn,
+  addImpactRow,
+  removeImpactRow,
+  addImpactDescriptionText,
+  removeImpactDescriptionText,
 
-const removeDescriptionText = () => {
-  showDescriptionText.value = false
-  descriptionText.value = ''
-}
+  // Computed
+  probabilityScaleOptions,
+  impactScaleOptions,
+
+  // Utility Methods
+  loadScalesData,
+  prepareScaleDataForSubmission
+} = useScaleManagement()
 
 // Preview state
 const showPreview = ref(false)
@@ -1203,154 +754,6 @@ const showPreview = ref(false)
 const togglePreview = () => {
   showPreview.value = !showPreview.value
 }
-
-let nextColumnId = 3
-
-const addColumn = () => {
-  probabilityScaleColumns.value.push({
-    id: nextColumnId++,
-    name: '',
-    removable: true
-  })
-
-  // 為所有現有 rows 添加新欄位
-  probabilityScaleRows.value.forEach(row => {
-    row.dynamicFields[nextColumnId - 1] = ''
-  })
-}
-
-const removeColumn = (columnId) => {
-  probabilityScaleColumns.value = probabilityScaleColumns.value.filter(col => col.id !== columnId)
-
-  // 從所有 rows 移除該欄位
-  probabilityScaleRows.value.forEach(row => {
-    delete row.dynamicFields[columnId]
-  })
-}
-
-const addRow = () => {
-  const newRow = {
-    dynamicFields: {},
-    probability: '',
-    scoreRange: ''
-  }
-
-  // 為新 row 初始化所有動態欄位
-  probabilityScaleColumns.value.forEach(col => {
-    newRow.dynamicFields[col.id] = ''
-  })
-
-  probabilityScaleRows.value.push(newRow)
-}
-
-const removeRow = (index) => {
-  if (probabilityScaleRows.value.length > 1) {
-    probabilityScaleRows.value.splice(index, 1)
-  }
-}
-
-// Financial Impact Scale data structures (default column names and 2 default rows, data will be loaded from database)
-const impactScaleColumns = ref([
-  { id: 1, name: '股東權益金額', removable: true, amountNote: '' },
-  { id: 2, name: '股東權益金額百分比', removable: true, amountNote: '' },
-  { id: 3, name: '實際權益金額(分配後)', removable: true, amountNote: '' }
-])
-const impactScaleRows = ref([
-  { dynamicFields: { 1: '', 2: '', 3: '' }, impactLevel: '', scoreRange: '' },
-  { dynamicFields: { 1: '', 2: '', 3: '' }, impactLevel: '', scoreRange: '' }
-])
-
-let nextImpactColumnId = 4
-
-const addImpactColumn = () => {
-  impactScaleColumns.value.push({
-    id: nextImpactColumnId++,
-    name: '',
-    removable: true,
-    amountNote: ''
-  })
-
-  // 為所有現有 rows 添加新欄位
-  impactScaleRows.value.forEach(row => {
-    row.dynamicFields[nextImpactColumnId - 1] = ''
-  })
-}
-
-const removeImpactColumn = (columnId) => {
-  impactScaleColumns.value = impactScaleColumns.value.filter(col => col.id !== columnId)
-
-  // 從所有 rows 移除該欄位
-  impactScaleRows.value.forEach(row => {
-    delete row.dynamicFields[columnId]
-  })
-}
-
-const addImpactRow = () => {
-  const newRow = {
-    dynamicFields: {},
-    impactLevel: '',
-    scoreRange: ''
-  }
-
-  // 為新 row 初始化所有動態欄位
-  impactScaleColumns.value.forEach(col => {
-    newRow.dynamicFields[col.id] = ''
-  })
-
-  impactScaleRows.value.push(newRow)
-}
-
-const removeImpactRow = (index) => {
-  if (impactScaleRows.value.length > 1) {
-    impactScaleRows.value.splice(index, 1)
-  }
-}
-
-// 可能性量表下拉選單選項
-const probabilityScaleOptions = computed(() => {
-  return probabilityScaleRows.value.map(row => {
-    // 使用分數級距作為 value
-    const value = row.scoreRange || ''
-
-    // 根據選擇的欄位顯示 text
-    let text = ''
-    if (selectedProbabilityDisplayColumn.value === 'probability') {
-      text = row.probability || ''
-    } else {
-      // 如果選擇的是變動欄位
-      const columnId = parseInt(selectedProbabilityDisplayColumn.value)
-      text = row.dynamicFields[columnId] || ''
-    }
-
-    return {
-      value: value,
-      text: text ? `${value} (${text})` : value
-    }
-  }).filter(opt => opt.value) // 過濾掉空的選項
-})
-
-// 財務衝擊量表下拉選單選項
-const impactScaleOptions = computed(() => {
-  return impactScaleRows.value.map(row => {
-    // 使用分數級距作為 value
-    const value = row.scoreRange || ''
-
-    // 根據選擇的欄位顯示 text
-    let text = ''
-    if (selectedImpactDisplayColumn.value === 'impactLevel') {
-      text = row.impactLevel || ''
-    } else {
-      // 如果選擇的是變動欄位
-      const columnId = parseInt(selectedImpactDisplayColumn.value)
-      text = row.dynamicFields[columnId] || ''
-    }
-
-    return {
-      value: value,
-      text: text ? `${value} (${text})` : value
-    }
-  }).filter(opt => opt.value) // 過濾掉空的選項
-})
 
 // Get question data
 const questionData = computed(() => {
@@ -1737,20 +1140,29 @@ const cancelHoverEdit = () => {
 // Save probability scale data
 const saveProbabilityScale = async () => {
   try {
+    console.log('=== Saving Probability Scale ===')
+    console.log('Columns to save:', probabilityScaleColumns.value)
+    console.log('Rows to save:', probabilityScaleRows.value)
+
+    // Use composable's method to prepare data
+    const scaleData = prepareScaleDataForSubmission()
+
     // 儲存可能性量表
     const probabilityResponse = await apiClient.request(
       `/templates/${templateId}/scales/probability`,
       {
         method: 'POST',
         body: {
-          columns: probabilityScaleColumns.value,
-          rows: probabilityScaleRows.value,
-          descriptionText: descriptionText.value,
-          showDescriptionText: showDescriptionText.value,
-          selectedDisplayColumn: selectedProbabilityDisplayColumn.value
+          columns: scaleData.probability_scale.columns,
+          rows: scaleData.probability_scale.rows,
+          descriptionText: scaleData.probability_scale.description_text,
+          showDescriptionText: scaleData.probability_scale.show_description,
+          selectedDisplayColumn: scaleData.probability_scale.selected_display_column
         }
       }
     )
+
+    console.log('Probability scale save response:', probabilityResponse)
 
     // 儲存財務衝擊量表
     const impactResponse = await apiClient.request(
@@ -1758,9 +1170,11 @@ const saveProbabilityScale = async () => {
       {
         method: 'POST',
         body: {
-          columns: impactScaleColumns.value,
-          rows: impactScaleRows.value,
-          selectedDisplayColumn: selectedImpactDisplayColumn.value
+          columns: scaleData.impact_scale.columns,
+          rows: scaleData.impact_scale.rows,
+          descriptionText: scaleData.impact_scale.description_text,
+          showDescriptionText: scaleData.impact_scale.show_description,
+          selectedDisplayColumn: scaleData.impact_scale.selected_display_column
         }
       }
     )
@@ -1795,35 +1209,6 @@ const loadScaleData = async () => {
       }
     )
 
-    if (probabilityResponse.success && probabilityResponse.data) {
-      const { scale, columns, rows } = probabilityResponse.data
-
-      // 更新可能性量表主表設定
-      if (scale) {
-        descriptionText.value = scale.description_text || ''
-        showDescriptionText.value = !!scale.show_description
-        selectedProbabilityDisplayColumn.value = scale.selected_display_column || 'probability'
-      }
-
-      // 更新欄位定義
-      if (columns && columns.length > 0) {
-        probabilityScaleColumns.value = columns.map(col => ({
-          id: col.column_id,
-          name: col.name,
-          removable: !!col.removable
-        }))
-      }
-
-      // 更新資料列
-      if (rows && rows.length > 0) {
-        probabilityScaleRows.value = rows.map(row => ({
-          dynamicFields: row.dynamicFields || {},
-          probability: row.probability || '',
-          scoreRange: row.score_range || ''
-        }))
-      }
-    }
-
     // 載入財務衝擊量表
     const impactResponse = await apiClient.request(
       `/templates/${templateId}/scales/impact`,
@@ -1832,35 +1217,20 @@ const loadScaleData = async () => {
       }
     )
 
-    if (impactResponse.success && impactResponse.data) {
-      const { scale, columns, rows } = impactResponse.data
-
-      // 更新財務衝擊量表主表設定
-      if (scale) {
-        selectedImpactDisplayColumn.value = scale.selected_display_column || 'impactLevel'
-      }
-
-      // 更新欄位定義
-      if (columns && columns.length > 0) {
-        impactScaleColumns.value = columns.map(col => ({
-          id: col.column_id,
-          name: col.name,
-          amountNote: col.amount_note || '',
-          removable: !!col.removable
-        }))
-      }
-
-      // 更新資料列
-      if (rows && rows.length > 0) {
-        impactScaleRows.value = rows.map(row => ({
-          dynamicFields: row.dynamicFields || {},
-          impactLevel: row.impact_level || '',
-          scoreRange: row.score_range || ''
-        }))
-      }
+    // Use composable's loadScalesData to process the response
+    const scalesData = {
+      probability_scale: probabilityResponse.success ? probabilityResponse.data : null,
+      impact_scale: impactResponse.success ? impactResponse.data : null
     }
 
-    console.log('量表資料載入成功')
+    loadScalesData(scalesData)
+
+    console.log('=== Scale Data Loaded Successfully ===')
+    console.log('Probability Columns:', probabilityScaleColumns.value)
+    console.log('Probability Rows:', probabilityScaleRows.value)
+    console.log('Selected Display Column:', selectedProbabilityDisplayColumn.value)
+    console.log('Impact Columns:', impactScaleColumns.value)
+    console.log('Impact Rows:', impactScaleRows.value)
   } catch (error) {
     console.error('載入量表資料失敗:', error)
   } finally {
@@ -2104,6 +1474,14 @@ onMounted(async () => {
 
   // Load scale data for E-1 and F-1 dropdown options
   await loadScaleData()
+})
+
+// Watch for modal open to reload scale data
+watch(() => showProbabilityScaleModal.value, (newValue) => {
+  if (newValue) {
+    // Reload scale data when modal opens to ensure fresh data
+    loadScaleData()
+  }
 })
 
 // Watch for changes in selected risk factor description to update the rich text editor

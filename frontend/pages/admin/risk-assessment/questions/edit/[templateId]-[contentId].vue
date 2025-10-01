@@ -367,8 +367,18 @@
         </div>
 
         <!-- Green Context Bar -->
-        <div class="bg-green-600 text-white px-6 py-3 rounded-2xl">
+        <div class="bg-green-600 text-white px-6 py-3 rounded-2xl flex items-center justify-between">
           <span class="font_title_white">請依上述資訊，整點公司致富相關之風險情況，並評估未來永續在各風險/機會情境</span>
+          <button
+            v-if="probabilityScaleRows.length > 0 || impactScaleRows.length > 0"
+            @click="showProbabilityScaleModal = true"
+            class="px-4 py-2 bg-white text-black font-bold rounded-full hover:bg-gray-100 transition-colors duration-200 flex items-center space-x-2 whitespace-nowrap"
+          >
+            <span>可能性量表</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
         </div>
 
         <!-- Sections E, F, G, H in Grid Layout -->
@@ -407,11 +417,9 @@
                       v-model="formData.riskProbability"
                       class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     >
-                      <option value="1">1 (極低可能性)</option>
-                      <option value="2">2 (低可能性)</option>
-                      <option value="3">3 (中等可能性)</option>
-                      <option value="4">4 (高可能性)</option>
-                      <option value="5">5 (極高可能性)</option>
+                      <option v-for="option in probabilityScaleOptions" :key="option.value" :value="option.value">
+                        {{ option.text }}
+                      </option>
                     </select>
                   </div>
                   <div>
@@ -420,11 +428,9 @@
                       v-model="formData.riskImpactLevel"
                       class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     >
-                      <option value="1">1 (3000萬以下)</option>
-                      <option value="2">2 (3000萬~1億)</option>
-                      <option value="3">3 (1億~10億)</option>
-                      <option value="4">4 (10億~100億)</option>
-                      <option value="5">5 (100億以上)</option>
+                      <option v-for="option in impactScaleOptions" :key="option.value" :value="option.value">
+                        {{ option.text }}
+                      </option>
                     </select>
                   </div>
                 </div>
@@ -479,11 +485,9 @@
                       v-model="formData.opportunityProbability"
                       class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     >
-                      <option value="1">1 (極低可能性)</option>
-                      <option value="2">2 (低可能性)</option>
-                      <option value="3">3 (中等可能性)</option>
-                      <option value="4">4 (高可能性)</option>
-                      <option value="5">5 (極高可能性)</option>
+                      <option v-for="option in probabilityScaleOptions" :key="option.value" :value="option.value">
+                        {{ option.text }}
+                      </option>
                     </select>
                   </div>
                   <div>
@@ -492,11 +496,9 @@
                       v-model="formData.opportunityImpactLevel"
                       class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     >
-                      <option value="1">1 (3000萬以下)</option>
-                      <option value="2">2 (3000萬~1億)</option>
-                      <option value="3">3 (1億~10億)</option>
-                      <option value="4">4 (10億~100億)</option>
-                      <option value="5">5 (100億以上)</option>
+                      <option v-for="option in impactScaleOptions" :key="option.value" :value="option.value">
+                        {{ option.text }}
+                      </option>
                     </select>
                   </div>
                 </div>
@@ -765,6 +767,42 @@
         </div>
       </div>
     </div>
+
+
+    <!-- Scale Editor Modal -->
+    <ScaleEditorModal
+      v-model="showProbabilityScaleModal"
+      title="量表編輯"
+      :is-loading="false"
+      :probability-columns="probabilityScaleColumns"
+      :probability-rows="probabilityScaleRows"
+      :selected-probability-display-column="selectedProbabilityDisplayColumn"
+      :show-probability-description="showDescriptionText"
+      :probability-description-text="descriptionText"
+      :impact-columns="impactScaleColumns"
+      :impact-rows="impactScaleRows"
+      :selected-impact-display-column="selectedImpactDisplayColumn"
+      :show-impact-description="showImpactDescriptionText"
+      :impact-description-text="impactDescriptionText"
+      @update:selected-probability-display-column="selectedProbabilityDisplayColumn = $event"
+      @update:selected-impact-display-column="selectedImpactDisplayColumn = $event"
+      @update:probability-description-text="descriptionText = $event"
+      @update:impact-description-text="impactDescriptionText = $event"
+      @add-probability-column="addProbabilityColumn"
+      @remove-probability-column="removeProbabilityColumn"
+      @add-probability-row="addProbabilityRow"
+      @remove-probability-row="removeProbabilityRow"
+      @add-probability-description="addProbabilityDescriptionText"
+      @remove-probability-description="removeProbabilityDescriptionText"
+      @add-impact-column="addImpactColumn"
+      @remove-impact-column="removeImpactColumn"
+      @add-impact-row="addImpactRow"
+      @remove-impact-row="removeImpactRow"
+      @add-impact-description="addImpactDescriptionText"
+      @remove-impact-description="removeImpactDescriptionText"
+      @save="saveQuestionScales"
+    />
+
   </div>
 </template>
 
@@ -776,6 +814,8 @@ import {
   CheckIcon
 } from '@heroicons/vue/24/outline'
 import RichTextEditor from '~/components/RichTextEditor.vue'
+import ScaleEditorModal from '~/components/Scale/ScaleEditorModal.vue'
+import { useScaleManagement } from '~/composables/useScaleManagement'
 
 definePageMeta({
   middleware: 'auth'
@@ -785,17 +825,21 @@ const route = useRoute()
 const router = useRouter()
 
 // Extract IDs from route params
+// NOTE: Despite the param names (templateId/contentId), these actually represent:
+// - templateId = assessmentId (評估記錄ID)
+// - contentId = questionContentId (題項內容ID)
 const routeParams = route.params
-const templateId = parseInt(routeParams.templateId)
-const contentId = parseInt(routeParams.contentId)
-
-// Use stores
-const templatesStore = useTemplatesStore()
+const assessmentId = parseInt(routeParams.templateId)  // Actually assessment ID
+const questionContentId = parseInt(routeParams.contentId)  // Actually question content ID
 
 usePageTitle('題目編輯')
 
 // Reactive state
 const showPreview = ref(false)
+const showProbabilityScaleModal = ref(false)
+const activeScaleTab = ref('probability')
+const isLoading = ref(true)
+const loadError = ref(null)
 
 // Control visibility of basic info section - set to false to hide
 const showBasicInfo = ref(false)
@@ -806,22 +850,118 @@ const expandedSections = ref({
   sectionB: false
 })
 
-// Get question data
-const questionData = computed(() => {
-  const contentList = templatesStore.getTemplateContent(templateId)
-  return contentList.value?.find(item => item.id === contentId)
+// Load question data from API
+const questionData = ref(null)
+const riskCategories = ref([])
+const riskTopics = ref([])
+const riskFactors = ref([])
+
+// Use scale management composable
+const {
+  // Probability Scale State
+  probabilityScaleColumns,
+  probabilityScaleRows,
+  probabilityScaleId,
+  selectedProbabilityDisplayColumn,
+  showDescriptionText,
+  descriptionText,
+
+  // Impact Scale State
+  impactScaleColumns,
+  impactScaleRows,
+  impactScaleId,
+  selectedImpactDisplayColumn,
+  showImpactDescriptionText,
+  impactDescriptionText,
+
+  // Probability Scale Methods
+  addProbabilityColumn,
+  removeProbabilityColumn,
+  addProbabilityRow,
+  removeProbabilityRow,
+  addProbabilityDescriptionText,
+  removeProbabilityDescriptionText,
+
+  // Impact Scale Methods
+  addImpactColumn,
+  removeImpactColumn,
+  addImpactRow,
+  removeImpactRow,
+  addImpactDescriptionText,
+  removeImpactDescriptionText,
+
+  // Computed
+  probabilityScaleOptions,
+  impactScaleOptions,
+
+  // Utility Methods
+  loadScalesData,
+  prepareScaleDataForSubmission
+} = useScaleManagement()
+
+// Fetch question content data
+const loadQuestionData = async () => {
+  try {
+    isLoading.value = true
+    loadError.value = null
+
+    // Fetch question content
+    const contentResponse = await $fetch(`/api/v1/question-management/contents/${questionContentId}`)
+
+    if (contentResponse.success && contentResponse.data?.content) {
+      questionData.value = contentResponse.data.content
+
+      // Load related structure data (categories, topics, factors) for this assessment
+      const structureResponse = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/structure`)
+
+      if (structureResponse.success && structureResponse.data?.structure) {
+        riskCategories.value = structureResponse.data.structure.categories || []
+        riskTopics.value = structureResponse.data.structure.topics || []
+        riskFactors.value = structureResponse.data.structure.factors || []
+      }
+
+      // Load scale data for this assessment
+      try {
+        const scalesResponse = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/scales`)
+
+        if (scalesResponse.success && scalesResponse.data) {
+          // Use composable's loadScalesData to process the response
+          loadScalesData(scalesResponse.data)
+
+          console.log('=== Question Scale Data Loaded ===')
+          console.log('Raw API Response:', scalesResponse.data)
+          console.log('Probability Columns:', probabilityScaleColumns.value)
+          console.log('Probability Rows:', probabilityScaleRows.value)
+          console.log('Probability Row[0] dynamicFields:', probabilityScaleRows.value[0]?.dynamicFields)
+          console.log('Selected Probability Display Column:', selectedProbabilityDisplayColumn.value)
+          console.log('Impact Columns:', impactScaleColumns.value)
+          console.log('Impact Rows:', impactScaleRows.value)
+          console.log('Impact Row[0] dynamicFields:', impactScaleRows.value[0]?.dynamicFields)
+          console.log('Selected Impact Display Column:', selectedImpactDisplayColumn.value)
+        }
+      } catch (scaleError) {
+        console.warn('Failed to load scale data:', scaleError)
+        // Scale data is optional, don't fail the whole page
+      }
+    } else {
+      throw new Error('無法載入題項資料')
+    }
+  } catch (error) {
+    console.error('Error loading question data:', error)
+    loadError.value = error.message || '載入題項資料時發生錯誤'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Load data on mount
+onMounted(() => {
+  loadQuestionData()
 })
 
-// Template information for breadcrumb
-const templateInfo = templatesStore.getTemplateById(templateId)
-
-const riskCategories = templatesStore.getRiskCategories(templateId)
-const riskTopics = templatesStore.getRiskTopics(templateId)
-const riskFactors = templatesStore.getRiskFactors(templateId)
-
-// Get risk topics enabled state from template settings
+// Get risk topics enabled state based on whether topics exist in the structure
 const riskTopicsEnabled = computed(() => {
-  return templateInfo.value?.risk_topics_enabled ?? true
+  return riskTopics.value && riskTopics.value.length > 0
 })
 
 // Get selected risk factor description
@@ -918,6 +1058,9 @@ const toggleSection = (sectionKey) => {
   expandedSections.value[sectionKey] = !expandedSections.value[sectionKey]
 }
 
+// 可能性量表下拉選單選項
+// Note: probabilityScaleOptions and impactScaleOptions are now provided by useScaleManagement composable
+
 // 富文本編輯器事件處理
 const onRiskFactorChange = (htmlContent) => {
   console.log('風險因子描述已更新:', htmlContent.length, '字元')
@@ -975,6 +1118,49 @@ const onTopicChange = async () => {
   }
 }
 
+// ===== Scale editing functions =====
+// Note: All scale editing functions are now provided by useScaleManagement composable
+// Including: addProbabilityColumn, removeProbabilityColumn, addProbabilityRow, removeProbabilityRow
+//           addImpactColumn, removeImpactColumn, addImpactRow, removeImpactRow
+//           addProbabilityDescriptionText, removeProbabilityDescriptionText
+//           addImpactDescriptionText, removeImpactDescriptionText
+
+// Save scale data
+const saveQuestionScales = async () => {
+  try {
+    const { $swal } = useNuxtApp()
+
+    // Use composable's method to prepare data
+    const scaleData = prepareScaleDataForSubmission()
+
+    // Call API to save
+    const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/scales`, {
+      method: 'PUT',
+      body: scaleData
+    })
+
+    if (response.success) {
+      await $swal.fire({
+        icon: 'success',
+        title: '系統提示',
+        text: '量表已儲存',
+        showConfirmButton: false,
+        timer: 1500
+      })
+      showProbabilityScaleModal.value = false
+    }
+  } catch (error) {
+    const { $swal } = useNuxtApp()
+    await $swal.fire({
+      icon: 'error',
+      title: '系統提示',
+      text: error.data?.message || '儲存量表時發生錯誤',
+      showConfirmButton: false,
+      timer: 1500
+    })
+  }
+}
+
 // Form validation
 const isFormValid = computed(() => {
   const basicValidation = basicInfo.value.description.trim() &&
@@ -995,7 +1181,8 @@ const isFormValid = computed(() => {
 
 // Methods
 const goBack = () => {
-  router.push(`/admin/risk-assessment/templates/${templateId}/content`)
+  // Go back to the question management page for this assessment
+  router.push(`/admin/risk-assessment/questions/${assessmentId}/management`)
 }
 
 const saveQuestion = async () => {
@@ -1081,76 +1268,8 @@ const saveQuestion = async () => {
   }
 }
 
-// Lifecycle
-onMounted(async () => {
-  console.log('ESG Question editing page mounted for template:', templateId, 'content:', contentId)
-
-  // Initialize store if needed
-  if (!templatesStore.templates || templatesStore.templates.length === 0) {
-    await templatesStore.initialize()
-  }
-
-  // Ensure template content is loaded
-  const existingContent = templatesStore.getTemplateContent(templateId)
-  if (!existingContent.value || existingContent.value.length === 0) {
-    try {
-      await templatesStore.fetchTemplateContent(templateId)
-    } catch (error) {
-      console.error('Failed to fetch template content:', error)
-    }
-  }
-
-  // Ensure risk categories are loaded
-  if (!riskCategories.value || riskCategories.value.length === 0) {
-    try {
-      await templatesStore.fetchRiskCategories(templateId)
-    } catch (error) {
-      console.error('Failed to fetch risk categories:', error)
-    }
-  }
-
-  // Load topics and factors if they are already selected in the content
-  const templateContentList = templatesStore.getTemplateContent(templateId)
-  const currentContent = templateContentList.value?.find(item => item.id === contentId)
-
-  if (currentContent) {
-    const isTopicsEnabled = templateInfo.value?.risk_topics_enabled ?? true
-
-    if (isTopicsEnabled) {
-      // Load topics for the selected category if topics are enabled
-      if (currentContent.category_id) {
-        try {
-          await templatesStore.fetchRiskTopics(templateId, { category_id: currentContent.category_id })
-        } catch (error) {
-          console.error('Failed to fetch topics for existing category:', error)
-        }
-      }
-
-      // Load factors for the selected topic
-      if (currentContent.topic_id) {
-        try {
-          await templatesStore.fetchRiskFactors(templateId, { topic_id: currentContent.topic_id })
-        } catch (error) {
-          console.error('Failed to fetch factors for existing topic:', error)
-        }
-      }
-    } else {
-      // Load factors directly for the category if topics are disabled
-      if (currentContent.category_id) {
-        try {
-          await templatesStore.fetchRiskFactors(templateId, { category_id: currentContent.category_id })
-        } catch (error) {
-          console.error('Failed to fetch factors for existing category:', error)
-        }
-      }
-    }
-  }
-
-  // 初始化富文本編輯器默認內容（如果沒有內容）
-  if (!formData.value.riskFactorDescription) {
-    formData.value.riskFactorDescription = '企業的營運往往高度依賴自然資源，如水資源、石油、天然氣、動植物資源、海洋魚類供給、土壤、植木等、隨著氣候變遷、生態退化與資源稀缺問題日益嚴峻，若企業未能妥善管理資源使用環境衝擊，可能面臨供應中斷、成本上升與合規壓力等風險。同時，過度依賴自然資源或可生產活動衝擊，亦可能引發社會關注與質疑指稱。'
-  }
-})
+// Note: Lifecycle and data loading is handled by the loadQuestionData() function
+// which is called in the onMounted hook defined above (line 849)
 </script>
 
 <style scoped>
