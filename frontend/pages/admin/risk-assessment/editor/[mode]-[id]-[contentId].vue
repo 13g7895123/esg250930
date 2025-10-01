@@ -193,11 +193,11 @@
       </div>
     </Teleport>
 
-    <!-- Scale Modal -->
+    <!-- Scale Modal - Editor Mode -->
     <ScaleEditorModal
-      v-if="showScaleModal"
+      v-if="showScaleModal && features.scaleMode === 'editor'"
       v-model="showScaleModal"
-      :title="features.scaleMode === 'editor' ? '量表編輯' : '量表檢視'"
+      title="量表編輯"
       :is-loading="isLoadingScales"
       :mode="features.scaleMode"
       :probability-columns="probabilityScaleColumns"
@@ -228,6 +228,22 @@
       @remove-impact-description="removeImpactDescriptionText"
       @save="handleScaleSave"
     />
+
+    <!-- Scale Modal - Viewer Mode -->
+    <ScaleViewerModal
+      v-if="showScaleModal && features.scaleMode !== 'editor'"
+      v-model="showScaleModal"
+      :loading="isLoadingScales"
+      :compact-mode="features.scaleMode === 'viewer-compact'"
+      :probability-columns="probabilityScaleColumns"
+      :probability-rows="probabilityScaleRows"
+      :probability-description-text="descriptionText"
+      :show-probability-description="showDescriptionText"
+      :impact-columns="impactScaleColumns"
+      :impact-rows="impactScaleRows"
+      :impact-description-text="impactDescriptionText"
+      :show-impact-description="showImpactDescriptionText"
+    />
   </div>
 </template>
 
@@ -238,6 +254,7 @@ import { useDataMapper } from '~/composables/useDataMapper'
 import { useScaleManagement } from '~/composables/useScaleManagement'
 import RichTextEditor from '~/components/RichTextEditor.vue'
 import ScaleEditorModal from '~/components/Scale/ScaleEditorModal.vue'
+import ScaleViewerModal from '~/components/Scale/ScaleViewerModal.vue'
 import EditorHeader from '~/components/Editor/EditorHeader.vue'
 import EditorSection from '~/components/Editor/EditorSection.vue'
 import EditorRiskEventSection from '~/components/Editor/EditorRiskEventSection.vue'
