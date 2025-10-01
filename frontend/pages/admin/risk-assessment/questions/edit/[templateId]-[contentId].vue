@@ -383,83 +383,89 @@
 
         <!-- Sections E, F, G, H in Grid Layout -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Section E-1: 相關風險 -->
-          <div class="bg-white assessment-rounded border border-gray-200 p-6">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center space-x-3">
-                <span class="font_title">相關風險</span>
-                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-base font-medium flex items-center">
-                  E-1
-                </span>
-                <InformationCircleIcon class="w-4 h-4 ml-1" />
-              </div>
-              <button class="px-3 py-1 bg-green-600 text-white text-base rounded-full">紀錄</button>
-            </div>
-
-            <div class="space-y-4">
-              <p class="text-base text-gray-600">公司未來潛在相關風險營清說明，未來潛在風險（收入減少）、費用增加於損益</p>
-
-              <div>
-                <label class="text-gray-600 mt-6 mb-1">風險描述</label>
-                <textarea
-                  v-model="formData.riskDescription"
-                  rows="3"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="致使集團對外資源、石油、天然氣、動植物資源、海洋魚類供給、土壤、植木等依賴不高，威脅相關風險"
-                />
-              </div>
-            </div>
-          </div>
-
-          <!-- Section E-2: 風險財務影響評估 -->
-          <div class="bg-white assessment-rounded border border-gray-200 p-6">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center space-x-3">
-                <span class="font_title">請依上述公司盤點之風險情境評估一旦發生風險對公司之財務影響</span>
-                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-base font-medium flex items-center">
-                  E-2
-                </span>
-              </div>
-              <button class="px-3 py-1 bg-green-600 text-white text-base rounded-full">紀錄</button>
-            </div>
-
-            <div class="space-y-4">
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-base text-gray-600 mb-1">*風險發生可能性</label>
-                  <select
-                    v-model="formData.riskProbability"
-                    class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  >
-                    <option v-for="option in probabilityScaleOptions" :key="option.value" :value="option.value">
-                      {{ option.text }}
-                    </option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-base text-gray-600 mb-1">*風險發生衝擊程度</label>
-                  <select
-                    v-model="formData.riskImpactLevel"
-                    class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  >
-                    <option v-for="option in impactScaleOptions" :key="option.value" :value="option.value">
-                      {{ option.text }}
-                    </option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label class="flex items-center text-base text-gray-600 mb-1">
-                  *計算說明
+          <!-- Section E: 相關風險 (E-1 + E-2 垂直排列在同一個 border 中) -->
+          <div class="bg-white assessment-rounded border border-gray-200 p-6 space-y-6">
+            <!-- E-1: 相關風險描述 -->
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                  <span class="font_title">相關風險</span>
+                  <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-base font-medium flex items-center">
+                    E-1
+                  </span>
                   <InformationCircleIcon class="w-4 h-4 ml-1" />
-                </label>
-                <textarea
-                  v-model="formData.riskCalculation"
-                  rows="3"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-base"
-                  placeholder="致使相關風險、衝擊程度低"
-                />
+                </div>
+                <button class="px-3 py-1 bg-green-600 text-white text-base rounded-full">紀錄</button>
+              </div>
+
+              <div class="space-y-4">
+                <p class="text-base text-gray-600">公司未來潛在相關風險營清說明，未來潛在風險（收入減少）、費用增加於損益</p>
+
+                <div>
+                  <label class="text-gray-600 mt-6 mb-1">風險描述</label>
+                  <textarea
+                    v-model="formData.riskDescription"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="致使集團對外資源、石油、天然氣、動植物資源、海洋魚類供給、土壤、植木等依賴不高，威脅相關風險"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- 分隔線 -->
+            <div class="border-t border-gray-200"></div>
+
+            <!-- E-2: 風險財務影響評估 -->
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                  <span class="font_title">請依上述公司盤點之風險情境評估一旦發生風險對公司之財務影響</span>
+                  <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-base font-medium flex items-center">
+                    E-2
+                  </span>
+                </div>
+                <button class="px-3 py-1 bg-green-600 text-white text-base rounded-full">紀錄</button>
+              </div>
+
+              <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-base text-gray-600 mb-1">*風險發生可能性</label>
+                    <select
+                      v-model="formData.riskProbability"
+                      class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    >
+                      <option v-for="option in probabilityScaleOptions" :key="option.value" :value="option.value">
+                        {{ option.text }}
+                      </option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-base text-gray-600 mb-1">*風險發生衝擊程度</label>
+                    <select
+                      v-model="formData.riskImpactLevel"
+                      class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    >
+                      <option v-for="option in impactScaleOptions" :key="option.value" :value="option.value">
+                        {{ option.text }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="flex items-center text-base text-gray-600 mb-1">
+                    *計算說明
+                    <InformationCircleIcon class="w-4 h-4 ml-1" />
+                  </label>
+                  <textarea
+                    v-model="formData.riskCalculation"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-base"
+                    placeholder="致使相關風險、衝擊程度低"
+                  />
+                </div>
               </div>
             </div>
           </div>

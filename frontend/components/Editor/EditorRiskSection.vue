@@ -70,7 +70,7 @@
         <div class="grid grid-cols-2 gap-4">
           <!-- 風險發生可能性 -->
           <div>
-            <label class="block text-base text-gray-600 mb-1">*風險發生可能性</label>
+            <label class="block text-base text-gray-600 mb-1">*風險發生可能性123</label>
             <select
               v-model="localRiskData.probability"
               :class="[
