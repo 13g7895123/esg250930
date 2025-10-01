@@ -211,6 +211,7 @@ $routes->group('api/v1/question-management', function($routes) {
     // Assessment Structure Management
     $routes->get('assessment/(:num)/structure', 'Api\V1\QuestionManagement\QuestionManagementController::getAssessmentStructure/$1');
     $routes->post('assessment/(:num)/sync-from-template', 'Api\V1\QuestionManagement\QuestionManagementController::syncFromTemplate/$1');
+    $routes->get('assessment/(:num)/scales', 'Api\V1\QuestionManagement\QuestionManagementController::getAssessmentScales/$1');
     $routes->get('assessment/(:num)/stats', 'Api\V1\QuestionManagement\QuestionManagementController::getAssessmentStats/$1');
     $routes->get('assessment/(:num)/assignment-status', 'Api\V1\QuestionManagement\QuestionManagementController::getAssignmentStatus/$1');
     $routes->get('assessment/(:num)/assignments', 'Api\V1\QuestionManagement\QuestionManagementController::getAssignments/$1');
@@ -241,9 +242,13 @@ $routes->group('api/v1/question-management', function($routes) {
 
     // Contents Management
     $routes->get('assessment/(:num)/contents', 'Api\V1\QuestionManagement\QuestionManagementController::getContents/$1');
+    $routes->get('contents/(:num)', 'Api\V1\QuestionManagement\QuestionManagementController::getContent/$1');
     $routes->post('assessment/(:num)/contents', 'Api\V1\QuestionManagement\QuestionManagementController::createContent/$1');
     $routes->put('contents/(:num)', 'Api\V1\QuestionManagement\QuestionManagementController::updateContent/$1');
     $routes->delete('contents/(:num)', 'Api\V1\QuestionManagement\QuestionManagementController::deleteContent/$1');
+
+    // Statistics Results
+    $routes->get('assessment/(:num)/statistics-results', 'Api\V1\QuestionManagement\QuestionManagementController::getStatisticsResults/$1');
 
     // Responses Management
     $routes->get('assessment/(:num)/responses', 'Api\V1\QuestionManagement\QuestionManagementController::getResponses/$1');

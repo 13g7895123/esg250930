@@ -169,7 +169,7 @@ export const useScaleManagement = () => {
 
       return {
         value: value,
-        text: text ? `${value} (${text})` : value
+        label: text ? `${value} (${text})` : value
       }
     }).filter(opt => opt.value) // 過濾掉空的選項
   })
@@ -192,7 +192,7 @@ export const useScaleManagement = () => {
 
       return {
         value: value,
-        text: text ? `${value} (${text})` : value
+        label: text ? `${value} (${text})` : value
       }
     }).filter(opt => opt.value) // 過濾掉空的選項
   })
@@ -243,10 +243,12 @@ export const useScaleManagement = () => {
           })
 
           // Fill in actual values from row data
-          if (row.dynamic_fields) {
-            Object.keys(row.dynamic_fields).forEach(key => {
+          // 後端會將 dynamic_fields 轉換為 dynamicFields (camelCase)
+          const sourceFields = row.dynamicFields || row.dynamic_fields
+          if (sourceFields) {
+            Object.keys(sourceFields).forEach(key => {
               const colId = parseInt(key)
-              dynamicFields[colId] = row.dynamic_fields[key]
+              dynamicFields[colId] = sourceFields[key]
             })
           }
 
@@ -296,10 +298,12 @@ export const useScaleManagement = () => {
           })
 
           // Fill in actual values from row data
-          if (row.dynamic_fields) {
-            Object.keys(row.dynamic_fields).forEach(key => {
+          // 後端會將 dynamic_fields 轉換為 dynamicFields (camelCase)
+          const sourceFields = row.dynamicFields || row.dynamic_fields
+          if (sourceFields) {
+            Object.keys(sourceFields).forEach(key => {
               const colId = parseInt(key)
-              dynamicFields[colId] = row.dynamic_fields[key]
+              dynamicFields[colId] = sourceFields[key]
             })
           }
 
@@ -326,14 +330,14 @@ export const useScaleManagement = () => {
         show_description: showDescriptionText.value ? 1 : 0,
         selected_display_column: selectedProbabilityDisplayColumn.value,
         columns: probabilityScaleColumns.value.map(col => ({
-          column_id: col.id,
+          id: col.id,
           name: col.name,
           removable: col.removable ? 1 : 0
         })),
         rows: probabilityScaleRows.value.map(row => ({
           probability: row.probability,
-          score_range: row.scoreRange,
-          dynamic_fields: row.dynamicFields
+          scoreRange: row.scoreRange,
+          dynamicFields: row.dynamicFields
         }))
       },
       impact_scale: {
@@ -342,14 +346,14 @@ export const useScaleManagement = () => {
         show_description: showImpactDescriptionText.value ? 1 : 0,
         selected_display_column: selectedImpactDisplayColumn.value,
         columns: impactScaleColumns.value.map(col => ({
-          column_id: col.id,
+          id: col.id,
           name: col.name,
           removable: col.removable ? 1 : 0
         })),
         rows: impactScaleRows.value.map(row => ({
-          impact_level: row.impactLevel,
-          score_range: row.scoreRange,
-          dynamic_fields: row.dynamicFields
+          impactLevel: row.impactLevel,
+          scoreRange: row.scoreRange,
+          dynamicFields: row.dynamicFields
         }))
       }
     }

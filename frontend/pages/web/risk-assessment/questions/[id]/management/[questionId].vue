@@ -203,7 +203,7 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const route = useRoute()
-const companyId = route.params.id
+const assessmentId = route.params.id  // 注意：這是 assessment_id，不是 company_id
 const questionId = parseInt(route.params.questionId)
 
 // Loading states
@@ -213,17 +213,26 @@ const saving = ref(false)
 // Get company data from composable
 const { getCompanyNameById } = useLocalCompanies()
 
-// Company name reactive
+// Company ID 和 name 的 reactive 變數
+const companyId = ref(null)
 const companyName = ref('載入中...')
 
 // Load company name asynchronously
 const loadCompanyName = async () => {
   try {
-    const name = await getCompanyNameById(companyId)
-    companyName.value = name || `公司 #${companyId}`
+    // 從 assessment API 取得 company_id
+    const assessmentResponse = await $fetch(`/api/v1/risk-assessment/company-assessments/${assessmentId}`)
+
+    if (assessmentResponse.success && assessmentResponse.data) {
+      companyId.value = assessmentResponse.data.company_id
+      const name = await getCompanyNameById(companyId.value)
+      companyName.value = name || `公司 #${companyId.value}`
+    } else {
+      companyName.value = '未知公司'
+    }
   } catch (error) {
     console.error('Error loading company name:', error)
-    companyName.value = `公司 #${companyId}`
+    companyName.value = '未知公司'
   }
 }
 

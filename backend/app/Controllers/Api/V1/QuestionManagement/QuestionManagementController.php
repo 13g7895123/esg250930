@@ -595,6 +595,49 @@ class QuestionManagementController extends BaseController
     }
 
     /**
+     * 取得單一內容項目的詳細資料
+     * GET /api/v1/question-management/contents/{contentId}
+     *
+     * @param int|null $contentId 內容項目ID
+     * @return ResponseInterface
+     */
+    public function getContent($contentId = null)
+    {
+        try {
+            if (!$contentId) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '內容項目ID為必填項目'
+                ]);
+            }
+
+            // 查詢單一內容項目
+            $content = $this->contentModel->find($contentId);
+
+            if (!$content) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '找不到指定的內容項目'
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => [
+                    'content' => $content
+                ]
+            ]);
+        } catch (\Exception $e) {
+            log_message('error', '取得內容項目詳細資料失敗: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '取得內容項目詳細資料時發生錯誤',
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * 取得評估記錄的指派狀況
      * GET /api/v1/question-management/assessment/{assessmentId}/assignment-status
      *
@@ -1407,6 +1450,263 @@ class QuestionManagementController extends BaseController
             return $this->response->setStatusCode(500)->setJSON([
                 'success' => false,
                 'message' => '取得用戶回答時發生錯誤'
+            ]);
+        }
+    }
+
+    /**
+     * 取得評估表統計結果（每人每題一筆資料）
+     * GET /api/v1/question-management/assessment/{assessmentId}/statistics-results
+     *
+     * @param int|null $assessmentId 評估記錄ID
+     * @return ResponseInterface
+     */
+    public function getStatisticsResults($assessmentId = null)
+    {
+        try {
+            if (!$assessmentId) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '評估記錄ID為必填項目'
+                ]);
+            }
+
+            // 驗證評估記錄是否存在
+            $assessment = $this->assessmentModel->find($assessmentId);
+            if (!$assessment) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '找不到指定的評估記錄'
+                ]);
+            }
+
+            // 取得所有內容項目
+            $contents = $this->contentModel->getContentsByAssessment($assessmentId);
+
+            // 建立 content_id 到內容資訊的映射
+            $contentMap = [];
+            foreach ($contents as $content) {
+                $contentMap[$content['id']] = $content;
+            }
+
+            // 取得所有回答記錄
+            $allResponses = $this->responseModel->where('assessment_id', $assessmentId)->findAll();
+
+            // 重新組織資料：每人每題一筆
+            $results = [];
+            foreach ($allResponses as $response) {
+                $contentId = $response['question_content_id'];
+                $userId = $response['answered_by'];
+
+                // 取得題目資訊
+                $content = $contentMap[$contentId] ?? null;
+                if (!$content) {
+                    continue; // 跳過找不到題目的回答
+                }
+
+                // 取得人員資訊
+                $personnelInfo = $this->getPersonnelInfo($userId, $assessment['company_id'], $assessmentId);
+
+                // 建立一筆記錄
+                $record = [
+                    'id' => $response['id'], // response ID
+                    'content_id' => $contentId,
+                    'order' => $content['sort_order'] ?? 0,
+                    'category_name' => $content['category_name'] ?? '',
+                    'topic_name' => $content['topic_name'] ?? '',
+                    'factor_name' => $content['factor_name'] ?? '',
+                    'description' => $content['description'] ?? '',
+
+                    // 人員資訊
+                    'user_id' => $userId,
+                    'user_name' => $personnelInfo['user_name'] ?? '',
+                    'department' => $personnelInfo['department'] ?? '',
+                    'position' => $personnelInfo['position'] ?? '',
+
+                    // C 欄位 - 風險事件
+                    'c_risk_event_choice' => $response['c_risk_event_choice'] ?? '',
+                    'c_risk_event_description' => $response['c_risk_event_description'] ?? '',
+
+                    // D 欄位 - 因應行動
+                    'd_counter_action_choice' => $response['d_counter_action_choice'] ?? '',
+                    'd_counter_action_description' => $response['d_counter_action_description'] ?? '',
+                    'd_counter_action_cost' => $response['d_counter_action_cost'] ?? '',
+
+                    // E1 欄位 - 風險評估
+                    'e1_risk_description' => $response['e1_risk_description'] ?? '',
+                    'e1_risk_probability' => $response['e1_risk_probability'] ?? '',
+                    'e1_risk_impact' => $response['e1_risk_impact'] ?? '',
+                    'e1_risk_calculation' => $response['e1_risk_calculation'] ?? '',
+
+                    // F1 欄位 - 機會評估
+                    'f1_opportunity_description' => $response['f1_opportunity_description'] ?? '',
+                    'f1_opportunity_probability' => $response['f1_opportunity_probability'] ?? '',
+                    'f1_opportunity_impact' => $response['f1_opportunity_impact'] ?? '',
+                    'f1_opportunity_calculation' => $response['f1_opportunity_calculation'] ?? '',
+
+                    // G1 欄位 - 負面衝擊
+                    'g1_negative_impact_level' => $response['g1_negative_impact_level'] ?? '',
+                    'g1_negative_impact_description' => $response['g1_negative_impact_description'] ?? '',
+
+                    // H1 欄位 - 正面衝擊
+                    'h1_positive_impact_level' => $response['h1_positive_impact_level'] ?? '',
+                    'h1_positive_impact_description' => $response['h1_positive_impact_description'] ?? '',
+
+                    // 其他資訊
+                    'answered_at' => $response['answered_at'] ?? '',
+                    'review_status' => $response['review_status'] ?? 'pending',
+                ];
+
+                $results[] = $record;
+            }
+
+            // 根據 order 排序
+            usort($results, function($a, $b) {
+                if ($a['order'] != $b['order']) {
+                    return $a['order'] - $b['order'];
+                }
+                // 相同題目時，按部門排序
+                return strcmp($a['department'], $b['department']);
+            });
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => [
+                    'assessment' => [
+                        'id' => $assessment['id'],
+                        'template_version' => $assessment['template_version'] ?? '預設範本',
+                        'year' => $assessment['assessment_year'] ?? date('Y')
+                    ],
+                    'results' => $results,
+                    'summary' => [
+                        'total_contents' => count($contents),
+                        'total_responses' => count($allResponses),
+                        'total_records' => count($results)
+                    ]
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'QuestionManagementController::getStatisticsResults - ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '取得統計結果時發生錯誤'
+            ]);
+        }
+    }
+
+    /**
+     * 取得評估記錄的量表資料（從範本獲取）
+     * GET /api/v1/question-management/assessment/{assessmentId}/scales
+     *
+     * @param int|null $assessmentId 評估記錄ID
+     * @return ResponseInterface
+     */
+    public function getAssessmentScales($assessmentId = null)
+    {
+        try {
+            if (!$assessmentId) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '評估記錄ID為必填項目'
+                ]);
+            }
+
+            // 取得評估記錄
+            $assessment = $this->assessmentModel->find($assessmentId);
+            if (!$assessment) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '找不到指定的評估記錄'
+                ]);
+            }
+
+            $templateId = $assessment['template_id'];
+            if (!$templateId) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '評估記錄未指定範本ID'
+                ]);
+            }
+
+            // 從範本載入量表資料
+            $probabilityScaleModel = new \App\Models\RiskAssessment\ProbabilityScaleModel();
+            $probabilityColumnModel = new \App\Models\RiskAssessment\ProbabilityScaleColumnModel();
+            $probabilityRowModel = new \App\Models\RiskAssessment\ProbabilityScaleRowModel();
+
+            $impactScaleModel = new \App\Models\RiskAssessment\ImpactScaleModel();
+            $impactColumnModel = new \App\Models\RiskAssessment\ImpactScaleColumnModel();
+            $impactRowModel = new \App\Models\RiskAssessment\ImpactScaleRowModel();
+
+            // 取得可能性量表
+            $probabilityScale = $probabilityScaleModel->where('template_id', $templateId)->first();
+            $probabilityData = null;
+
+            if ($probabilityScale) {
+                $probabilityColumns = $probabilityColumnModel
+                    ->where('scale_id', $probabilityScale['id'])
+                    ->orderBy('sort_order', 'ASC')
+                    ->findAll();
+
+                $probabilityRows = $probabilityRowModel
+                    ->where('scale_id', $probabilityScale['id'])
+                    ->orderBy('sort_order', 'ASC')
+                    ->findAll();
+
+                // 解析 JSON 欄位
+                foreach ($probabilityRows as &$row) {
+                    $row['dynamicFields'] = json_decode($row['dynamic_fields'], true);
+                    unset($row['dynamic_fields']);
+                }
+
+                $probabilityData = [
+                    'scale' => $probabilityScale,
+                    'columns' => $probabilityColumns,
+                    'rows' => $probabilityRows
+                ];
+            }
+
+            // 取得財務衝擊量表
+            $impactScale = $impactScaleModel->where('template_id', $templateId)->first();
+            $impactData = null;
+
+            if ($impactScale) {
+                $impactColumns = $impactColumnModel
+                    ->where('scale_id', $impactScale['id'])
+                    ->orderBy('sort_order', 'ASC')
+                    ->findAll();
+
+                $impactRows = $impactRowModel
+                    ->where('scale_id', $impactScale['id'])
+                    ->orderBy('sort_order', 'ASC')
+                    ->findAll();
+
+                // 解析 JSON 欄位
+                foreach ($impactRows as &$row) {
+                    $row['dynamicFields'] = json_decode($row['dynamic_fields'], true);
+                    unset($row['dynamic_fields']);
+                }
+
+                $impactData = [
+                    'scale' => $impactScale,
+                    'columns' => $impactColumns,
+                    'rows' => $impactRows
+                ];
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => [
+                    'probability_scale' => $probabilityData,
+                    'impact_scale' => $impactData
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'QuestionManagementController::getAssessmentScales - ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '取得量表資料時發生錯誤: ' . $e->getMessage()
             ]);
         }
     }

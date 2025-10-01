@@ -245,8 +245,17 @@
           </div>
 
           <!-- Green Context Bar -->
-          <div class="bg-green-600 text-white px-6 py-3 rounded-2xl">
+          <div class="bg-green-600 text-white px-6 py-3 rounded-2xl flex items-center justify-between">
             <span class="font-bold text-white text-xl">請依上述資訊，整點公司致富相關之風險情況，並評估未來永續在各風險/機會情境</span>
+            <button
+              @click="showProbabilityScaleModal = true"
+              class="px-4 py-2 bg-white text-black font-bold rounded-full hover:bg-gray-100 transition-colors duration-200 flex items-center space-x-2 whitespace-nowrap"
+            >
+              <span>可能性量表</span>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
           </div>
 
           <!-- Sections E, F, G, H in Grid Layout -->
@@ -288,11 +297,9 @@
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="">請選擇</option>
-                        <option value="very-low">極低 (1-5%)</option>
-                        <option value="low">低 (6-25%)</option>
-                        <option value="medium">中等 (26-50%)</option>
-                        <option value="high">高 (51-75%)</option>
-                        <option value="very-high">極高 (76-100%)</option>
+                        <option v-for="option in probabilityScaleOptions" :key="option.value" :value="option.value">
+                          {{ option.label }}
+                        </option>
                       </select>
                     </div>
                     <div>
@@ -302,11 +309,9 @@
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="">請選擇</option>
-                        <option value="very-low">極低影響</option>
-                        <option value="low">低影響</option>
-                        <option value="medium">中等影響</option>
-                        <option value="high">高影響</option>
-                        <option value="very-high">極高影響</option>
+                        <option v-for="option in impactScaleOptions" :key="option.value" :value="option.value">
+                          {{ option.label }}
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -360,11 +365,9 @@
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="">請選擇</option>
-                        <option value="very-low">極低 (1-5%)</option>
-                        <option value="low">低 (6-25%)</option>
-                        <option value="medium">中等 (26-50%)</option>
-                        <option value="high">高 (51-75%)</option>
-                        <option value="very-high">極高 (76-100%)</option>
+                        <option v-for="option in probabilityScaleOptions" :key="option.value" :value="option.value">
+                          {{ option.label }}
+                        </option>
                       </select>
                     </div>
                     <div>
@@ -374,11 +377,9 @@
                         class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="">請選擇</option>
-                        <option value="very-low">極低影響</option>
-                        <option value="low">低影響</option>
-                        <option value="medium">中等影響</option>
-                        <option value="high">高影響</option>
-                        <option value="very-high">極高影響</option>
+                        <option v-for="option in impactScaleOptions" :key="option.value" :value="option.value">
+                          {{ option.label }}
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -523,11 +524,23 @@
       <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">沒有找到填寫結果</h3>
       <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">該用戶尚未開始填寫此評估表</p>
     </div>
+
+    <!-- Scale Viewer Modal -->
+    <ScaleViewerModal
+      v-model="showProbabilityScaleModal"
+      :loading="isLoadingScales"
+      :probability-scale-columns="probabilityScaleColumns"
+      :probability-scale-rows="probabilityScaleRows"
+      :impact-scale-columns="impactScaleColumns"
+      :impact-scale-rows="impactScaleRows"
+      :show-description-text="showDescriptionText"
+      :description-text="descriptionText"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowLeftIcon,
@@ -536,6 +549,9 @@ import {
   ChevronUpIcon,
   ChevronDownIcon
 } from '@heroicons/vue/24/outline'
+import ScaleViewerModal from '~/components/Scale/ScaleViewerModal.vue'
+import { useScaleManagement } from '~/composables/useScaleManagement'
+import apiClient from '~/utils/api.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -546,22 +562,31 @@ const resultData = ref(null)
 const userInfo = ref(null)
 const assessmentInfo = ref(null)
 
-// 選項對應表
-const probabilityOptions = {
-  'very-low': '極低 (1-5%)',
-  'low': '低 (6-25%)',
-  'medium': '中等 (26-50%)',
-  'high': '高 (51-75%)',
-  'very-high': '極高 (76-100%)'
-}
+// Use scale management composable
+const {
+  // State
+  probabilityScaleColumns,
+  probabilityScaleRows,
+  selectedProbabilityDisplayColumn,
+  showDescriptionText,
+  descriptionText,
+  impactScaleColumns,
+  impactScaleRows,
+  selectedImpactDisplayColumn,
+  showImpactDescriptionText,
+  impactDescriptionText,
 
-const impactOptions = {
-  'very-low': '極低影響',
-  'low': '低影響',
-  'medium': '中等影響',
-  'high': '高影響',
-  'very-high': '極高影響'
-}
+  // Computed
+  probabilityScaleOptions,
+  impactScaleOptions,
+
+  // Utility Methods
+  loadScalesData
+} = useScaleManagement()
+
+// Scale modal
+const showProbabilityScaleModal = ref(false)
+const isLoadingScales = ref(false)
 
 const impactLevelOptions = {
   'level-1': '等級1 - 極輕微',
@@ -734,11 +759,35 @@ const loadResultData = async () => {
     }
 
     console.log('Result data loaded successfully from API')
+
+    // Load scale data
+    await loadScaleData()
   } catch (err) {
     console.error('載入填寫結果時發生錯誤:', err)
     error.value = err.message || '載入填寫結果時發生錯誤'
   } finally {
     loading.value = false
+  }
+}
+
+// Load scale data from backend
+const loadScaleData = async () => {
+  isLoadingScales.value = true
+  try {
+    const assessmentId = route.params.id
+
+    // Load scales from the assessment's template
+    const scalesResponse = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/scales`)
+
+    if (scalesResponse.success && scalesResponse.data) {
+      // Use composable's loadScalesData to process the response
+      loadScalesData(scalesResponse.data)
+      console.log('Scale data loaded successfully')
+    }
+  } catch (error) {
+    console.error('載入量表資料失敗:', error)
+  } finally {
+    isLoadingScales.value = false
   }
 }
 

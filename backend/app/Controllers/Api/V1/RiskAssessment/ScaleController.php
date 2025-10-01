@@ -156,6 +156,40 @@ class ScaleController extends BaseController
                 unset($row['dynamic_fields']);
             }
 
+            // 如果 columns 為空但 rows 有 dynamicFields，從 dynamicFields 推斷欄位定義
+            if (empty($columns) && !empty($rows)) {
+                $inferredColumns = [];
+                $columnIds = [];
+
+                // 從所有 rows 收集所有欄位 ID
+                foreach ($rows as $row) {
+                    if (!empty($row['dynamicFields'])) {
+                        $columnIds = array_merge($columnIds, array_keys($row['dynamicFields']));
+                    }
+                }
+
+                // 去重並排序
+                $columnIds = array_unique($columnIds);
+                sort($columnIds);
+
+                // 建立預設欄位名稱
+                $defaultColumnNames = [
+                    1 => '如風險不曾發生過',
+                    2 => '如風險曾經發生過'
+                ];
+
+                foreach ($columnIds as $index => $columnId) {
+                    $inferredColumns[] = [
+                        'column_id' => $columnId,
+                        'name' => $defaultColumnNames[$columnId] ?? "欄位 {$columnId}",
+                        'removable' => 1,
+                        'sort_order' => $index
+                    ];
+                }
+
+                $columns = $inferredColumns;
+            }
+
             return $this->response->setJSON([
                 'success' => true,
                 'data' => [
@@ -288,6 +322,42 @@ class ScaleController extends BaseController
             foreach ($rows as &$row) {
                 $row['dynamicFields'] = json_decode($row['dynamic_fields'], true);
                 unset($row['dynamic_fields']);
+            }
+
+            // 如果 columns 為空但 rows 有 dynamicFields，從 dynamicFields 推斷欄位定義
+            if (empty($columns) && !empty($rows)) {
+                $inferredColumns = [];
+                $columnIds = [];
+
+                // 從所有 rows 收集所有欄位 ID
+                foreach ($rows as $row) {
+                    if (!empty($row['dynamicFields'])) {
+                        $columnIds = array_merge($columnIds, array_keys($row['dynamicFields']));
+                    }
+                }
+
+                // 去重並排序
+                $columnIds = array_unique($columnIds);
+                sort($columnIds);
+
+                // 建立預設欄位名稱
+                $defaultColumnNames = [
+                    1 => '股東權益金額',
+                    2 => '股東權益金額百分比',
+                    3 => '實際權益金額(分配後)'
+                ];
+
+                foreach ($columnIds as $index => $columnId) {
+                    $inferredColumns[] = [
+                        'column_id' => $columnId,
+                        'name' => $defaultColumnNames[$columnId] ?? "欄位 {$columnId}",
+                        'amount_note' => '',
+                        'removable' => 1,
+                        'sort_order' => $index
+                    ];
+                }
+
+                $columns = $inferredColumns;
             }
 
             return $this->response->setJSON([

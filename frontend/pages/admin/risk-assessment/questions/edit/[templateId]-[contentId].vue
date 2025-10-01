@@ -409,6 +409,14 @@
                 />
               </div>
 
+              <!-- E-2 說明文字（在框框外面） -->
+              <div class="mb-3">
+                <p class="text-xl font-bold text-gray-900">
+                  請依上述公司盤點之風險情境評估一旦發生風險對公司之財務影響
+                  <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-sm font-medium ml-2">E-2</span>
+                </p>
+              </div>
+
               <div class="border border-gray-300 rounded-2xl p-4 space-y-3">
                 <div class="grid grid-cols-2 gap-4">
                   <div>
@@ -475,6 +483,14 @@
                   class="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="集團持續導入資源效率管理、循環經濟及生物保護措施，以降低風險並最終可能導致業務擴張，可帶來更多客戶期待"
                 />
+              </div>
+
+              <!-- F-2 說明文字（在框框外面） -->
+              <div class="mb-3">
+                <p class="text-xl font-bold text-gray-900">
+                  請依上述公司盤點之機會情境評估一旦發生機會對公司之財務影響
+                  <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-sm font-medium ml-2">F-2</span>
+                </p>
               </div>
 
               <div class="border border-gray-300 rounded-2xl p-4 space-y-3">

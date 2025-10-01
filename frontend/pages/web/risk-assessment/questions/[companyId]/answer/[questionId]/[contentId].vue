@@ -208,11 +208,26 @@
         </div>
 
         <!-- Green Context Bar -->
-        <div class="bg-green-600 text-white px-6 py-3 rounded-2xl">
+        <div class="bg-green-600 text-white px-6 py-3 rounded-2xl flex items-center justify-between">
           <span class="font-bold text-white text-xl">請依上述資訊，整點公司致富相關之風險情況，並評估未來永續在各風險/機會情境</span>
+          <button
+            @click="showProbabilityScaleModal = true"
+            :disabled="isCompactMode"
+            :class="[
+              'px-4 py-2 bg-white text-black font-bold rounded-full transition-colors duration-200 flex items-center space-x-2 whitespace-nowrap',
+              isCompactMode
+                ? 'opacity-50 cursor-not-allowed'
+                : 'hover:bg-gray-100'
+            ]"
+          >
+            <span>可能性量表</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
         </div>
 
-        <!-- Sections E, F, G, H in Grid Layout -->
+        <!-- Sections E, F in Grid Layout -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Section E-1: 相關風險 -->
           <div class="bg-white border border-gray-200 p-6 rounded-2xl">
@@ -243,6 +258,15 @@
                   placeholder="請輸入風險描述"
                 ></textarea>
               </div>
+
+              <!-- E-2 說明文字（在框框外面） -->
+              <div class="mb-3">
+                <p class="text-xl font-bold text-gray-900">
+                  請依上述公司盤點之風險情境評估一旦發生風險對公司之財務影響
+                  <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-sm font-medium ml-2">E-2</span>
+                </p>
+              </div>
+
               <div class="border border-gray-300 rounded-2xl p-4 space-y-3">
                 <div class="grid grid-cols-2 gap-4">
                   <div>
@@ -313,6 +337,15 @@
                   placeholder="請輸入機會描述"
                 ></textarea>
               </div>
+
+              <!-- F-2 說明文字（在框框外面） -->
+              <div class="mb-3">
+                <p class="text-xl font-bold text-gray-900">
+                  請依上述公司盤點之機會情境評估一旦發生機會對公司之財務影響
+                  <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-sm font-medium ml-2">F-2</span>
+                </p>
+              </div>
+
               <div class="border border-gray-300 rounded-2xl p-4 space-y-3">
                 <div class="grid grid-cols-2 gap-4">
                   <div>
@@ -352,7 +385,15 @@
               </div>
             </div>
           </div>
+        </div>
 
+        <!-- Context Text for External Impact Assessment -->
+        <div class="bg-green-600 text-white px-6 py-3 rounded-2xl">
+          <span class="font-bold text-white text-xl">請依上述公司營點之進行或風險會環境,結合評估公司之營運程此議題可能造成的「對外」衝擊(對外部環境、環境、人群(含含責人補)之正/負面影響)</span>
+        </div>
+
+        <!-- Sections G, H in Grid Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Section G-1: 對外負面衝擊 -->
           <div class="bg-white border border-gray-200 p-6 rounded-2xl">
             <div class="flex items-center justify-between mb-4">
@@ -461,6 +502,18 @@
       </div>
     </div>
   </div>
+
+  <!-- Probability Scale Modal (Read-only) -->
+  <ScaleViewerModal
+    v-model="showProbabilityScaleModal"
+    :loading="isLoadingScales"
+    :probability-scale-columns="probabilityScaleColumns"
+    :probability-scale-rows="probabilityScaleRows"
+    :impact-scale-columns="impactScaleColumns"
+    :impact-scale-rows="impactScaleRows"
+    :show-description-text="showDescriptionText"
+    :description-text="descriptionText"
+  />
 </template>
 
 <script setup>
@@ -468,6 +521,8 @@ import {
   ChevronUpIcon,
   ChevronDownIcon
 } from '@heroicons/vue/24/outline'
+import apiClient from '~/utils/api.js'
+import ScaleViewerModal from '~/components/Scale/ScaleViewerModal.vue'
 
 definePageMeta({
   middleware: 'auth'
@@ -500,6 +555,18 @@ const expandedSections = ref({
 const toggleSection = (sectionKey) => {
   expandedSections.value[sectionKey] = !expandedSections.value[sectionKey]
 }
+
+// Probability Scale Modal state
+const showProbabilityScaleModal = ref(false)
+const isLoadingScales = ref(false)
+
+// Scale data structures
+const probabilityScaleColumns = ref([])
+const probabilityScaleRows = ref([])
+const impactScaleColumns = ref([])
+const impactScaleRows = ref([])
+const showDescriptionText = ref(false)
+const descriptionText = ref('')
 
 // Form data - 可編輯的表單資料
 const formData = ref({
@@ -544,22 +611,9 @@ const isSaving = ref(false)
 const showTestDataButton = ref(true) // 設為 true 顯示按鈕，false 隱藏按鈕
 const isFillingTestData = ref(false)
 
-// Dropdown options
-const probabilityOptions = [
-  { value: 'very-low', label: '極低 (1-5%)' },
-  { value: 'low', label: '低 (6-25%)' },
-  { value: 'medium', label: '中等 (26-50%)' },
-  { value: 'high', label: '高 (51-75%)' },
-  { value: 'very-high', label: '極高 (76-100%)' }
-]
-
-const impactOptions = [
-  { value: 'very-low', label: '極低影響' },
-  { value: 'low', label: '低影響' },
-  { value: 'medium', label: '中等影響' },
-  { value: 'high', label: '高影響' },
-  { value: 'very-high', label: '極高影響' }
-]
+// Dropdown options - 動態從量表資料載入
+const probabilityOptions = ref([])
+const impactOptions = ref([])
 
 const impactLevelOptions = [
   { value: 'level-1', label: '等級1 - 極輕微' },
@@ -584,10 +638,10 @@ const loadQuestionData = async () => {
 
     // Load question content to get A and B sections
     const contentResponse = await $fetch(`/api/v1/question-management/contents/${contentId}`)
-    if (contentResponse.success && contentResponse.data) {
-      const data = contentResponse.data
-      formData.value.riskFactorDescription = data.a_content || ''
-      formData.value.referenceText = data.b_content || ''
+    if (contentResponse.success && contentResponse.data?.content) {
+      const content = contentResponse.data.content
+      formData.value.riskFactorDescription = content.a_content || ''
+      formData.value.referenceText = content.b_content || ''
     }
 
     // Load existing answer if any
@@ -828,6 +882,10 @@ const fillTestData = async () => {
 
     // 隨機選擇器函數
     const getRandomOption = (options) => {
+      if (!options || options.length === 0) {
+        // 如果選項為空,返回預設值
+        return '1-20'
+      }
       const randomIndex = Math.floor(Math.random() * options.length)
       return options[randomIndex].value
     }
@@ -935,14 +993,14 @@ const fillTestData = async () => {
 
       // E區域
       riskDescription: getRandomText(riskDescriptions),
-      riskProbability: getRandomOption(probabilityOptions),
-      riskImpact: getRandomOption(impactOptions),
+      riskProbability: getRandomOption(probabilityOptions.value),
+      riskImpact: getRandomOption(impactOptions.value),
       riskCalculation: getRandomText(riskCalculations),
 
       // F區域
       opportunityDescription: getRandomText(opportunityDescriptions),
-      opportunityProbability: getRandomOption(probabilityOptions),
-      opportunityImpact: getRandomOption(impactOptions),
+      opportunityProbability: getRandomOption(probabilityOptions.value),
+      opportunityImpact: getRandomOption(impactOptions.value),
       opportunityCalculation: getRandomText(opportunityCalculations),
 
       // G區域
@@ -968,8 +1026,7 @@ onMounted(async () => {
   console.log('Answer page mounted for:', { companyId, questionId, contentId })
 
   // 檢查並初始化用戶資料
-  const { $route } = useNuxtApp()
-  const token = $route.query.token || ''
+  const token = route.query.token || ''
 
   console.log('=== 用戶資料初始化檢查 ===')
   console.log('Token from URL:', token)
@@ -1016,7 +1073,147 @@ onMounted(async () => {
   if (isViewMode.value) {
     await loadExistingAnswers()
   }
+
+  // 載入量表資料
+  await loadScaleData()
 })
+
+// Load scale data from backend
+const loadScaleData = async () => {
+  isLoadingScales.value = true
+  try {
+    // 從 company_assessments 取得 template_id
+    // questionId 實際上是 company_assessment 的 id
+    const assessmentResponse = await $fetch(`/api/v1/risk-assessment/company-assessments/${questionId}`)
+    if (!assessmentResponse.success || !assessmentResponse.data?.template_id) {
+      console.warn('無法取得 template_id，跳過載入量表資料')
+      return
+    }
+
+    const templateId = assessmentResponse.data.template_id
+
+    // Load probability scale
+    const probabilityResponse = await apiClient.request(
+      `/templates/${templateId}/scales/probability`,
+      {
+        method: 'GET'
+      }
+    )
+
+    if (probabilityResponse.success && probabilityResponse.data) {
+      const { scale, columns, rows } = probabilityResponse.data
+
+      // Update probability scale main settings
+      let selectedDisplayColumn = 'probability' // 預設使用固定欄位
+      if (scale) {
+        descriptionText.value = scale.description_text || ''
+        showDescriptionText.value = !!scale.show_description
+        selectedDisplayColumn = scale.selected_display_column || 'probability'
+      }
+
+      // Update column definitions
+      if (columns && columns.length > 0) {
+        probabilityScaleColumns.value = columns.map(col => ({
+          id: col.column_id,
+          name: col.name,
+          removable: !!col.removable
+        }))
+      }
+
+      // Update data rows
+      if (rows && rows.length > 0) {
+        probabilityScaleRows.value = rows.map(row => ({
+          dynamicFields: row.dynamicFields || {},
+          probability: row.probability || '',
+          scoreRange: row.score_range || ''
+        }))
+
+        // 同步更新 E-1 和 F-1 的可能性下拉選單選項
+        // 根據 selected_display_column 決定顯示欄位
+        probabilityOptions.value = rows.map(row => {
+          const value = row.score_range || ''
+          let text = ''
+
+          if (selectedDisplayColumn === 'probability') {
+            text = row.probability || ''
+          } else {
+            // 如果選擇的是變動欄位
+            const columnId = parseInt(selectedDisplayColumn)
+            text = row.dynamicFields[columnId] || ''
+          }
+
+          return {
+            value: value,
+            label: text ? `${value} (${text})` : value
+          }
+        }).filter(opt => opt.value) // 過濾掉空的選項
+      }
+    }
+
+    // Load impact scale
+    const impactResponse = await apiClient.request(
+      `/templates/${templateId}/scales/impact`,
+      {
+        method: 'GET'
+      }
+    )
+
+    if (impactResponse.success && impactResponse.data) {
+      const { scale, columns, rows } = impactResponse.data
+
+      // Update impact scale main settings
+      let selectedDisplayColumn = 'impactLevel' // 預設使用固定欄位
+      if (scale) {
+        selectedDisplayColumn = scale.selected_display_column || 'impactLevel'
+      }
+
+      // Update column definitions
+      if (columns && columns.length > 0) {
+        impactScaleColumns.value = columns.map(col => ({
+          id: col.column_id,
+          name: col.name,
+          amountNote: col.amount_note || '',
+          removable: !!col.removable
+        }))
+      }
+
+      // Update data rows
+      if (rows && rows.length > 0) {
+        impactScaleRows.value = rows.map(row => ({
+          dynamicFields: row.dynamicFields || {},
+          impactLevel: row.impact_level || '',
+          scoreRange: row.score_range || ''
+        }))
+
+        // 同步更新 E-1 和 F-1 的衝擊程度下拉選單選項
+        // 根據 selected_display_column 決定顯示欄位
+        impactOptions.value = rows.map(row => {
+          const value = row.score_range || ''
+          let text = ''
+
+          if (selectedDisplayColumn === 'impactLevel') {
+            text = row.impact_level || ''
+          } else {
+            // 如果選擇的是變動欄位
+            const columnId = parseInt(selectedDisplayColumn)
+            text = row.dynamicFields[columnId] || ''
+          }
+
+          return {
+            value: value,
+            label: text ? `${value} (${text})` : value
+          }
+        }).filter(opt => opt.value) // 過濾掉空的選項
+      }
+    }
+
+    console.log('量表資料載入成功')
+  } catch (error) {
+    console.error('載入量表資料失敗:', error)
+  } finally {
+    isLoadingScales.value = false
+  }
+}
 </script>
 
 <style scoped>

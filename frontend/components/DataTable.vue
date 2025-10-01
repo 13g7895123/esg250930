@@ -27,9 +27,64 @@
       <table class="w-full">
         <!-- Table Header -->
         <thead class="bg-gray-50 dark:bg-gray-700">
-          <tr>
-            <!-- Select All Checkbox -->
-            <th v-if="selectable" class="px-6 py-3 text-left">
+          <!-- Group Header Row (if groups exist and have multiple columns) -->
+          <tr v-if="shouldShowGroupHeader" class="bg-gray-50 dark:bg-gray-700">
+            <th v-if="selectable" class="px-6 py-3 border-b border-gray-300 dark:border-gray-600" rowspan="2">
+              <input
+                type="checkbox"
+                :checked="isAllSelected"
+                @change="toggleSelectAll"
+                class="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+            </th>
+            <template v-for="(column, index) in columns" :key="`group-${column.key}`">
+              <!-- Group header for columns with groups (only show once per group) -->
+              <th
+                v-if="column.group && isFirstInGroup(index)"
+                :colspan="getGroupColspan(column.group, index)"
+                class="px-6 py-3 text-center text-xs font-bold uppercase tracking-wide border-b border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 border-l border-r border-gray-300 dark:border-gray-600"
+              >
+                {{ column.group }}
+              </th>
+              <!-- Non-grouped column spans 2 rows -->
+              <th
+                v-if="!column.group"
+                rowspan="2"
+                :class="[
+                  'px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-600 whitespace-nowrap',
+                  column.sortable ? 'cursor-pointer hover:text-gray-700 dark:hover:text-gray-100' : ''
+                ]"
+                @click="column.sortable ? handleSort(column.key) : null"
+              >
+                <div class="flex items-center space-x-1">
+                  <span>{{ column.label }}</span>
+                  <div v-if="column.sortable" class="flex flex-col">
+                    <ChevronUpIcon
+                      :class="[
+                        'w-3 h-3',
+                        sortField === column.key && sortOrder === 'asc'
+                          ? 'text-primary-600'
+                          : 'text-gray-400'
+                      ]"
+                    />
+                    <ChevronDownIcon
+                      :class="[
+                        'w-3 h-3 -mt-1',
+                        sortField === column.key && sortOrder === 'desc'
+                          ? 'text-primary-600'
+                          : 'text-gray-400'
+                      ]"
+                    />
+                  </div>
+                </div>
+              </th>
+            </template>
+          </tr>
+
+          <!-- Column Header Row -->
+          <tr v-if="!shouldShowGroupHeader || hasGroups">
+            <!-- Select All Checkbox (only show if no group header) -->
+            <th v-if="selectable && !shouldShowGroupHeader" class="px-6 py-3 text-left">
               <input
                 type="checkbox"
                 :checked="isAllSelected"
@@ -39,37 +94,41 @@
             </th>
 
             <!-- Column Headers -->
-            <th
-              v-for="column in columns"
-              :key="column.key"
-              :class="[
-                'px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider',
-                column.sortable ? 'cursor-pointer hover:text-gray-700 dark:hover:text-gray-100' : ''
-              ]"
-              @click="column.sortable ? handleSort(column.key) : null"
-            >
-              <div class="flex items-center space-x-1">
-                <span>{{ column.label }}</span>
-                <div v-if="column.sortable" class="flex flex-col">
-                  <ChevronUpIcon 
-                    :class="[
-                      'w-3 h-3',
-                      sortField === column.key && sortOrder === 'asc' 
-                        ? 'text-primary-600' 
-                        : 'text-gray-400'
-                    ]"
-                  />
-                  <ChevronDownIcon 
-                    :class="[
-                      'w-3 h-3 -mt-1',
-                      sortField === column.key && sortOrder === 'desc' 
-                        ? 'text-primary-600' 
-                        : 'text-gray-400'
-                    ]"
-                  />
+            <template v-for="(column, index) in columns" :key="column.key">
+              <!-- Only show grouped columns in second row when group header exists -->
+              <th
+                v-if="!shouldShowGroupHeader || column.group"
+                :class="[
+                  'px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-600 whitespace-nowrap',
+                  column.sortable ? 'cursor-pointer hover:text-gray-700 dark:hover:text-gray-100' : '',
+                  hasGroups && isFirstColumnInGroup(index) ? 'border-l border-gray-300 dark:border-gray-600' : (hasGroups && column.group ? 'border-l border-gray-200 dark:border-gray-600' : ''),
+                  hasGroups && column.group ? 'bg-gray-100/50 dark:bg-gray-600/30' : ''
+                ]"
+                @click="column.sortable ? handleSort(column.key) : null"
+              >
+                <div class="flex items-center space-x-1">
+                  <span>{{ column.label }}</span>
+                  <div v-if="column.sortable" class="flex flex-col">
+                    <ChevronUpIcon
+                      :class="[
+                        'w-3 h-3',
+                        sortField === column.key && sortOrder === 'asc'
+                          ? 'text-primary-600'
+                          : 'text-gray-400'
+                      ]"
+                    />
+                    <ChevronDownIcon
+                      :class="[
+                        'w-3 h-3 -mt-1',
+                        sortField === column.key && sortOrder === 'desc'
+                          ? 'text-primary-600'
+                          : 'text-gray-400'
+                      ]"
+                    />
+                  </div>
                 </div>
-              </div>
-            </th>
+              </th>
+            </template>
           </tr>
         </thead>
 
@@ -94,10 +153,14 @@
             </td>
 
             <!-- Data Cells -->
-            <td 
-              v-for="column in columns" 
+            <td
+              v-for="(column, colIndex) in columns"
               :key="column.key"
-              class="px-6 py-4 whitespace-nowrap"
+              :class="[
+                'px-6 py-4 whitespace-nowrap',
+                hasGroups && isFirstColumnInGroup(colIndex) ? 'border-l border-gray-300 dark:border-gray-600' : (hasGroups && column.group ? 'border-l border-gray-200 dark:border-gray-700' : ''),
+                hasGroups && column.group ? 'bg-gray-50/50 dark:bg-gray-700/30' : ''
+              ]"
             >
               <!-- Custom Cell Content -->
               <div v-if="$slots[`cell-${column.key}`]">
@@ -116,7 +179,7 @@
       <!-- Empty State -->
       <div v-if="paginatedData.length === 0" class="p-12 text-center">
         <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-          <component :is="emptyIcon" class="w-8 h-8 text-gray-400" />
+          <DocumentTextIcon class="w-8 h-8 text-gray-400" />
         </div>
         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
           {{ filteredData.length === 0 && searchQuery ? noSearchResultsTitle : emptyTitle }}
@@ -312,10 +375,6 @@ const props = defineProps({
   noSearchResultsMessage: {
     type: String,
     default: '請嘗試其他搜尋關鍵字'
-  },
-  emptyIcon: {
-    type: [Object, Function],
-    default: () => DocumentTextIcon
   }
 })
 
@@ -330,12 +389,116 @@ const sortField = ref('')
 const sortOrder = ref('asc')
 
 // Computed properties
+
+// Check if any column has a group
+const hasGroups = computed(() => {
+  return props.columns.some(col => col.group)
+})
+
+// Calculate column groups for header
+const columnGroups = computed(() => {
+  if (!hasGroups.value) return []
+
+  const groups = []
+  let currentGroup = null
+  let colspan = 0
+
+  props.columns.forEach((column, index) => {
+    if (column.group) {
+      if (currentGroup === column.group) {
+        // Same group, increase colspan
+        colspan++
+      } else {
+        // New group, save previous group if exists
+        if (currentGroup !== null) {
+          groups.push({
+            name: currentGroup,
+            label: currentGroup,
+            colspan: colspan
+          })
+        }
+        // Start new group
+        currentGroup = column.group
+        colspan = 1
+      }
+    } else {
+      // No group, save previous group if exists
+      if (currentGroup !== null) {
+        groups.push({
+          name: currentGroup,
+          label: currentGroup,
+          colspan: colspan
+        })
+        currentGroup = null
+        colspan = 0
+      }
+      // Add empty group for non-grouped column
+      groups.push({
+        name: `no-group-${index}`,
+        label: '',
+        colspan: 1
+      })
+    }
+  })
+
+  // Don't forget the last group
+  if (currentGroup !== null) {
+    groups.push({
+      name: currentGroup,
+      label: currentGroup,
+      colspan: colspan
+    })
+  }
+
+  return groups
+})
+
+// Check if we should show the group header row
+// Only show if there are groups with multiple columns (colspan > 1)
+const shouldShowGroupHeader = computed(() => {
+  if (!hasGroups.value) return false
+  return columnGroups.value.some(group => group.label && group.colspan > 1)
+})
+
+// Check if column is the first in its group
+const isFirstColumnInGroup = (index) => {
+  if (index === 0) return false
+  const currentColumn = props.columns[index]
+  const previousColumn = props.columns[index - 1]
+
+  // First column with a group, or group changed
+  return currentColumn.group && currentColumn.group !== previousColumn?.group
+}
+
+// Check if this is the first column in a group (for group header display)
+const isFirstInGroup = (index) => {
+  if (index === 0) return true
+  const currentColumn = props.columns[index]
+  const previousColumn = props.columns[index - 1]
+
+  // First occurrence of this group
+  return currentColumn.group && (!previousColumn || previousColumn.group !== currentColumn.group)
+}
+
+// Get colspan for a group starting at given index
+const getGroupColspan = (groupName, startIndex) => {
+  let count = 0
+  for (let i = startIndex; i < props.columns.length; i++) {
+    if (props.columns[i].group === groupName) {
+      count++
+    } else {
+      break
+    }
+  }
+  return count
+}
+
 const filteredData = computed(() => {
   if (!searchQuery.value) return props.data
 
   const query = searchQuery.value.toLowerCase()
-  const fieldsToSearch = props.searchFields.length > 0 
-    ? props.searchFields 
+  const fieldsToSearch = props.searchFields.length > 0
+    ? props.searchFields
     : props.columns.map(col => col.key)
 
   return props.data.filter(item => {

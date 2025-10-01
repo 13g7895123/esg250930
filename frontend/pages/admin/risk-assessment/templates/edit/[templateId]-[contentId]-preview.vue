@@ -220,7 +220,7 @@
           </button>
         </div>
 
-        <!-- Sections E, F, G, H in Grid Layout -->
+        <!-- Sections E, F in Grid Layout -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Section E-1: 相關風險 -->
           <div class="bg-white border border-gray-200 p-6 rounded-2xl">
@@ -252,6 +252,15 @@
                   disabled
                 ></textarea>
               </div>
+
+              <!-- E-2 說明文字（在框框外面） -->
+              <div class="mb-3">
+                <p class="text-xl font-bold text-gray-900">
+                  請依上述公司盤點之風險情境評估一旦發生風險對公司之財務影響
+                  <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-sm font-medium ml-2">E-2</span>
+                </p>
+              </div>
+
               <div class="border border-gray-300 rounded-2xl p-4 space-y-3">
                 <div class="grid grid-cols-2 gap-4">
                   <div>
@@ -323,6 +332,15 @@
                   disabled
                 ></textarea>
               </div>
+
+              <!-- F-2 說明文字（在框框外面） -->
+              <div class="mb-3">
+                <p class="text-xl font-bold text-gray-900">
+                  請依上述公司盤點之機會情境評估一旦發生機會對公司之財務影響
+                  <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-sm font-medium ml-2">F-2</span>
+                </p>
+              </div>
+
               <div class="border border-gray-300 rounded-2xl p-4 space-y-3">
                 <div class="grid grid-cols-2 gap-4">
                   <div>
@@ -363,7 +381,15 @@
               </div>
             </div>
           </div>
+        </div>
 
+        <!-- Context Text for External Impact Assessment -->
+        <div class="bg-green-600 text-white px-6 py-3 rounded-2xl">
+          <span class="font-bold text-white text-xl">請依上述公司營點之進行或風險會環境,結合評估公司之營運程此議題可能造成的「對外」衝擊(對外部環境、環境、人群(含含責人補)之正/負面影響)</span>
+        </div>
+
+        <!-- Sections G, H in Grid Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Section G-1: 對外負面衝擊 -->
           <div class="bg-white border border-gray-200 p-6 rounded-2xl">
             <div class="flex items-center justify-between mb-4">

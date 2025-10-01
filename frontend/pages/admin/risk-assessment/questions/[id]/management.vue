@@ -1789,13 +1789,26 @@ const submitForm = async () => {
       console.log('新增項目資料:', itemData)
       const newItem = await addQuestionManagementItem(companyId.value, itemData)
       console.log('新增後返回的項目:', newItem)
-      
+
       // Copy template content when creating new question management item
       if (template && newItem) {
-        console.log('開始複製範本內容...')
-        copyTemplateContentToQuestionManagement(template.id, newItem.id)
+        console.log('開始從範本同步內容到資料庫...')
+        try {
+          // 呼叫後端 API 從範本複製架構到題項管理
+          const syncResponse = await $fetch(`/api/v1/question-management/assessment/${newItem.id}/sync-from-template`, {
+            method: 'POST'
+          })
+
+          if (syncResponse.success) {
+            console.log('範本架構複製成功:', syncResponse.data)
+          } else {
+            console.error('範本架構複製失敗:', syncResponse.message)
+          }
+        } catch (error) {
+          console.error('同步範本架構時發生錯誤:', error)
+        }
       }
-      
+
       // Reload data after adding
       await loadQuestionManagementData()
     } else if (showEditModal.value) {
@@ -1812,13 +1825,26 @@ const submitForm = async () => {
       console.log('編輯項目資料:', itemData)
       console.log('編輯的項目:', editingItem.value)
       await updateQuestionManagementItem(companyId.value, editingItem.value.id, itemData)
-      
+
       // If template changed, copy new template content
       if (oldTemplateId !== newTemplateId && template) {
-        console.log('範本已變更，重新複製範本內容...')
-        copyTemplateContentToQuestionManagement(template.id, editingItem.value.id)
+        console.log('範本已變更，重新從範本同步內容到資料庫...')
+        try {
+          // 呼叫後端 API 從範本複製架構到題項管理
+          const syncResponse = await $fetch(`/api/v1/question-management/assessment/${editingItem.value.id}/sync-from-template`, {
+            method: 'POST'
+          })
+
+          if (syncResponse.success) {
+            console.log('範本架構複製成功:', syncResponse.data)
+          } else {
+            console.error('範本架構複製失敗:', syncResponse.message)
+          }
+        } catch (error) {
+          console.error('同步範本架構時發生錯誤:', error)
+        }
       }
-      
+
       // Reload data after updating
       await loadQuestionManagementData()
     }
@@ -1925,8 +1951,9 @@ const viewAssignments = (item) => {
 }
 
 const showStatistics = (item) => {
-  // TODO: Implement statistics modal
-  console.log('Show statistics for:', item)
+  console.log('Navigating to statistics for:', item)
+  // 導航到統計結果頁面
+  navigateTo(`/admin/risk-assessment/questions/${item.id}/statistics`)
 }
 
 const showCopyOverallForm = (item) => {
