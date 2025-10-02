@@ -3,7 +3,11 @@
  */
 export const useApi = () => {
   const config = useRuntimeConfig()
-  
+
+  // Authentication toggle - set to false to disable authentication checks
+  // Change this to true when authentication is ready to be enabled
+  const ENABLE_AUTH = false
+
   // Get base URL from environment - handle development vs production
   const getBaseURL = () => {
     // Always use the full API URL (no proxy in development)
@@ -44,6 +48,11 @@ export const useApi = () => {
   
   // Get authentication headers
   const getAuthHeaders = () => {
+    // If authentication is disabled, return empty headers
+    if (!ENABLE_AUTH) {
+      return {}
+    }
+
     const token = getAuthToken()
     if (token) {
       return {
@@ -84,16 +93,16 @@ export const useApi = () => {
       console.error('[API] Full URL:', `${baseURL}${endpoint}`)
       console.error('[API] Options:', defaultOptions)
       
-      // Handle authentication errors
-      if (error.status === 401 || error.statusCode === 401) {
+      // Handle authentication errors (only if authentication is enabled)
+      if (ENABLE_AUTH && (error.status === 401 || error.statusCode === 401)) {
         console.warn('[API] Authentication error - clearing auth state')
-        
+
         // Clear authentication data
         if (process.client) {
           localStorage.removeItem('auth_token')
           localStorage.removeItem('auth_user')
         }
-        
+
         // Redirect to login page (only if not already on login page)
         if (process.client && !window.location.pathname.includes('/auth/login')) {
           try {
