@@ -79,7 +79,7 @@ export default defineNuxtConfig({
         'project.local'
       ],
       proxy: {
-        '/api/v1': {
+        '/api': {
           target: process.env.BACKEND_URL || 'http://localhost:9218',
           changeOrigin: true,
           secure: false,
