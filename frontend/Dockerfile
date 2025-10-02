@@ -24,11 +24,17 @@ RUN chmod -R 755 node_modules/.bin 2>/dev/null || true
 RUN if [ -f node_modules/.bin/nuxt ]; then chmod +x node_modules/.bin/nuxt; fi
 
 # Set production environment variables for build
+# These will be passed from docker-compose at build time
+ARG NUXT_PUBLIC_API_BASE_URL
+ARG NUXT_PUBLIC_BACKEND_URL
+ARG NUXT_PUBLIC_BACKEND_HOST
+ARG NUXT_PUBLIC_BACKEND_PORT
+
 ENV NODE_ENV=production
-ENV NUXT_PUBLIC_API_BASE_URL=https://project.mercylife.cc/api
-ENV NUXT_PUBLIC_BACKEND_URL=https://project.mercylife.cc/api
-ENV NUXT_PUBLIC_BACKEND_HOST=project.mercylife.cc
-ENV NUXT_PUBLIC_BACKEND_PORT=443
+ENV NUXT_PUBLIC_API_BASE_URL=${NUXT_PUBLIC_API_BASE_URL}
+ENV NUXT_PUBLIC_BACKEND_URL=${NUXT_PUBLIC_BACKEND_URL}
+ENV NUXT_PUBLIC_BACKEND_HOST=${NUXT_PUBLIC_BACKEND_HOST}
+ENV NUXT_PUBLIC_BACKEND_PORT=${NUXT_PUBLIC_BACKEND_PORT}
 
 # Build the application
 RUN npm run build
@@ -53,11 +59,8 @@ ENV PORT 3000
 ENV HOST 0.0.0.0
 ENV NODE_ENV=production
 
-# Set production API configuration
-ENV NUXT_PUBLIC_API_BASE_URL=https://project.mercylife.cc/api
-ENV NUXT_PUBLIC_BACKEND_URL=https://project.mercylife.cc/api
-ENV NUXT_PUBLIC_BACKEND_HOST=project.mercylife.cc
-ENV NUXT_PUBLIC_BACKEND_PORT=443
+# Runtime environment variables will be passed from docker-compose
+# No need to set them here as they will be overridden
 
 # Start the application
 CMD ["node", "/app/.output/server/index.mjs"]

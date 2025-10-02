@@ -3,6 +3,11 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NUXT_PUBLIC_API_BASE_URL=${NUXT_PUBLIC_API_BASE_URL}
+        - NUXT_PUBLIC_BACKEND_URL=${NUXT_PUBLIC_BACKEND_URL}
+        - NUXT_PUBLIC_BACKEND_HOST=${NUXT_PUBLIC_BACKEND_HOST}
+        - NUXT_PUBLIC_BACKEND_PORT=${NUXT_PUBLIC_BACKEND_PORT}
     restart: always
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
