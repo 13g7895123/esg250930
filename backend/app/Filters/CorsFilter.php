@@ -117,6 +117,8 @@ class CorsFilter implements FilterInterface
         // Production environment - specify your allowed domains here
         if (ENVIRONMENT === 'production') {
             $allowedDomains = [
+                'https://esgmate.cc-sustain.com',
+                'https://www.esgmate.cc-sustain.com',
                 'https://your-production-domain.com',
                 'https://www.your-production-domain.com'
                 // Add your production domains here

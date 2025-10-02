@@ -33,10 +33,10 @@ export default defineNuxtConfig({
     // Private keys (only available on server-side)
     // Public keys (exposed to client-side)
     public: {
-      apiBaseUrl: process.env.BACKEND_API_URL || 'http://localhost:9218/api/v1',
-      backendUrl: process.env.BACKEND_URL || process.env.BACKEND_API_URL || 'http://localhost:9218/api/v1',
-      backendHost: process.env.BACKEND_HOST || 'localhost',
-      backendPort: process.env.BACKEND_PORT || '9218',
+      apiBaseUrl: process.env.NUXT_PUBLIC_API_BASE_URL || process.env.BACKEND_API_URL || 'http://localhost:9218/api/v1',
+      backendUrl: process.env.NUXT_PUBLIC_BACKEND_URL || process.env.BACKEND_URL || process.env.BACKEND_API_URL || 'http://localhost:9218/api/v1',
+      backendHost: process.env.NUXT_PUBLIC_BACKEND_HOST || process.env.BACKEND_HOST || 'localhost',
+      backendPort: process.env.NUXT_PUBLIC_BACKEND_PORT || process.env.BACKEND_PORT || '9218',
       requireAuth: process.env.NUXT_PUBLIC_REQUIRE_AUTH === 'true',
       showFooter: process.env.NUXT_PUBLIC_SHOW_FOOTER === 'true',
       appTitle: process.env.NUXT_PUBLIC_APP_TITLE || 'ESG系統'
