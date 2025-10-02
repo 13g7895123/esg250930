@@ -2,6 +2,17 @@
 const config = useRuntimeConfig()
 const API_BASE_URL = `${config.public.apiBaseUrl}/risk-assessment`
 
+// Debug: Log runtime config values
+console.log('=== 🔍 Runtime Config Debug ===')
+console.log('📁 File: /frontend/composables/useQuestionManagement.js')
+console.log('🔧 config.public.apiBaseUrl:', config.public.apiBaseUrl)
+console.log('🔧 config.public.backendUrl:', config.public.backendUrl)
+console.log('🌐 Final API_BASE_URL:', API_BASE_URL)
+console.log('📋 Environment Variables Check:')
+console.log('   NUXT_PUBLIC_API_BASE_URL should be:', 'https://esgmate.cc-sustain.com/api/v1')
+console.log('   NUXT_PUBLIC_BACKEND_URL should be:', 'https://esgmate.cc-sustain.com/api/v1')
+console.log('================================')
+
 // Question management data organized by company ID
 const questionManagement = ref({})
 
