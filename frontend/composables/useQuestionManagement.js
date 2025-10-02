@@ -48,6 +48,15 @@ const loadCompanyAssessments = async (companyId, userId = null) => {
   if (!process.client) return
 
   try {
+    const fullApiUrl = `${API_BASE_URL}/company-assessments/company/${companyId}`
+    console.log('=== 🚀 API CALL ===')
+    console.log('📁 Frontend File: /frontend/composables/useQuestionManagement.js')
+    console.log('⚙️  Function: loadCompanyAssessments')
+    console.log('🌐 Full API URL:', fullApiUrl)
+    console.log('🔧 Backend File: /backend/app/Controllers/Api/V1/RiskAssessment/CompanyAssessmentController.php')
+    console.log('📝 Backend Method: getByCompany')
+    console.log('===================')
+
     const response = await $fetch(`${API_BASE_URL}/company-assessments/company/${companyId}`)
     if (response.success && response.data.assessments) {
       let assessments = response.data.assessments
@@ -118,9 +127,15 @@ const loadCompanyAssessments = async (companyId, userId = null) => {
 
 // Save individual assessment to API
 const saveAssessmentToAPI = async (assessmentData) => {
-  console.log('🔥 [FRONTEND] saveAssessmentToAPI START')
-  console.log('🔥 [FRONTEND] Assessment data:', assessmentData)
-  console.log('🔥 [FRONTEND] API URL:', `${API_BASE_URL}/company-assessments`)
+  const fullApiUrl = `${API_BASE_URL}/company-assessments`
+  console.log('=== 🚀 API CALL ===')
+  console.log('📁 Frontend File: /frontend/composables/useQuestionManagement.js')
+  console.log('⚙️  Function: saveAssessmentToAPI')
+  console.log('🌐 Full API URL:', fullApiUrl)
+  console.log('🔧 Backend File: /backend/app/Controllers/Api/V1/RiskAssessment/CompanyAssessmentController.php')
+  console.log('📝 Backend Method: create (POST)')
+  console.log('📋 Request Data:', assessmentData)
+  console.log('===================')
 
   if (!process.client) {
     console.log('🔥 [FRONTEND] Not on client side, returning null')

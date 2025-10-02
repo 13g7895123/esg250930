@@ -15,7 +15,7 @@ const loadLocalCompanies = async (search = null, page = 1, limit = 20, sort = 'c
 
   loading.value = true
   error.value = null
-  
+
   try {
     const params = new URLSearchParams()
     if (search) params.append('search', search)
@@ -23,6 +23,15 @@ const loadLocalCompanies = async (search = null, page = 1, limit = 20, sort = 'c
     if (limit) params.append('limit', limit)
     if (sort) params.append('sort', sort)
     if (order) params.append('order', order)
+
+    const fullApiUrl = `${API_BASE_URL}/local-companies?${params.toString()}`
+    console.log('=== 🚀 API CALL ===')
+    console.log('📁 Frontend File: /frontend/composables/useLocalCompanies.js')
+    console.log('⚙️  Function: loadLocalCompanies')
+    console.log('🌐 Full API URL:', fullApiUrl)
+    console.log('🔧 Backend File: /backend/app/Controllers/Api/V1/LocalCompaniesController.php')
+    console.log('📝 Backend Method: index (GET)')
+    console.log('===================')
 
     const response = await $fetch(`${API_BASE_URL}/local-companies?${params.toString()}`)
     

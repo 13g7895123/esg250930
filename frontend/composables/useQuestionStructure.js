@@ -39,6 +39,15 @@ export const useQuestionStructure = () => {
     lastError.value = null
 
     try {
+      const fullApiUrl = `/api/v1/question-management/assessment/${assessmentId}/structure`
+      console.log('=== 🚀 API CALL ===')
+      console.log('📁 Frontend File: /frontend/composables/useQuestionStructure.js')
+      console.log('⚙️  Function: getAssessmentStructure')
+      console.log('🌐 Full API URL:', fullApiUrl)
+      console.log('🔧 Backend File: /backend/app/Controllers/Api/V1/QuestionManagement/QuestionManagementController.php')
+      console.log('📝 Backend Method: getAssessmentStructure')
+      console.log('===================')
+
       const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/structure`, {
         method: 'GET'
       })
@@ -76,6 +85,15 @@ export const useQuestionStructure = () => {
     lastError.value = null
 
     try {
+      const fullApiUrl = `/api/v1/question-management/assessment/${assessmentId}/sync-from-template`
+      console.log('=== 🚀 API CALL ===')
+      console.log('📁 Frontend File: /frontend/composables/useQuestionStructure.js')
+      console.log('⚙️  Function: syncFromTemplate')
+      console.log('🌐 Full API URL:', fullApiUrl)
+      console.log('🔧 Backend File: /backend/app/Controllers/Api/V1/QuestionManagement/QuestionManagementController.php')
+      console.log('📝 Backend Method: syncFromTemplate')
+      console.log('===================')
+
       const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/sync-from-template`, {
         method: 'POST'
       })
