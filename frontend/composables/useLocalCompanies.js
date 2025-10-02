@@ -1,8 +1,8 @@
 // 本地公司管理 composable
 // 負責與後端 API 整合，取代 localStorage 存儲
 
-// 使用 Nuxt 代理路徑，在開發環境會自動轉發到後端
-const API_BASE_URL = '/api/v1/risk-assessment'
+// Use unified API service
+const api = useApi()
 
 // Reactive state for local companies
 const localCompanies = ref([])
@@ -24,16 +24,15 @@ const loadLocalCompanies = async (search = null, page = 1, limit = 20, sort = 'c
     if (sort) params.append('sort', sort)
     if (order) params.append('order', order)
 
-    const fullApiUrl = `${API_BASE_URL}/local-companies?${params.toString()}`
     console.log('=== 🚀 API CALL ===')
     console.log('📁 Frontend File: /frontend/composables/useLocalCompanies.js')
     console.log('⚙️  Function: loadLocalCompanies')
-    console.log('🌐 Full API URL:', fullApiUrl)
     console.log('🔧 Backend File: /backend/app/Controllers/Api/V1/LocalCompaniesController.php')
     console.log('📝 Backend Method: index (GET)')
     console.log('===================')
 
-    const response = await $fetch(`${API_BASE_URL}/local-companies?${params.toString()}`)
+    const result = await api.companies.getAll({ search, page, limit, sort, order })
+    const response = result.data
     
     if (response.success && response.data) {
       // Transform API response to match frontend format
@@ -69,14 +68,12 @@ const addLocalCompany = async (companyData) => {
   error.value = null
   
   try {
-    const response = await $fetch(`${API_BASE_URL}/local-companies`, {
-      method: 'POST',
-      body: {
-        company_name: companyData.company_name || companyData.companyName,
-        external_id: companyData.external_id || companyData.externalId,
-        abbreviation: companyData.abbreviation || ''
-      }
+    const result = await api.companies.create({
+      company_name: companyData.company_name || companyData.companyName,
+      external_id: companyData.external_id || companyData.externalId,
+      abbreviation: companyData.abbreviation || ''
     })
+    const response = result.data
     
     if (response.success && response.data) {
       // Transform API response to match frontend format
@@ -111,13 +108,11 @@ const updateLocalCompany = async (id, companyData) => {
   error.value = null
   
   try {
-    const response = await $fetch(`${API_BASE_URL}/local-companies/${id}`, {
-      method: 'PUT',
-      body: {
-        company_name: companyData.company_name || companyData.companyName,
-        abbreviation: companyData.abbreviation || ''
-      }
+    const result = await api.companies.update(id, {
+      company_name: companyData.company_name || companyData.companyName,
+      abbreviation: companyData.abbreviation || ''
     })
+    const response = result.data
     
     if (response.success && response.data) {
       // Transform API response to match frontend format
@@ -155,9 +150,8 @@ const deleteLocalCompany = async (id) => {
   error.value = null
   
   try {
-    const response = await $fetch(`${API_BASE_URL}/local-companies/${id}`, {
-      method: 'DELETE'
-    })
+    const result = await api.companies.delete(id)
+    const response = result.data
     
     if (response.success) {
       // Remove from local state
@@ -180,7 +174,8 @@ const findByExternalId = async (externalId) => {
   if (!process.client) return null
 
   try {
-    const response = await $fetch(`${API_BASE_URL}/local-companies/external/${externalId}`)
+    const result = await api.companies.getByExternalId(externalId)
+    const response = result.data
     
     if (response.success && response.data) {
       return {
@@ -207,12 +202,13 @@ const getCompanyStats = async () => {
   if (!process.client) return null
 
   try {
-    const response = await $fetch(`${API_BASE_URL}/local-companies/stats`)
-    
+    const result = await api.companies.getStats()
+    const response = result.data
+
     if (response.success && response.data) {
       return response.data
     }
-    
+
     return null
   } catch (err) {
     console.error('Error getting company stats:', err)
@@ -237,8 +233,9 @@ const findById = async (id) => {
 
   // If not found in cache, load from API
   try {
-    const response = await $fetch(`${API_BASE_URL}/local-companies/${id}`)
-    
+    const result = await api.companies.getById(id)
+    const response = result.data
+
     if (response.success && response.data) {
       return {
         id: response.data.id,
@@ -247,7 +244,7 @@ const findById = async (id) => {
         abbreviation: response.data.abbreviation || ''
       }
     }
-    
+
     return null
   } catch (err) {
     // Company not found
@@ -278,12 +275,10 @@ const resolveCompany = async (companyId) => {
   error.value = null
 
   try {
-    const response = await $fetch(`${API_BASE_URL}/local-companies/resolve`, {
-      method: 'POST',
-      body: {
-        company_id: companyId
-      }
+    const result = await api.companies.resolve({
+      company_id: companyId
     })
+    const response = result.data
 
     if (response.success && response.data) {
       const company = {

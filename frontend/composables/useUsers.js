@@ -1,3 +1,6 @@
+// Use unified API service
+const api = useApi()
+
 // Store for users data indexed by company ID
 const usersByCompany = ref({})
 const isLoading = ref(false)
@@ -37,7 +40,8 @@ export const useUsers = () => {
       console.log(`Loading users for company ID: ${numericCompanyId}`)
 
       // Call the personnel API
-      const response = await $fetch(`/api/v1/personnel/companies/${numericCompanyId}/personnel-assignments`)
+      const result = await api.personnel.getByCompany(numericCompanyId)
+      const response = result.data
 
       if (response.success) {
         // Handle different response structures
