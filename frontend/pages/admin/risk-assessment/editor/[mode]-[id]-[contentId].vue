@@ -112,7 +112,7 @@
           </div>
 
           <!-- Context Text for External Impact -->
-          <div class="bg-green-600 text-white px-6 py-3 rounded-2xl">
+          <div class="text-white px-6 py-3 rounded-2xl" style="background-color: #059669;">
             <span class="font-bold text-white text-xl">
               請依上述公司營點之進行或風險會環境,結合評估公司之營運程此議題可能造成的「對外」衝擊(對外部環境、環境、人群(含含責人補)之正/負面影響)
             </span>

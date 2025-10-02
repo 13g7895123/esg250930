@@ -25,11 +25,11 @@
           class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <option value="">請選擇</option>
-          <option value="level-1">等級1 - 極輕微</option>
-          <option value="level-2">等級2 - 輕微</option>
-          <option value="level-3">等級3 - 中等</option>
-          <option value="level-4">等級4 - 嚴重</option>
-          <option value="level-5">等級5 - 極嚴重</option>
+          <option value="level-1">1</option>
+          <option value="level-2">2</option>
+          <option value="level-3">3</option>
+          <option value="level-4">4</option>
+          <option value="level-5">5</option>
         </select>
       </div>
       <div>

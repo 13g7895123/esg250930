@@ -29,7 +29,8 @@
 
       <button
         v-if="!readonly"
-        class="px-3 py-1 bg-green-600 text-white text-base rounded-full"
+        class="px-3 py-1 text-white text-base rounded-full"
+        style="background-color: #059669;"
       >
         紀錄
       </button>

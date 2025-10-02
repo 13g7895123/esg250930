@@ -1,6 +1,6 @@
 <template>
   <!-- 綠色量表按鈕列 -->
-  <div class="bg-green-600 text-white px-6 py-3 rounded-2xl flex items-center justify-between">
+  <div class="text-white px-6 py-3 rounded-2xl flex items-center justify-between" style="background-color: #059669;">
     <span class="font-bold text-white text-xl">
       請依上述資訊，整點公司致富相關之風險情況，並評估未來永續在各風險/機會情境
     </span>

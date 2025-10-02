@@ -75,50 +75,66 @@
         </div>
       </template>
 
-      <template #cell-c_risk_event_choice="{ item }">
-        <span v-if="item.c_risk_event_choice" class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-          :class="item.c_risk_event_choice.toLowerCase() === 'yes'
-            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
-            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'"
-        >
-          {{ item.c_risk_event_choice.toLowerCase() === 'yes' ? '是' : '否' }}
-        </span>
-        <span v-else class="text-gray-400">-</span>
+      <template #cell-c_risk_event="{ item }">
+        <div class="text-sm break-words">
+          <template v-if="item.c_risk_event_choice || item.c_risk_event_description">
+            <span v-if="item.c_risk_event_choice">
+              {{ item.c_risk_event_choice.toLowerCase() === 'yes' ? '是' : '否' }}
+            </span>
+            <span v-if="item.c_risk_event_choice && item.c_risk_event_description">, </span>
+            <span v-if="item.c_risk_event_description">{{ item.c_risk_event_description }}</span>
+          </template>
+          <span v-else class="text-gray-400">-</span>
+        </div>
       </template>
 
-      <template #cell-d_counter_action_choice="{ item }">
-        <span v-if="item.d_counter_action_choice" class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-          :class="item.d_counter_action_choice.toLowerCase() === 'yes'
-            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
-            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'"
-        >
-          {{ item.d_counter_action_choice.toLowerCase() === 'yes' ? '是' : '否' }}
-        </span>
-        <span v-else class="text-gray-400">-</span>
+      <template #cell-d_counter_action="{ item }">
+        <div class="text-sm break-words">
+          <template v-if="item.d_counter_action_choice || item.d_counter_action_description">
+            <span v-if="item.d_counter_action_choice">
+              {{ item.d_counter_action_choice.toLowerCase() === 'yes' ? '是' : '否' }}
+            </span>
+            <span v-if="item.d_counter_action_choice && item.d_counter_action_description">, </span>
+            <span v-if="item.d_counter_action_description">{{ item.d_counter_action_description }}</span>
+          </template>
+          <span v-else class="text-gray-400">-</span>
+        </div>
       </template>
 
-      <template #cell-e1_risk_probability="{ item }">
-        {{ item.e1_risk_probability || '-' }}
+      <template #cell-e1_risk_description="{ item }">
+        <div class="text-sm break-words">
+          {{ item.e1_risk_description || '-' }}
+        </div>
       </template>
 
-      <template #cell-e1_risk_impact="{ item }">
-        {{ item.e1_risk_impact || '-' }}
+      <template #cell-e2_risk_probability="{ item }">
+        {{ item.e2_risk_probability || '-' }}
       </template>
 
-      <template #cell-e1_risk_calculation="{ item }">
-        {{ item.e1_risk_calculation || '-' }}
+      <template #cell-e2_risk_impact="{ item }">
+        {{ item.e2_risk_impact || '-' }}
       </template>
 
-      <template #cell-f1_opportunity_probability="{ item }">
-        {{ item.f1_opportunity_probability || '-' }}
+      <template #cell-e2_risk_calculation="{ item }">
+        {{ item.e2_risk_calculation || '-' }}
       </template>
 
-      <template #cell-f1_opportunity_impact="{ item }">
-        {{ item.f1_opportunity_impact || '-' }}
+      <template #cell-f1_opportunity_description="{ item }">
+        <div class="text-sm break-words">
+          {{ item.f1_opportunity_description || '-' }}
+        </div>
       </template>
 
-      <template #cell-f1_opportunity_calculation="{ item }">
-        {{ item.f1_opportunity_calculation || '-' }}
+      <template #cell-f2_opportunity_probability="{ item }">
+        {{ item.f2_opportunity_probability || '-' }}
+      </template>
+
+      <template #cell-f2_opportunity_impact="{ item }">
+        {{ item.f2_opportunity_impact || '-' }}
+      </template>
+
+      <template #cell-f2_opportunity_calculation="{ item }">
+        {{ item.f2_opportunity_calculation || '-' }}
       </template>
 
       <template #cell-g1_negative_impact_level="{ item }">
@@ -130,10 +146,14 @@
       </template>
 
       <template #cell-description="{ item }">
-        <div class="max-w-xs">
-          <div class="line-clamp-2" :title="item.description">
-            {{ item.description || '-' }}
-          </div>
+        <div class="text-sm break-words">
+          {{ item.description || '-' }}
+        </div>
+      </template>
+
+      <template #cell-b_reference_text="{ item }">
+        <div class="text-sm break-words">
+          {{ item.b_reference_text || '-' }}
         </div>
       </template>
     </DataTable>
@@ -322,27 +342,30 @@ const allColumns = [
   { key: 'category_name', label: '風險類別', sortable: true, default: true },
   { key: 'topic_name', label: '風險主題', sortable: true, default: true },
   { key: 'factor_name', label: '風險因子', sortable: true, default: true },
-  { key: 'description', label: '描述', sortable: false, default: true },
+  { key: 'description', label: '【A】風險因子描述', sortable: false, default: true },
+  { key: 'b_reference_text', label: '【B】參考文字&模擬工具評估結果', sortable: false, default: true },
 
   // C 風險事件
-  { key: 'c_risk_event_choice', label: 'C風險事件', sortable: true, default: true, group: 'C 風險事件' },
-  { key: 'c_risk_event_description', label: 'C風險事件描述', sortable: false, default: false, group: 'C 風險事件' },
+  { key: 'c_risk_event', label: '【C】公司報導年度是否有發生實際風險/負面衝擊事件\n□是□否  請簡述', sortable: false, default: true },
 
   // D 因應行動
-  { key: 'd_counter_action_choice', label: 'D因應行動', sortable: true, default: true, group: 'D 因應行動' },
-  { key: 'd_counter_action_description', label: 'D因應行動描述', sortable: false, default: false, group: 'D 因應行動' },
+  { key: 'd_counter_action', label: '【D】公司報導年度是否有相關對應作為\n□是□否  請簡述', sortable: false, default: true },
 
-  // E1 風險評估
-  { key: 'e1_risk_probability', label: 'E1風險可能性', sortable: true, default: true, group: 'E1 風險評估' },
-  { key: 'e1_risk_impact', label: 'E1風險衝擊', sortable: true, default: true, group: 'E1 風險評估' },
-  { key: 'e1_risk_calculation', label: 'E1風險分數', sortable: true, default: true, group: 'E1 風險評估' },
-  { key: 'e1_risk_description', label: 'E1風險描述', sortable: false, default: false, group: 'E1 風險評估' },
+  // E1 風險情境說明
+  { key: 'e1_risk_description', label: '【E-1】風險情境說明\n公司未來潛在風險情境，包含對公司營運、獲利與聲譽可能造成的負面衝擊(例如收入減少、費用增加等)', sortable: false, default: true },
 
-  // F1 機會評估
-  { key: 'f1_opportunity_probability', label: 'F1機會可能性', sortable: true, default: true, group: 'F1 機會評估' },
-  { key: 'f1_opportunity_impact', label: 'F1機會衝擊', sortable: true, default: true, group: 'F1 機會評估' },
-  { key: 'f1_opportunity_calculation', label: 'F1機會分數', sortable: true, default: true, group: 'F1 機會評估' },
-  { key: 'f1_opportunity_description', label: 'F1機會描述', sortable: false, default: false, group: 'F1 機會評估' },
+  // E2 風險評估
+  { key: 'e2_risk_probability', label: '風險發生可能性', sortable: true, default: true, group: '【E-2】請評估上述風險情境發生時，對公司營運、獲利與聲譽可能造成的衝擊，並將其盡可能量化為可評估的財務金額' },
+  { key: 'e2_risk_impact', label: '風險發生衝擊程度', sortable: true, default: true, group: '【E-2】請評估上述風險情境發生時，對公司營運、獲利與聲譽可能造成的衝擊，並將其盡可能量化為可評估的財務金額' },
+  { key: 'e2_risk_calculation', label: '計算說明', sortable: true, default: true, group: '【E-2】請評估上述風險情境發生時，對公司營運、獲利與聲譽可能造成的衝擊，並將其盡可能量化為可評估的財務金額' },
+
+  // F1 機會情境說明
+  { key: 'f1_opportunity_description', label: '【F-1】機會情境說明\n公司未來潛在機會情境，包含對公司營運、獲利與聲譽可能造成的正面影響(例如收入增加、費用減少、靭性提高等)', sortable: false, default: true },
+
+  // F2 機會評估
+  { key: 'f2_opportunity_probability', label: '機會發生可能性', sortable: true, default: true, group: '【F-2】請評估上述機會情境發生時，對公司營運、獲利與聲譽可能造成的影響，並將其盡可能量化為可評估的財務金額' },
+  { key: 'f2_opportunity_impact', label: '機會發生影響程度', sortable: true, default: true, group: '【F-2】請評估上述機會情境發生時，對公司營運、獲利與聲譽可能造成的影響，並將其盡可能量化為可評估的財務金額' },
+  { key: 'f2_opportunity_calculation', label: '計算說明', sortable: true, default: true, group: '【F-2】請評估上述機會情境發生時，對公司營運、獲利與聲譽可能造成的影響，並將其盡可能量化為可評估的財務金額' },
 
   // G1 對外負面衝擊
   { key: 'g1_negative_impact_level', label: '負面衝擊程度', sortable: true, default: true, group: '【G-1】對外負面衝擊' },
@@ -509,5 +532,26 @@ usePageTitle(pageTitle)
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* 為所有表格單元格添加邊框 */
+:deep(table) {
+  border-collapse: collapse;
+}
+
+:deep(th) {
+  border: 1px solid rgb(209 213 219) !important;
+}
+
+:deep(.dark th) {
+  border-color: rgb(75 85 99) !important;
+}
+
+:deep(td) {
+  border: 1px solid rgb(209 213 219) !important;
+}
+
+:deep(.dark td) {
+  border-color: rgb(75 85 99) !important;
 }
 </style>
