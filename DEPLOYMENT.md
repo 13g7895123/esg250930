@@ -19,6 +19,8 @@
    - `MYSQL_DATABASE`: 資料庫名稱
    - `MYSQL_USER`: 資料庫使用者
    - `MYSQL_PASSWORD`: 資料庫密碼
+   - `PHPMYADMIN_PORT`: phpMyAdmin 埠號
+   - `PHPMYADMIN_URL`: phpMyAdmin 網址
 
 ### 部署步驟
 
@@ -41,7 +43,13 @@
    docker-compose -f docker-compose.prod.yml logs -f frontend
    docker-compose -f docker-compose.prod.yml logs -f backend
    docker-compose -f docker-compose.prod.yml logs -f mysql
+   docker-compose -f docker-compose.prod.yml logs -f phpmyadmin
    ```
+
+4. **存取 phpMyAdmin**
+   - 開啟瀏覽器並前往 `PHPMYADMIN_URL` 設定的網址
+   - 或使用 `http://localhost:9402` (若使用預設埠號)
+   - 使用 MySQL root 帳號登入
 
 ### 服務說明
 
@@ -68,6 +76,15 @@
   - 資料持久化 (使用 Docker Volume)
   - 健康檢查機制
   - UTF-8 MB4 字元集
+
+#### phpMyAdmin 服務
+- **技術**: phpMyAdmin (最新版)
+- **埠號**: 9402 (預設)
+- **網址**: 需在 `.env.prod` 中設定 `PHPMYADMIN_URL`
+- **功能**:
+  - 網頁介面管理 MySQL 資料庫
+  - 等待 MySQL 就緒後才啟動
+  - 支援自訂網址配置
 
 ### 重要功能
 
