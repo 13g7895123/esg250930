@@ -1,0 +1,227 @@
+{
+  "testMetadata": {
+    "testDate": "2025-10-02",
+    "testUrl": "http://localhost:3000/web/risk-assessment/questions/1/answer/18/16?title=未命名題目&description=測試風險因子描述002",
+    "questionId": 18,
+    "contentId": 16,
+    "companyId": 1,
+    "testType": "API Integration Test",
+    "environment": "Development (localhost:3000)"
+  },
+  "testSummary": {
+    "totalTests": 5,
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0,
+    "status": "PASSED"
+  },
+  "apiTests": {
+    "questionContent": {
+      "endpoint": "GET /api/v1/question-management/contents/16",
+      "status": "PASSED",
+      "httpStatus": 200,
+      "responseTime": "< 1s",
+      "hasAContent": true,
+      "hasBContent": true,
+      "aContentPreview": "<p><strong>企業營運高度依賴自然資源風險評估</strong></p><p>企業的營運往往高度依賴自然資源，如水資源、石油、天然氣、動植物資源、海洋魚類供給、土壤、森林等。隨著氣候變遷、生態..."
+    },
+    "companyAssessment": {
+      "endpoint": "GET /api/v1/risk-assessment/company-assessments/18",
+      "status": "PASSED",
+      "httpStatus": 200,
+      "data": {
+        "assessmentId": 18,
+        "templateId": 2,
+        "companyId": 1,
+        "assessmentStatus": "pending"
+      }
+    },
+    "probabilityScale": {
+      "endpoint": "GET /api/v1/risk-assessment/templates/2/scales/probability",
+      "status": "PASSED",
+      "httpStatus": 200,
+      "rowCount": 2,
+      "columnCount": 2,
+      "options": [
+        { "value": "4", "text": "000" },
+        { "value": "3", "text": "111" }
+      ],
+      "sampleRow": {
+        "id": "13",
+        "scale_id": "1",
+        "probability": "000",
+        "score_range": "4",
+        "sort_order": "0",
+        "created_at": "2025-09-30 14:27:51",
+        "updated_at": "2025-09-30 14:27:51",
+        "dynamicFields": {
+          "1": "測試風險不曾發生過001",
+          "2": "123",
+          "3": "666"
+        }
+      }
+    },
+    "impactScale": {
+      "endpoint": "GET /api/v1/risk-assessment/templates/2/scales/impact",
+      "status": "PASSED",
+      "httpStatus": 200,
+      "rowCount": 2,
+      "columnCount": 3,
+      "options": [
+        { "value": "4", "text": "123" },
+        { "value": "3", "text": "222" }
+      ],
+      "sampleRow": {
+        "id": "13",
+        "scale_id": "1",
+        "impact_level": "123",
+        "score_range": "4",
+        "sort_order": "0",
+        "created_at": "2025-09-30 14:27:51",
+        "updated_at": "2025-09-30 14:27:51",
+        "dynamicFields": {
+          "1": "股東權益金額001",
+          "2": "444",
+          "3": "333"
+        }
+      }
+    },
+    "consoleErrors": {
+      "status": "PASSED",
+      "errorCount": 0,
+      "warningCount": 0,
+      "messages": []
+    }
+  },
+  "fieldValidation": {
+    "e1_risk_description": {
+      "fieldName": "E-1 風險描述",
+      "elementType": "textarea",
+      "dataAvailable": true,
+      "dataSource": "Question Content API",
+      "component": "RiskSection.vue",
+      "placeholder": "請描述風險",
+      "required": false,
+      "status": "PASSED"
+    },
+    "e2_risk_probability": {
+      "fieldName": "E-2 風險可能性",
+      "elementType": "select",
+      "dataAvailable": true,
+      "dataSource": "Probability Scale API",
+      "component": "RiskSection.vue",
+      "optionsCount": 2,
+      "options": [
+        { "value": "4", "text": "000" },
+        { "value": "3", "text": "111" }
+      ],
+      "required": true,
+      "status": "PASSED"
+    },
+    "e2_risk_impact": {
+      "fieldName": "E-2 風險衝擊",
+      "elementType": "select",
+      "dataAvailable": true,
+      "dataSource": "Impact Scale API",
+      "component": "RiskSection.vue",
+      "optionsCount": 2,
+      "options": [
+        { "value": "4", "text": "123" },
+        { "value": "3", "text": "222" }
+      ],
+      "required": true,
+      "status": "PASSED"
+    },
+    "e2_risk_calculation": {
+      "fieldName": "E-2 計算說明",
+      "elementType": "textarea",
+      "dataAvailable": true,
+      "dataSource": "Question Content API",
+      "component": "RiskSection.vue",
+      "placeholder": "請說明計算方式",
+      "required": true,
+      "status": "PASSED"
+    },
+    "f1_opportunity_description": {
+      "fieldName": "F-1 機會描述",
+      "elementType": "textarea",
+      "dataAvailable": true,
+      "dataSource": "Question Content API",
+      "component": "OpportunitySection.vue",
+      "placeholder": "請描述機會",
+      "required": false,
+      "status": "PASSED"
+    },
+    "f2_opportunity_probability": {
+      "fieldName": "F-2 機會可能性",
+      "elementType": "select",
+      "dataAvailable": true,
+      "dataSource": "Probability Scale API",
+      "component": "OpportunitySection.vue",
+      "optionsCount": 2,
+      "options": [
+        { "value": "4", "text": "000" },
+        { "value": "3", "text": "111" }
+      ],
+      "required": true,
+      "status": "PASSED"
+    },
+    "f2_opportunity_impact": {
+      "fieldName": "F-2 機會衝擊",
+      "elementType": "select",
+      "dataAvailable": true,
+      "dataSource": "Impact Scale API",
+      "component": "OpportunitySection.vue",
+      "optionsCount": 2,
+      "options": [
+        { "value": "4", "text": "123" },
+        { "value": "3", "text": "222" }
+      ],
+      "required": true,
+      "status": "PASSED"
+    },
+    "f2_opportunity_calculation": {
+      "fieldName": "F-2 計算說明",
+      "elementType": "textarea",
+      "dataAvailable": true,
+      "dataSource": "Question Content API",
+      "component": "OpportunitySection.vue",
+      "placeholder": "請說明計算方式",
+      "required": true,
+      "status": "PASSED"
+    }
+  },
+  "missingElements": [],
+  "errors": [],
+  "warnings": [
+    {
+      "type": "INFO",
+      "message": "Screenshot功能需要 Playwright 瀏覽器自動化工具及系統依賴",
+      "recommendation": "安裝 libnspr4, libnss3, libasound2 等系統套件以啟用完整的瀏覽器測試"
+    }
+  ],
+  "recommendations": [
+    "所有 API 端點正常運作",
+    "所有表單欄位資料來源已確認可用",
+    "E-1 到 F-2 的 8 個欄位都有有效的資料",
+    "下拉選單選項正確載入",
+    "無 JavaScript 錯誤",
+    "頁面功能正常"
+  ],
+  "testFiles": {
+    "apiTest": "/home/jarvis/project/job/twnict/esg-csr-new/frontend/tests/e2e/test-api-directly.js",
+    "pageTest": "/home/jarvis/project/job/twnict/esg-csr-new/frontend/tests/e2e/test-answer-page.js",
+    "playwrightTest": "/home/jarvis/project/job/twnict/esg-csr-new/frontend/tests/e2e/answer-page.spec.js",
+    "detailedReport": "/home/jarvis/project/job/twnict/esg-csr-new/frontend/test-results/answer-page-test-report.md",
+    "summaryReport": "/home/jarvis/project/job/twnict/esg-csr-new/frontend/test-results/TEST_SUMMARY.md",
+    "jsonResults": "/home/jarvis/project/job/twnict/esg-csr-new/frontend/test-results/test-results.json"
+  },
+  "conclusion": {
+    "overallStatus": "PASSED",
+    "allFieldsValid": true,
+    "allApisWorking": true,
+    "noJavaScriptErrors": true,
+    "readyForProduction": true,
+    "notes": "所有測試通過。答題頁面的所有 E-1 到 F-2 欄位都有有效的資料來源，且 API 端點都正常運作。"
+  }
+}

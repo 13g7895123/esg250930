@@ -1,7 +1,7 @@
 /**
  * 編輯器功能開關管理 Composable
  *
- * 用途: 根據不同編輯模式 (template/question/preview) 控制功能顯示與行為
+ * 用途: 根據不同編輯模式 (template/question/preview/answer) 控制功能顯示與行為
  *
  * @param {Ref<string>} mode - 編輯器模式
  * @returns {Object} 功能開關配置
@@ -31,9 +31,9 @@ export const useEditorFeatures = (mode) => {
 
       /**
        * 顯示「預覽」按鈕
-       * preview 模式本身就是預覽，不需要此按鈕
+       * preview 和 answer 模式不顯示預覽按鈕
        */
-      showPreviewButton: currentMode !== 'preview',
+      showPreviewButton: currentMode !== 'preview' && currentMode !== 'answer',
 
       /**
        * 顯示「返回」按鈕
@@ -51,9 +51,9 @@ export const useEditorFeatures = (mode) => {
 
       /**
        * 顯示資訊圖示 (i)
-       * template 和 preview 模式都顯示，但只有 template 可編輯
+       * template, preview 和 answer 模式都顯示，但只有 template 可編輯
        */
-      showHoverIcons: currentMode === 'template' || currentMode === 'preview',
+      showHoverIcons: currentMode === 'template' || currentMode === 'preview' || currentMode === 'answer',
 
       /**
        * 顯示基本資訊區塊 (類別、主題、因子選擇)
@@ -69,7 +69,7 @@ export const useEditorFeatures = (mode) => {
        * - 'viewer': 唯讀檢視模式 (只能看，不能編輯)
        * - 'viewer-compact': 精簡檢視模式 (可拖曳、精簡化的檢視視窗)
        */
-      scaleMode: currentMode === 'preview'
+      scaleMode: currentMode === 'preview' || currentMode === 'answer'
         ? 'viewer-compact'
         : currentMode === 'question'
           ? 'viewer'
@@ -100,16 +100,16 @@ export const useEditorFeatures = (mode) => {
 
       /**
        * Section 區塊可收折
-       * 僅在 preview 模式下 Section A 和 B 可以收折
+       * preview 和 answer 模式下 Section A 和 B 可以收折
        */
-      collapsibleSections: currentMode === 'preview',
+      collapsibleSections: currentMode === 'preview' || currentMode === 'answer',
 
       /**
        * 預設展開的 Section
-       * preview 模式: Section A 展開, Section B 收折
+       * preview/answer 模式: Section A 展開, Section B 收折
        * 其他模式: 全部展開
        */
-      defaultExpandedSections: currentMode === 'preview'
+      defaultExpandedSections: currentMode === 'preview' || currentMode === 'answer'
         ? { sectionA: true, sectionB: false }
         : { sectionA: true, sectionB: true },
 
@@ -134,18 +134,22 @@ export const useEditorFeatures = (mode) => {
        */
       pageTitle: currentMode === 'preview'
         ? '使用者表單預覽'
-        : currentMode === 'question'
-          ? '題目編輯'
-          : '題目編輯',
+        : currentMode === 'answer'
+          ? '風險評估作答'
+          : currentMode === 'question'
+            ? '題目編輯'
+            : '題目編輯',
 
       /**
        * 頁面副標題
        */
       pageSubtitle: currentMode === 'preview'
         ? '檢視使用者將看到的表單內容'
-        : currentMode === 'question'
-          ? '編輯完整的ESG評估題目內容'
-          : '類別：{category} | 編輯完整的ESG評估題目內容',
+        : currentMode === 'answer'
+          ? '請完整填寫以下表單內容'
+          : currentMode === 'question'
+            ? '編輯完整的ESG評估題目內容'
+            : '類別：{category} | 編輯完整的ESG評估題目內容',
 
       /**
        * 「紀錄」按鈕顯示
@@ -178,7 +182,12 @@ export const useEditorFeatures = (mode) => {
       /**
        * 是否為預覽模式
        */
-      isPreviewMode: currentMode === 'preview'
+      isPreviewMode: currentMode === 'preview',
+
+      /**
+       * 是否為答題模式
+       */
+      isAnswerMode: currentMode === 'answer'
     }
   })
 
@@ -205,15 +214,36 @@ export const useEditorFeatures = (mode) => {
    * 取得導航路徑
    * 根據不同模式返回正確的返回路徑
    * @param {number} id - templateId 或 assessmentId
+   * @param {number} contentId - 題目內容 ID (preview 模式必需)
+   * @param {string} from - preview 模式的來源 ('template' 或 'question')
+   * @param {number} companyId - 公司 ID (question/answer 模式必需)
+   * @param {number} assessmentId - 評估記錄 ID (question/answer 模式必需)
    * @returns {string} 路由路徑
    */
-  const getBackPath = (id) => {
+  const getBackPath = (id, contentId, from = null, companyId = null, assessmentId = null) => {
     const currentMode = unref(mode)
 
-    if (currentMode === 'template' || currentMode === 'preview') {
+    if (currentMode === 'preview') {
+      // 根據來源決定返回路徑
+      if (from === 'question') {
+        return `/admin/risk-assessment/editor/question-${id}-${contentId}`
+      } else {
+        return `/admin/risk-assessment/editor/template-${id}-${contentId}`
+      }
+    } else if (currentMode === 'template') {
       return `/admin/risk-assessment/templates/${id}/content`
     } else if (currentMode === 'question') {
+      // question 模式需要返回到 /admin/risk-assessment/questions/{companyId}/management/{assessmentId}/content
+      if (companyId && assessmentId) {
+        return `/admin/risk-assessment/questions/${companyId}/management/${assessmentId}/content`
+      }
+      // 備用：如果沒有提供參數，使用舊的路徑
       return `/admin/risk-assessment/questions/${id}/management`
+    } else if (currentMode === 'answer') {
+      // answer 模式返回到題目內容列表
+      if (companyId && assessmentId) {
+        return `/web/risk-assessment/questions/${companyId}/management/${assessmentId}/content`
+      }
     }
 
     return '/admin/risk-assessment'
@@ -223,15 +253,21 @@ export const useEditorFeatures = (mode) => {
    * 取得預覽路徑
    * @param {number} id - templateId 或 assessmentId
    * @param {number} contentId - 題目內容 ID
-   * @returns {string|null} 預覽路由路徑，如果不支援預覽則返回 null
+   * @returns {object|null} 預覽路由物件 (含 path 和 query)，如果不支援預覽則返回 null
    */
   const getPreviewPath = (id, contentId) => {
     const currentMode = unref(mode)
 
     if (currentMode === 'template') {
-      return `/admin/risk-assessment/editor/preview-${id}-${contentId}`
+      return {
+        path: `/admin/risk-assessment/editor/preview-${id}-${contentId}`,
+        query: { from: 'template' }
+      }
     } else if (currentMode === 'question') {
-      return null // question 模式使用 inline modal
+      return {
+        path: `/admin/risk-assessment/editor/preview-${id}-${contentId}`,
+        query: { from: 'question' }
+      }
     }
 
     return null

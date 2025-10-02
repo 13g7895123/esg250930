@@ -258,231 +258,47 @@
             </button>
           </div>
 
-          <!-- Sections E, F, G, H in Grid Layout -->
+          <!-- Sections E, F in Grid Layout -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Section E-1: 相關風險 -->
-            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 rounded-2xl">
-              <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center space-x-3">
-                  <span class="font-bold text-gray-900 dark:text-white text-xl">相關風險</span>
-                  <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 px-2 py-1 rounded text-base font-medium flex items-center">E-1</span>
-                  <div
-                    class="relative group w-5 h-5 ml-2 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-serif font-bold cursor-pointer hover:scale-110 transition-transform duration-200"
-                  >
-                    <span class="italic">i</span>
-                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
-                      相關風險說明：企業面臨的風險評估相關資訊
-                      <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800 dark:border-t-gray-700"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="space-y-4">
-                <p class="text-base text-gray-600 dark:text-gray-400">公司未來潛在相關風險營清說明，未來潛在風險（收入減少）、費用增加於損益</p>
-                <div>
-                  <label class="text-gray-600 dark:text-gray-400 mt-6 mb-1">風險描述</label>
-                  <textarea
-                    v-model="responseData.riskDescription"
-                    rows="3"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="請描述風險"
-                  ></textarea>
-                </div>
-                <div class="border border-gray-300 dark:border-gray-600 rounded-2xl p-4 space-y-3">
-                  <div class="grid grid-cols-2 gap-4">
-                    <div>
-                      <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*風險發生可能性</label>
-                      <select
-                        v-model="responseData.riskProbability"
-                        class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        <option value="">請選擇</option>
-                        <option v-for="option in probabilityScaleOptions" :key="option.value" :value="option.value">
-                          {{ option.label }}
-                        </option>
-                      </select>
-                    </div>
-                    <div>
-                      <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*風險發生衝擊程度</label>
-                      <select
-                        v-model="responseData.riskImpact"
-                        class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        <option value="">請選擇</option>
-                        <option v-for="option in impactScaleOptions" :key="option.value" :value="option.value">
-                          {{ option.label }}
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <label class="flex items-center text-base text-gray-600 dark:text-gray-400 mb-1">*計算說明</label>
-                    <textarea
-                      v-model="responseData.riskCalculation"
-                      rows="3"
-                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="請說明計算方式"
-                    ></textarea>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <!-- Section E-1/E-2: Risk Section -->
+            <RiskSection
+              v-model:e1-risk-description="responseData.e1_risk_description"
+              v-model:e2-risk-probability="responseData.e2_risk_probability"
+              v-model:e2-risk-impact="responseData.e2_risk_impact"
+              v-model:e2-risk-calculation="responseData.e2_risk_calculation"
+              :probability-options="probabilityScaleOptions"
+              :impact-options="impactScaleOptions"
+            />
 
-            <!-- Section F-1: 相關機會 -->
-            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 rounded-2xl">
-              <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center space-x-3">
-                  <span class="font-bold text-gray-900 dark:text-white text-xl">相關機會</span>
-                  <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 px-2 py-1 rounded text-base font-medium flex items-center">F-1</span>
-                  <div
-                    class="relative group w-5 h-5 ml-2 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-serif font-bold cursor-pointer hover:scale-110 transition-transform duration-200"
-                  >
-                    <span class="italic">i</span>
-                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
-                      相關機會說明：企業可能的機會評估相關資訊
-                      <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800 dark:border-t-gray-700"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="space-y-4">
-                <p class="text-base text-gray-600 dark:text-gray-400">公司未來潛在相關機會營清說明，未來潛在機會（收入增加）、費用減少於收益等不會定</p>
-                <div>
-                  <label class="text-gray-600 dark:text-gray-400 mt-6 mb-1">機會描述</label>
-                  <textarea
-                    v-model="responseData.opportunityDescription"
-                    rows="3"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="請描述機會"
-                  ></textarea>
-                </div>
-                <div class="border border-gray-300 dark:border-gray-600 rounded-2xl p-4 space-y-3">
-                  <div class="grid grid-cols-2 gap-4">
-                    <div>
-                      <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*機會發生可能性</label>
-                      <select
-                        v-model="responseData.opportunityProbability"
-                        class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        <option value="">請選擇</option>
-                        <option v-for="option in probabilityScaleOptions" :key="option.value" :value="option.value">
-                          {{ option.label }}
-                        </option>
-                      </select>
-                    </div>
-                    <div>
-                      <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*機會發生衝擊程度</label>
-                      <select
-                        v-model="responseData.opportunityImpact"
-                        class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        <option value="">請選擇</option>
-                        <option v-for="option in impactScaleOptions" :key="option.value" :value="option.value">
-                          {{ option.label }}
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <label class="flex items-center text-base text-gray-600 dark:text-gray-400 mb-1">*計算說明</label>
-                    <textarea
-                      v-model="responseData.opportunityCalculation"
-                      rows="3"
-                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="請說明計算方式"
-                    ></textarea>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <!-- Section F-1/F-2: Opportunity Section -->
+            <OpportunitySection
+              v-model:f1-opportunity-description="responseData.f1_opportunity_description"
+              v-model:f2-opportunity-probability="responseData.f2_opportunity_probability"
+              v-model:f2-opportunity-impact="responseData.f2_opportunity_impact"
+              v-model:f2-opportunity-calculation="responseData.f2_opportunity_calculation"
+              :probability-options="probabilityScaleOptions"
+              :impact-options="impactScaleOptions"
+            />
+          </div>
 
-            <!-- Section G-1: 對外負面衝擊 -->
-            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 rounded-2xl">
-              <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center space-x-3">
-                  <span class="font-bold text-gray-900 dark:text-white text-xl">對外負面衝擊</span>
-                  <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 px-2 py-1 rounded text-base font-medium flex items-center">G-1</span>
-                  <div
-                    class="relative group w-5 h-5 ml-2 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-serif font-bold cursor-pointer hover:scale-110 transition-transform duration-200"
-                  >
-                    <span class="italic">i</span>
-                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
-                      對外負面衝擊說明：企業對外部環境可能造成的負面影響
-                      <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800 dark:border-t-gray-700"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="space-y-4">
-                <div>
-                  <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">負面衝擊程度</label>
-                  <select
-                    v-model="responseData.negativeImpactLevel"
-                    class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">請選擇</option>
-                    <option value="level-1">等級1 - 極輕微</option>
-                    <option value="level-2">等級2 - 輕微</option>
-                    <option value="level-3">等級3 - 中等</option>
-                    <option value="level-4">等級4 - 嚴重</option>
-                    <option value="level-5">等級5 - 極嚴重</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">評分說明</label>
-                  <textarea
-                    v-model="responseData.negativeImpactDescription"
-                    rows="4"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="請說明負面衝擊"
-                  ></textarea>
-                </div>
-              </div>
-            </div>
+          <!-- Context Text for External Impact Assessment -->
+          <div class="bg-green-600 text-white px-6 py-3 rounded-2xl">
+            <span class="font-bold text-white text-xl">請依上述公司營點之進行或風險會環境,結合評估公司之營運程此議題可能造成的「對外」衝擊(對外部環境、環境、人群(含含責人補)之正/負面影響)</span>
+          </div>
 
-            <!-- Section H-1: 對外正面影響 -->
-            <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-6 rounded-2xl">
-              <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center space-x-3">
-                  <span class="font-bold text-gray-900 dark:text-white text-xl">對外正面影響</span>
-                  <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 px-2 py-1 rounded text-base font-medium flex items-center">H-1</span>
-                  <div
-                    class="relative group w-5 h-5 ml-2 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-serif font-bold cursor-pointer hover:scale-110 transition-transform duration-200"
-                  >
-                    <span class="italic">i</span>
-                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
-                      對外正面影響說明：企業對外部環境可能產生的正面影響
-                      <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800 dark:border-t-gray-700"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="space-y-4">
-                <div>
-                  <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">正面影響程度</label>
-                  <select
-                    v-model="responseData.positiveImpactLevel"
-                    class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">請選擇</option>
-                    <option value="level-1">等級1 - 極輕微</option>
-                    <option value="level-2">等級2 - 輕微</option>
-                    <option value="level-3">等級3 - 中等</option>
-                    <option value="level-4">等級4 - 嚴重</option>
-                    <option value="level-5">等級5 - 極嚴重</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">評分說明</label>
-                  <textarea
-                    v-model="responseData.positiveImpactDescription"
-                    rows="4"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="請說明正面影響"
-                  ></textarea>
-                </div>
-              </div>
-            </div>
+          <!-- Sections G, H in Grid Layout -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Section G-1: Negative Impact -->
+            <NegativeImpactSection
+              v-model:g1-negative-impact-level="responseData.g1_negative_impact_level"
+              v-model:g1-negative-impact-description="responseData.g1_negative_impact_description"
+            />
+
+            <!-- Section H-1: Positive Impact -->
+            <PositiveImpactSection
+              v-model:h1-positive-impact-level="responseData.h1_positive_impact_level"
+              v-model:h1-positive-impact-description="responseData.h1_positive_impact_description"
+            />
           </div>
 
           <!-- Action Buttons at Bottom -->
@@ -550,6 +366,10 @@ import {
   ChevronDownIcon
 } from '@heroicons/vue/24/outline'
 import ScaleViewerModal from '~/components/Scale/ScaleViewerModal.vue'
+import RiskSection from '~/components/RiskAssessment/RiskSection.vue'
+import OpportunitySection from '~/components/RiskAssessment/OpportunitySection.vue'
+import NegativeImpactSection from '~/components/RiskAssessment/NegativeImpactSection.vue'
+import PositiveImpactSection from '~/components/RiskAssessment/PositiveImpactSection.vue'
 import { useScaleManagement } from '~/composables/useScaleManagement'
 import apiClient from '~/utils/api.js'
 
@@ -611,18 +431,24 @@ const responseData = ref({
   counterActionChoice: 'yes',
   counterActionDescription: null,
   counterActionCost: null,
-  riskDescription: null,
-  riskProbability: null,
-  riskImpact: null,
-  riskCalculation: null,
-  opportunityDescription: null,
-  opportunityProbability: null,
-  opportunityImpact: null,
-  opportunityCalculation: null,
-  negativeImpactLevel: null,
-  negativeImpactDescription: null,
-  positiveImpactLevel: null,
-  positiveImpactDescription: null,
+  // E-1
+  e1_risk_description: null,
+  // E-2
+  e2_risk_probability: null,
+  e2_risk_impact: null,
+  e2_risk_calculation: null,
+  // F-1
+  f1_opportunity_description: null,
+  // F-2
+  f2_opportunity_probability: null,
+  f2_opportunity_impact: null,
+  f2_opportunity_calculation: null,
+  // G-1
+  g1_negative_impact_level: null,
+  g1_negative_impact_description: null,
+  // H-1
+  h1_positive_impact_level: null,
+  h1_positive_impact_description: null,
   answered_at: null,
   updated_at: null
 })
@@ -742,18 +568,24 @@ const loadResultData = async () => {
       counterActionChoice: fields.counterActionChoice || null,
       counterActionDescription: fields.counterActionDescription || null,
       counterActionCost: fields.counterActionCost || null,
-      riskDescription: fields.riskDescription || null,
-      riskProbability: fields.riskProbability || null,
-      riskImpact: fields.riskImpact || null,
-      riskCalculation: fields.riskCalculation || null,
-      opportunityDescription: fields.opportunityDescription || null,
-      opportunityProbability: fields.opportunityProbability || null,
-      opportunityImpact: fields.opportunityImpact || null,
-      opportunityCalculation: fields.opportunityCalculation || null,
-      negativeImpactLevel: fields.negativeImpactLevel || null,
-      negativeImpactDescription: fields.negativeImpactDescription || null,
-      positiveImpactLevel: fields.positiveImpactLevel || null,
-      positiveImpactDescription: fields.positiveImpactDescription || null,
+      // E-1
+      e1_risk_description: fields.e1_risk_description || null,
+      // E-2
+      e2_risk_probability: fields.e2_risk_probability || null,
+      e2_risk_impact: fields.e2_risk_impact || null,
+      e2_risk_calculation: fields.e2_risk_calculation || null,
+      // F-1
+      f1_opportunity_description: fields.f1_opportunity_description || null,
+      // F-2
+      f2_opportunity_probability: fields.f2_opportunity_probability || null,
+      f2_opportunity_impact: fields.f2_opportunity_impact || null,
+      f2_opportunity_calculation: fields.f2_opportunity_calculation || null,
+      // G-1
+      g1_negative_impact_level: fields.g1_negative_impact_level || null,
+      g1_negative_impact_description: fields.g1_negative_impact_description || null,
+      // H-1
+      h1_positive_impact_level: fields.h1_positive_impact_level || null,
+      h1_positive_impact_description: fields.h1_positive_impact_description || null,
       answered_at: firstResponse.answered_at || null,
       updated_at: firstResponse.updated_at || null
     }
@@ -805,18 +637,24 @@ const saveData = async () => {
       d_counter_action_choice: responseData.value.counterActionChoice,
       d_counter_action_description: responseData.value.counterActionDescription,
       d_counter_action_cost: responseData.value.counterActionCost,
-      e1_risk_description: responseData.value.riskDescription,
-      e1_risk_probability: responseData.value.riskProbability,
-      e1_risk_impact: responseData.value.riskImpact,
-      e1_risk_calculation: responseData.value.riskCalculation,
-      f1_opportunity_description: responseData.value.opportunityDescription,
-      f1_opportunity_probability: responseData.value.opportunityProbability,
-      f1_opportunity_impact: responseData.value.opportunityImpact,
-      f1_opportunity_calculation: responseData.value.opportunityCalculation,
-      g1_negative_impact_level: responseData.value.negativeImpactLevel,
-      g1_negative_impact_description: responseData.value.negativeImpactDescription,
-      h1_positive_impact_level: responseData.value.positiveImpactLevel,
-      h1_positive_impact_description: responseData.value.positiveImpactDescription
+      // E-1
+      e1_risk_description: responseData.value.e1_risk_description,
+      // E-2
+      e2_risk_probability: responseData.value.e2_risk_probability,
+      e2_risk_impact: responseData.value.e2_risk_impact,
+      e2_risk_calculation: responseData.value.e2_risk_calculation,
+      // F-1
+      f1_opportunity_description: responseData.value.f1_opportunity_description,
+      // F-2
+      f2_opportunity_probability: responseData.value.f2_opportunity_probability,
+      f2_opportunity_impact: responseData.value.f2_opportunity_impact,
+      f2_opportunity_calculation: responseData.value.f2_opportunity_calculation,
+      // G-1
+      g1_negative_impact_level: responseData.value.g1_negative_impact_level,
+      g1_negative_impact_description: responseData.value.g1_negative_impact_description,
+      // H-1
+      h1_positive_impact_level: responseData.value.h1_positive_impact_level,
+      h1_positive_impact_description: responseData.value.h1_positive_impact_description
     }
 
     // 呼叫更新 API

@@ -38,6 +38,15 @@
       <template #actions>
         <div class="flex gap-2">
           <button
+            @click="showExportModal = true"
+            class="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
+          >
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            匯出 Excel
+          </button>
+          <button
             @click="showColumnSelector = true"
             class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
           >
@@ -128,6 +137,66 @@
         </div>
       </template>
     </DataTable>
+
+    <!-- Export Format Modal -->
+    <div v-if="showExportModal" class="fixed inset-0 z-50 overflow-y-auto">
+      <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <!-- Background overlay -->
+        <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" @click="showExportModal = false"></div>
+
+        <!-- Modal panel -->
+        <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+          <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+                選擇匯出格式
+              </h3>
+            </div>
+
+            <div class="space-y-4">
+              <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors" @click="exportData('individual')">
+                <div class="flex items-start">
+                  <div class="flex-1">
+                    <h4 class="text-base font-semibold text-gray-900 dark:text-white mb-2">個別填寫</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">匯出目前平台上的所有填寫內容，每個人的回答各占一列</p>
+                    <ul class="mt-2 text-sm text-gray-500 dark:text-gray-400 list-disc list-inside">
+                      <li>包含所有填答者的詳細資料</li>
+                      <li>顯示部門、姓名等個人資訊</li>
+                      <li>保留所有原始填答內容</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors" @click="exportData('merged')">
+                <div class="flex items-start">
+                  <div class="flex-1">
+                    <h4 class="text-base font-semibold text-gray-900 dark:text-white mb-2">合併總表</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">將同一題目的多人回答合併成一列，並自動計算平均值</p>
+                    <ul class="mt-2 text-sm text-gray-500 dark:text-gray-400 list-disc list-inside">
+                      <li>文字欄位：附上 &lt;部門/姓名&gt; 標記</li>
+                      <li>E2/F2 風險可能性：取平均值</li>
+                      <li>E2/F2 風險衝擊程度：取最大值</li>
+                      <li>G1/H1 影響程度：取平均值</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button
+              type="button"
+              @click="showExportModal = false"
+              class="w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:w-auto sm:text-sm"
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Column Selector Modal -->
     <div v-if="showColumnSelector" class="fixed inset-0 z-50 overflow-y-auto">
@@ -241,6 +310,9 @@ const summary = ref({
 
 // Column selector
 const showColumnSelector = ref(false)
+
+// Export modal
+const showExportModal = ref(false)
 
 // 定義所有可用的欄位（按照英文代碼分組）
 const allColumns = [
@@ -398,6 +470,26 @@ const loadStatistics = async () => {
     }
   } finally {
     loading.value = false
+  }
+}
+
+// Export data
+const exportData = async (type) => {
+  try {
+    console.log('Exporting data with type:', type)
+
+    // 建立匯出 URL
+    const exportUrl = `/api/v1/question-management/assessment/${assessmentId.value}/export?type=${type}`
+
+    // 開啟新視窗下載檔案
+    window.open(exportUrl, '_blank')
+
+    // 關閉 Modal
+    showExportModal.value = false
+
+  } catch (err) {
+    console.error('Error exporting data:', err)
+    alert('匯出資料時發生錯誤，請稍後再試')
   }
 }
 

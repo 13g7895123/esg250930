@@ -250,6 +250,9 @@ $routes->group('api/v1/question-management', function($routes) {
     // Statistics Results
     $routes->get('assessment/(:num)/statistics-results', 'Api\V1\QuestionManagement\QuestionManagementController::getStatisticsResults/$1');
 
+    // Export Statistics
+    $routes->get('assessment/(:num)/export', 'Api\V1\QuestionManagement\QuestionManagementController::exportStatistics/$1');
+
     // Responses Management
     $routes->get('assessment/(:num)/responses', 'Api\V1\QuestionManagement\QuestionManagementController::getResponses/$1');
     $routes->post('assessment/(:num)/responses', 'Api\V1\QuestionManagement\QuestionManagementController::saveResponses/$1');

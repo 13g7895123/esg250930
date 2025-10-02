@@ -242,6 +242,20 @@ const refreshData = async () => {
 }
 
 const viewResults = async (assignment) => {
+  // 檢查使用者是否已填寫
+  if (assignment.status === 'not_started') {
+    // 使用者尚未填寫，顯示提示
+    const { $swal } = useNuxtApp()
+    $swal.fire({
+      icon: 'warning',
+      title: '系統提示',
+      text: '使用者尚未填寫該題目',
+      showConfirmButton: false,
+      timer: 1500
+    })
+    return
+  }
+
   // 導航到用戶結果頁面，顯示所有已填答的內容
   const assessmentId = route.params.id
   const companyId = assignment.company_id

@@ -246,7 +246,7 @@ export const useExternalUserStore = defineStore('externalUser', () => {
   }
 }, {
   persist: {
-    storage: sessionStorage,
+    storage: sessionStorage, // 使用 sessionStorage（當前瀏覽器分頁有效）
     pick: ['userInfo', 'token', 'internalUserId', 'isLoaded', 'lastUpdated'] // 持久化用戶相關字段
   }
 })

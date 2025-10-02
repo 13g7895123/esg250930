@@ -210,25 +210,33 @@ class QuestionResponseModel extends Model
 
         // 處理每筆回答資料
         foreach ($results as &$result) {
-            // 建構分離的回答物件
+            // 建構分離的回答物件 - 使用 snake_case 格式與前端一致
             $result['response_fields'] = [
+                // C區域
                 'riskEventChoice' => $result['c_risk_event_choice'] ?? null,
                 'riskEventDescription' => $result['c_risk_event_description'] ?? null,
+                // D區域
                 'counterActionChoice' => $result['d_counter_action_choice'] ?? null,
                 'counterActionDescription' => $result['d_counter_action_description'] ?? null,
                 'counterActionCost' => $result['d_counter_action_cost'] ?? null,
-                'riskDescription' => $result['e1_risk_description'] ?? null,
-                'riskProbability' => $result['e1_risk_probability'] ?? null,
-                'riskImpact' => $result['e1_risk_impact'] ?? null,
-                'riskCalculation' => $result['e1_risk_calculation'] ?? null,
-                'opportunityDescription' => $result['f1_opportunity_description'] ?? null,
-                'opportunityProbability' => $result['f1_opportunity_probability'] ?? null,
-                'opportunityImpact' => $result['f1_opportunity_impact'] ?? null,
-                'opportunityCalculation' => $result['f1_opportunity_calculation'] ?? null,
-                'negativeImpactLevel' => $result['g1_negative_impact_level'] ?? null,
-                'negativeImpactDescription' => $result['g1_negative_impact_description'] ?? null,
-                'positiveImpactLevel' => $result['h1_positive_impact_level'] ?? null,
-                'positiveImpactDescription' => $result['h1_positive_impact_description'] ?? null
+                // E-1 風險描述
+                'e1_risk_description' => $result['e1_risk_description'] ?? null,
+                // E-2 風險財務影響評估
+                'e2_risk_probability' => $result['e2_risk_probability'] ?? null,
+                'e2_risk_impact' => $result['e2_risk_impact'] ?? null,
+                'e2_risk_calculation' => $result['e2_risk_calculation'] ?? null,
+                // F-1 機會描述
+                'f1_opportunity_description' => $result['f1_opportunity_description'] ?? null,
+                // F-2 機會財務影響評估
+                'f2_opportunity_probability' => $result['f2_opportunity_probability'] ?? null,
+                'f2_opportunity_impact' => $result['f2_opportunity_impact'] ?? null,
+                'f2_opportunity_calculation' => $result['f2_opportunity_calculation'] ?? null,
+                // G-1 對外負面衝擊
+                'g1_negative_impact_level' => $result['g1_negative_impact_level'] ?? null,
+                'g1_negative_impact_description' => $result['g1_negative_impact_description'] ?? null,
+                // H-1 對外正面影響
+                'h1_positive_impact_level' => $result['h1_positive_impact_level'] ?? null,
+                'h1_positive_impact_description' => $result['h1_positive_impact_description'] ?? null
             ];
 
             // 解析 JSON 欄位
@@ -263,25 +271,33 @@ class QuestionResponseModel extends Model
             ->first();
 
         if ($result) {
-            // 建構分離的回答物件
+            // 建構分離的回答物件 - 使用 snake_case 格式與前端一致
             $result['response_fields'] = [
+                // C區域
                 'riskEventChoice' => $result['c_risk_event_choice'] ?? null,
                 'riskEventDescription' => $result['c_risk_event_description'] ?? null,
+                // D區域
                 'counterActionChoice' => $result['d_counter_action_choice'] ?? null,
                 'counterActionDescription' => $result['d_counter_action_description'] ?? null,
                 'counterActionCost' => $result['d_counter_action_cost'] ?? null,
-                'riskDescription' => $result['e1_risk_description'] ?? null,
-                'riskProbability' => $result['e1_risk_probability'] ?? null,
-                'riskImpact' => $result['e1_risk_impact'] ?? null,
-                'riskCalculation' => $result['e1_risk_calculation'] ?? null,
-                'opportunityDescription' => $result['f1_opportunity_description'] ?? null,
-                'opportunityProbability' => $result['f1_opportunity_probability'] ?? null,
-                'opportunityImpact' => $result['f1_opportunity_impact'] ?? null,
-                'opportunityCalculation' => $result['f1_opportunity_calculation'] ?? null,
-                'negativeImpactLevel' => $result['g1_negative_impact_level'] ?? null,
-                'negativeImpactDescription' => $result['g1_negative_impact_description'] ?? null,
-                'positiveImpactLevel' => $result['h1_positive_impact_level'] ?? null,
-                'positiveImpactDescription' => $result['h1_positive_impact_description'] ?? null
+                // E-1 風險描述
+                'e1_risk_description' => $result['e1_risk_description'] ?? null,
+                // E-2 風險財務影響評估
+                'e2_risk_probability' => $result['e2_risk_probability'] ?? null,
+                'e2_risk_impact' => $result['e2_risk_impact'] ?? null,
+                'e2_risk_calculation' => $result['e2_risk_calculation'] ?? null,
+                // F-1 機會描述
+                'f1_opportunity_description' => $result['f1_opportunity_description'] ?? null,
+                // F-2 機會財務影響評估
+                'f2_opportunity_probability' => $result['f2_opportunity_probability'] ?? null,
+                'f2_opportunity_impact' => $result['f2_opportunity_impact'] ?? null,
+                'f2_opportunity_calculation' => $result['f2_opportunity_calculation'] ?? null,
+                // G-1 對外負面衝擊
+                'g1_negative_impact_level' => $result['g1_negative_impact_level'] ?? null,
+                'g1_negative_impact_description' => $result['g1_negative_impact_description'] ?? null,
+                // H-1 對外正面影響
+                'h1_positive_impact_level' => $result['h1_positive_impact_level'] ?? null,
+                'h1_positive_impact_description' => $result['h1_positive_impact_description'] ?? null
             ];
 
             // 解析 JSON 欄位
@@ -344,25 +360,29 @@ class QuestionResponseModel extends Model
             $data['d_counter_action_description'] = $responseArray['counterActionDescription'] ?? null;
             $data['d_counter_action_cost'] = $responseArray['counterActionCost'] ?? null;
 
-            // E-1區域
-            $data['e1_risk_description'] = $responseArray['riskDescription'] ?? null;
-            $data['e1_risk_probability'] = $responseArray['riskProbability'] ?? null;
-            $data['e1_risk_impact'] = $responseArray['riskImpact'] ?? null;
-            $data['e1_risk_calculation'] = $responseArray['riskCalculation'] ?? null;
+            // E-1區域 - 接受兩種格式以保持相容性
+            $data['e1_risk_description'] = $responseArray['e1_risk_description'] ?? $responseArray['riskDescription'] ?? null;
 
-            // F-1區域
-            $data['f1_opportunity_description'] = $responseArray['opportunityDescription'] ?? null;
-            $data['f1_opportunity_probability'] = $responseArray['opportunityProbability'] ?? null;
-            $data['f1_opportunity_impact'] = $responseArray['opportunityImpact'] ?? null;
-            $data['f1_opportunity_calculation'] = $responseArray['opportunityCalculation'] ?? null;
+            // E-2區域 - 接受兩種格式以保持相容性
+            $data['e2_risk_probability'] = $responseArray['e2_risk_probability'] ?? $responseArray['riskProbability'] ?? null;
+            $data['e2_risk_impact'] = $responseArray['e2_risk_impact'] ?? $responseArray['riskImpact'] ?? null;
+            $data['e2_risk_calculation'] = $responseArray['e2_risk_calculation'] ?? $responseArray['riskCalculation'] ?? null;
 
-            // G-1區域
-            $data['g1_negative_impact_level'] = $responseArray['negativeImpactLevel'] ?? null;
-            $data['g1_negative_impact_description'] = $responseArray['negativeImpactDescription'] ?? null;
+            // F-1區域 - 接受兩種格式以保持相容性
+            $data['f1_opportunity_description'] = $responseArray['f1_opportunity_description'] ?? $responseArray['opportunityDescription'] ?? null;
 
-            // H-1區域
-            $data['h1_positive_impact_level'] = $responseArray['positiveImpactLevel'] ?? null;
-            $data['h1_positive_impact_description'] = $responseArray['positiveImpactDescription'] ?? null;
+            // F-2區域 - 接受兩種格式以保持相容性
+            $data['f2_opportunity_probability'] = $responseArray['f2_opportunity_probability'] ?? $responseArray['opportunityProbability'] ?? null;
+            $data['f2_opportunity_impact'] = $responseArray['f2_opportunity_impact'] ?? $responseArray['opportunityImpact'] ?? null;
+            $data['f2_opportunity_calculation'] = $responseArray['f2_opportunity_calculation'] ?? $responseArray['opportunityCalculation'] ?? null;
+
+            // G-1區域 - 接受兩種格式以保持相容性
+            $data['g1_negative_impact_level'] = $responseArray['g1_negative_impact_level'] ?? $responseArray['negativeImpactLevel'] ?? null;
+            $data['g1_negative_impact_description'] = $responseArray['g1_negative_impact_description'] ?? $responseArray['negativeImpactDescription'] ?? null;
+
+            // H-1區域 - 接受兩種格式以保持相容性
+            $data['h1_positive_impact_level'] = $responseArray['h1_positive_impact_level'] ?? $responseArray['positiveImpactLevel'] ?? null;
+            $data['h1_positive_impact_description'] = $responseArray['h1_positive_impact_description'] ?? $responseArray['positiveImpactDescription'] ?? null;
         }
 
         if ($existingResponse) {

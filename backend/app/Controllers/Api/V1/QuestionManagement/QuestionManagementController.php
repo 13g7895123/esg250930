@@ -12,6 +12,11 @@ use App\Models\QuestionManagement\QuestionResponseModel;
 use App\Models\PersonnelAssignmentModel;
 use App\Models\ExternalPersonnelModel;
 use CodeIgniter\HTTP\ResponseInterface;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 /**
  * 題項管理控制器
@@ -611,8 +616,12 @@ class QuestionManagementController extends BaseController
                 ]);
             }
 
-            // 查詢單一內容項目
-            $content = $this->contentModel->find($contentId);
+            // 查詢單一內容項目，並 JOIN assessment 以取得 company_id
+            $content = $this->contentModel
+                ->select('question_contents.*, company_assessments.company_id, company_assessments.id as assessment_id')
+                ->join('company_assessments', 'company_assessments.id = question_contents.assessment_id', 'left')
+                ->where('question_contents.id', $contentId)
+                ->first();
 
             if (!$content) {
                 return $this->response->setStatusCode(404)->setJSON([
@@ -1423,11 +1432,34 @@ class QuestionManagementController extends BaseController
                 ]);
             }
 
-            // 解析 JSON 格式的回答值
-            $responseValue = null;
-            if (!empty($response['response_value'])) {
-                $responseValue = json_decode($response['response_value'], true);
-            }
+            // 建構回答值物件 - 從分離的欄位組合成前端期望的格式
+            $responseValue = [
+                // C區域
+                'riskEventChoice' => $response['c_risk_event_choice'] ?? null,
+                'riskEventDescription' => $response['c_risk_event_description'] ?? null,
+                // D區域
+                'counterActionChoice' => $response['d_counter_action_choice'] ?? null,
+                'counterActionDescription' => $response['d_counter_action_description'] ?? null,
+                'counterActionCost' => $response['d_counter_action_cost'] ?? null,
+                // E-1 風險描述
+                'e1_risk_description' => $response['e1_risk_description'] ?? null,
+                // E-2 風險財務影響評估
+                'e2_risk_probability' => $response['e2_risk_probability'] ?? null,
+                'e2_risk_impact' => $response['e2_risk_impact'] ?? null,
+                'e2_risk_calculation' => $response['e2_risk_calculation'] ?? null,
+                // F-1 機會描述
+                'f1_opportunity_description' => $response['f1_opportunity_description'] ?? null,
+                // F-2 機會財務影響評估
+                'f2_opportunity_probability' => $response['f2_opportunity_probability'] ?? null,
+                'f2_opportunity_impact' => $response['f2_opportunity_impact'] ?? null,
+                'f2_opportunity_calculation' => $response['f2_opportunity_calculation'] ?? null,
+                // G-1 對外負面衝擊
+                'g1_negative_impact_level' => $response['g1_negative_impact_level'] ?? null,
+                'g1_negative_impact_description' => $response['g1_negative_impact_description'] ?? null,
+                // H-1 對外正面影響
+                'h1_positive_impact_level' => $response['h1_positive_impact_level'] ?? null,
+                'h1_positive_impact_description' => $response['h1_positive_impact_description'] ?? null
+            ];
 
             return $this->response->setJSON([
                 'success' => true,
@@ -1711,5 +1743,452 @@ class QuestionManagementController extends BaseController
                 'message' => '取得量表資料時發生錯誤: ' . $e->getMessage()
             ]);
         }
+    }
+
+    /**
+     * 匯出評估統計資料為 Excel (CSV格式)
+     * GET /api/v1/question-management/assessment/{assessmentId}/export
+     *
+     * @param int|null $assessmentId 評估記錄ID
+     * @return ResponseInterface
+     */
+    public function exportStatistics($assessmentId = null)
+    {
+        try {
+            if (!$assessmentId) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '評估記錄ID為必填項目'
+                ]);
+            }
+
+            // 取得匯出類型：individual (個別填寫) 或 merged (合併總表)
+            $exportType = $this->request->getGet('type') ?? 'individual';
+
+            // 驗證評估記錄是否存在
+            $assessment = $this->assessmentModel->find($assessmentId);
+            if (!$assessment) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '找不到指定的評估記錄'
+                ]);
+            }
+
+            // 取得所有內容項目
+            $contents = $this->contentModel->getContentsByAssessment($assessmentId);
+            $contentMap = [];
+            foreach ($contents as $content) {
+                $contentMap[$content['id']] = $content;
+            }
+
+            // 取得所有回答記錄
+            $allResponses = $this->responseModel->where('assessment_id', $assessmentId)->findAll();
+
+            if ($exportType === 'individual') {
+                return $this->exportIndividual($assessment, $contentMap, $allResponses);
+            } else {
+                return $this->exportMerged($assessment, $contentMap, $allResponses);
+            }
+
+        } catch (\Exception $e) {
+            log_message('error', 'QuestionManagementController::exportStatistics - ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '匯出資料時發生錯誤: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * 個別填寫格式匯出
+     */
+    private function exportIndividual($assessment, $contentMap, $allResponses)
+    {
+        $csvData = [];
+
+        // CSV 標題行
+        $headers = [
+            '編號', '部門', '姓名', '風險類別', '風險主題', '風險因子', '描述',
+            'C風險事件', 'C風險事件描述',
+            'D因應行動', 'D因應行動描述', 'D因應行動成本',
+            'E1風險描述',
+            'E2風險可能性', 'E2風險衝擊', 'E2計算說明',
+            'F1機會描述',
+            'F2機會可能性', 'F2機會衝擊', 'F2計算說明',
+            'G1負面衝擊程度', 'G1評分說明',
+            'H1正面影響程度', 'H1評分說明',
+            '填答時間'
+        ];
+        $csvData[] = $headers;
+
+        // 組織資料
+        $results = [];
+        foreach ($allResponses as $response) {
+            $contentId = $response['question_content_id'];
+            $userId = $response['answered_by'];
+
+            $content = $contentMap[$contentId] ?? null;
+            if (!$content) continue;
+
+            $personnelInfo = $this->getPersonnelInfo($userId, $assessment['company_id'], $assessment['id']);
+
+            $row = [
+                $content['sort_order'] ?? 0,
+                $personnelInfo['department'] ?? '',
+                $personnelInfo['user_name'] ?? '',
+                $content['category_name'] ?? '',
+                $content['topic_name'] ?? '',
+                $content['factor_name'] ?? '',
+                strip_tags($content['description'] ?? ''),
+
+                $response['c_risk_event_choice'] === 'yes' ? '是' : ($response['c_risk_event_choice'] === 'no' ? '否' : ''),
+                strip_tags($response['c_risk_event_description'] ?? ''),
+
+                $response['d_counter_action_choice'] === 'yes' ? '是' : ($response['d_counter_action_choice'] === 'no' ? '否' : ''),
+                strip_tags($response['d_counter_action_description'] ?? ''),
+                $response['d_counter_action_cost'] ?? '',
+
+                strip_tags($response['e1_risk_description'] ?? ''),
+                $response['e2_risk_probability'] ?? '',
+                $response['e2_risk_impact'] ?? '',
+                strip_tags($response['e2_risk_calculation'] ?? ''),
+
+                strip_tags($response['f1_opportunity_description'] ?? ''),
+                $response['f2_opportunity_probability'] ?? '',
+                $response['f2_opportunity_impact'] ?? '',
+                strip_tags($response['f2_opportunity_calculation'] ?? ''),
+
+                $response['g1_negative_impact_level'] ?? '',
+                strip_tags($response['g1_negative_impact_description'] ?? ''),
+
+                $response['h1_positive_impact_level'] ?? '',
+                strip_tags($response['h1_positive_impact_description'] ?? ''),
+
+                $response['answered_at'] ?? ''
+            ];
+
+            $results[] = [
+                'order' => $content['sort_order'] ?? 0,
+                'department' => $personnelInfo['department'] ?? '',
+                'row' => $row
+            ];
+        }
+
+        // 排序
+        usort($results, function($a, $b) {
+            if ($a['order'] != $b['order']) {
+                return $a['order'] - $b['order'];
+            }
+            return strcmp($a['department'], $b['department']);
+        });
+
+        foreach ($results as $item) {
+            $csvData[] = $item['row'];
+        }
+
+        return $this->outputExcel($csvData, $assessment, '個別填寫');
+    }
+
+    /**
+     * 合併總表格式匯出
+     */
+    private function exportMerged($assessment, $contentMap, $allResponses)
+    {
+        $csvData = [];
+
+        // CSV 標題行
+        $headers = [
+            '編號', '風險類別', '風險主題', '風險因子', '描述',
+            'C風險事件', 'C風險事件描述',
+            'D因應行動', 'D因應行動描述', 'D因應行動成本',
+            'E1風險描述',
+            'E2風險可能性(平均)', 'E2風險衝擊(最大)', 'E2計算說明',
+            'F1機會描述',
+            'F2機會可能性(平均)', 'F2機會衝擊(最大)', 'F2計算說明',
+            'G1負面衝擊程度(平均)', 'G1評分說明',
+            'H1正面影響程度(平均)', 'H1評分說明'
+        ];
+        $csvData[] = $headers;
+
+        // 按 content_id 分組
+        $grouped = [];
+        foreach ($allResponses as $response) {
+            $contentId = $response['question_content_id'];
+            if (!isset($grouped[$contentId])) {
+                $grouped[$contentId] = [];
+            }
+            $grouped[$contentId][] = $response;
+        }
+
+        // 處理每個題目
+        $results = [];
+        foreach ($grouped as $contentId => $responses) {
+            $content = $contentMap[$contentId] ?? null;
+            if (!$content) continue;
+
+            // 收集人員資訊
+            $personnelNames = [];
+            foreach ($responses as $response) {
+                $userId = $response['answered_by'];
+                $personnelInfo = $this->getPersonnelInfo($userId, $assessment['company_id'], $assessment['id']);
+                $deptName = $personnelInfo['department'] ?? '';
+                $userName = $personnelInfo['user_name'] ?? '';
+                if ($deptName && $userName) {
+                    $personnelNames[] = "<{$deptName}/{$userName}>";
+                }
+            }
+
+            // 合併文字欄位 (C, D, E1, E2計算, F1, F2計算, G1, H1)
+            $cDescriptions = [];
+            $dDescriptions = [];
+            $e1Descriptions = [];
+            $e2Calculations = [];
+            $f1Descriptions = [];
+            $f2Calculations = [];
+            $g1Descriptions = [];
+            $h1Descriptions = [];
+
+            // 數值欄位 (用於計算平均/最大)
+            $e2Probabilities = [];
+            $e2Impacts = [];
+            $f2Probabilities = [];
+            $f2Impacts = [];
+            $g1Levels = [];
+            $h1Levels = [];
+
+            foreach ($responses as $idx => $response) {
+                $personnelLabel = $personnelNames[$idx] ?? '';
+
+                if (!empty($response['c_risk_event_description'])) {
+                    $cDescriptions[] = strip_tags($response['c_risk_event_description']) . ' ' . $personnelLabel;
+                }
+                if (!empty($response['d_counter_action_description'])) {
+                    $dDescriptions[] = strip_tags($response['d_counter_action_description']) . ' ' . $personnelLabel;
+                }
+                if (!empty($response['e1_risk_description'])) {
+                    $e1Descriptions[] = strip_tags($response['e1_risk_description']) . ' ' . $personnelLabel;
+                }
+                if (!empty($response['e2_risk_calculation'])) {
+                    $e2Calculations[] = strip_tags($response['e2_risk_calculation']) . ' ' . $personnelLabel;
+                }
+                if (!empty($response['f1_opportunity_description'])) {
+                    $f1Descriptions[] = strip_tags($response['f1_opportunity_description']) . ' ' . $personnelLabel;
+                }
+                if (!empty($response['f2_opportunity_calculation'])) {
+                    $f2Calculations[] = strip_tags($response['f2_opportunity_calculation']) . ' ' . $personnelLabel;
+                }
+                if (!empty($response['g1_negative_impact_description'])) {
+                    $g1Descriptions[] = strip_tags($response['g1_negative_impact_description']) . ' ' . $personnelLabel;
+                }
+                if (!empty($response['h1_positive_impact_description'])) {
+                    $h1Descriptions[] = strip_tags($response['h1_positive_impact_description']) . ' ' . $personnelLabel;
+                }
+
+                // 收集數值
+                if (!empty($response['e2_risk_probability']) && is_numeric($response['e2_risk_probability'])) {
+                    $e2Probabilities[] = floatval($response['e2_risk_probability']);
+                }
+                if (!empty($response['e2_risk_impact']) && is_numeric($response['e2_risk_impact'])) {
+                    $e2Impacts[] = floatval($response['e2_risk_impact']);
+                }
+                if (!empty($response['f2_opportunity_probability']) && is_numeric($response['f2_opportunity_probability'])) {
+                    $f2Probabilities[] = floatval($response['f2_opportunity_probability']);
+                }
+                if (!empty($response['f2_opportunity_impact']) && is_numeric($response['f2_opportunity_impact'])) {
+                    $f2Impacts[] = floatval($response['f2_opportunity_impact']);
+                }
+
+                // G1, H1 的等級需要轉換成數字再計算
+                $g1Level = $this->levelToNumber($response['g1_negative_impact_level'] ?? '');
+                if ($g1Level > 0) $g1Levels[] = $g1Level;
+
+                $h1Level = $this->levelToNumber($response['h1_positive_impact_level'] ?? '');
+                if ($h1Level > 0) $h1Levels[] = $h1Level;
+            }
+
+            // 計算平均值和最大值
+            $e2ProbAvg = !empty($e2Probabilities) ? round(array_sum($e2Probabilities) / count($e2Probabilities), 2) : '';
+            $e2ImpactMax = !empty($e2Impacts) ? max($e2Impacts) : '';
+            $f2ProbAvg = !empty($f2Probabilities) ? round(array_sum($f2Probabilities) / count($f2Probabilities), 2) : '';
+            $f2ImpactMax = !empty($f2Impacts) ? max($f2Impacts) : '';
+            $g1Avg = !empty($g1Levels) ? $this->numberToLevel(round(array_sum($g1Levels) / count($g1Levels))) : '';
+            $h1Avg = !empty($h1Levels) ? $this->numberToLevel(round(array_sum($h1Levels) / count($h1Levels))) : '';
+
+            // 組合文字欄位
+            $cChoice = $responses[0]['c_risk_event_choice'] ?? '';
+            $dChoice = $responses[0]['d_counter_action_choice'] ?? '';
+            $dCost = $responses[0]['d_counter_action_cost'] ?? '';
+
+            $row = [
+                $content['sort_order'] ?? 0,
+                $content['category_name'] ?? '',
+                $content['topic_name'] ?? '',
+                $content['factor_name'] ?? '',
+                strip_tags($content['description'] ?? ''),
+
+                $cChoice === 'yes' ? '是' : ($cChoice === 'no' ? '否' : ''),
+                implode('; ', $cDescriptions),
+
+                $dChoice === 'yes' ? '是' : ($dChoice === 'no' ? '否' : ''),
+                implode('; ', $dDescriptions),
+                $dCost,
+
+                implode('; ', $e1Descriptions),
+                $e2ProbAvg,
+                $e2ImpactMax,
+                implode('; ', $e2Calculations),
+
+                implode('; ', $f1Descriptions),
+                $f2ProbAvg,
+                $f2ImpactMax,
+                implode('; ', $f2Calculations),
+
+                $g1Avg,
+                implode('; ', $g1Descriptions),
+
+                $h1Avg,
+                implode('; ', $h1Descriptions),
+            ];
+
+            $results[] = [
+                'order' => $content['sort_order'] ?? 0,
+                'row' => $row
+            ];
+        }
+
+        // 排序
+        usort($results, function($a, $b) {
+            return $a['order'] - $b['order'];
+        });
+
+        foreach ($results as $item) {
+            $csvData[] = $item['row'];
+        }
+
+        return $this->outputExcel($csvData, $assessment, '合併總表');
+    }
+
+    /**
+     * 將等級轉換為數字 (用於計算平均值)
+     */
+    private function levelToNumber($level)
+    {
+        $mapping = [
+            'level-1' => 1,
+            'level-2' => 2,
+            'level-3' => 3,
+            'level-4' => 4,
+            'level-5' => 5
+        ];
+        return $mapping[$level] ?? 0;
+    }
+
+    /**
+     * 將數字轉換回等級
+     */
+    private function numberToLevel($number)
+    {
+        $mapping = [
+            1 => 'level-1',
+            2 => 'level-2',
+            3 => 'level-3',
+            4 => 'level-4',
+            5 => 'level-5'
+        ];
+        return $mapping[$number] ?? '';
+    }
+
+    /**
+     * 輸出 Excel 檔案 (.xlsx 格式)
+     */
+    private function outputExcel($data, $assessment, $sheetName = '統計資料')
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle($sheetName);
+
+        // 寫入資料
+        $rowIndex = 1;
+        foreach ($data as $rowData) {
+            $colIndex = 'A';
+            foreach ($rowData as $cellValue) {
+                $sheet->setCellValue($colIndex . $rowIndex, $cellValue);
+                $colIndex++;
+            }
+            $rowIndex++;
+        }
+
+        // 美化標題列（第一列）
+        $lastColumn = chr(ord('A') + count($data[0]) - 1);
+        $headerRange = 'A1:' . $lastColumn . '1';
+
+        // 標題樣式
+        $sheet->getStyle($headerRange)->applyFromArray([
+            'font' => [
+                'bold' => true,
+                'color' => ['rgb' => 'FFFFFF'],
+                'size' => 12
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '4472C4'] // 藍色背景
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => '000000']
+                ]
+            ]
+        ]);
+
+        // 設定所有儲存格邊框
+        $dataRange = 'A1:' . $lastColumn . ($rowIndex - 1);
+        $sheet->getStyle($dataRange)->applyFromArray([
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => 'CCCCCC']
+                ]
+            ]
+        ]);
+
+        // 設定資料列樣式（斑馬紋）
+        for ($i = 2; $i < $rowIndex; $i++) {
+            if ($i % 2 == 0) {
+                $sheet->getStyle('A' . $i . ':' . $lastColumn . $i)->applyFromArray([
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'F2F2F2'] // 淺灰色背景
+                    ]
+                ]);
+            }
+        }
+
+        // 自動調整欄寬
+        foreach (range('A', $lastColumn) as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // 凍結首列
+        $sheet->freezePane('A2');
+
+        // 設定檔案名稱
+        $filename = '評估統計_' . ($assessment['template_version'] ?? '預設範本') . '_' . date('Y-m-d_His') . '.xlsx';
+
+        // 輸出檔案
+        $writer = new Xlsx($spreadsheet);
+
+        // 設定回應標頭
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        // 輸出到 php://output
+        $writer->save('php://output');
+        exit;
     }
 }

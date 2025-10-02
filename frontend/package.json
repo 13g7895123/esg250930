@@ -12,7 +12,10 @@
     "prepare": "nuxt prepare",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug"
   },
   "dependencies": {
     "@heroicons/vue": "^2.1.5",
@@ -24,14 +27,18 @@
     "pinia-plugin-persistedstate": "^4.5.0",
     "sweetalert2": "^11.23.0",
     "vue": "latest",
-    "vue3-apexcharts": "^1.8.0"
+    "vue3-apexcharts": "^1.8.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@nuxt/devtools": "^1.5.2",
     "@nuxt/kit": "^3.13.0",
+    "@playwright/test": "^1.55.1",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/test-utils": "^2.4.6",
     "happy-dom": "^18.0.1",
+    "jsdom": "^27.0.0",
+    "node-fetch": "^3.3.2",
     "typescript": "^5.6.3",
     "vitest": "^3.2.4"
   }

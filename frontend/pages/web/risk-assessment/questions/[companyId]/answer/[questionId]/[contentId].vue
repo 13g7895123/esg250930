@@ -229,162 +229,27 @@
 
         <!-- Sections E, F in Grid Layout -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Section E-1: 相關風險 -->
-          <div class="bg-white border border-gray-200 p-6 rounded-2xl">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center space-x-3">
-                <span class="font-bold text-gray-900 text-xl">相關風險</span>
-                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-base font-medium flex items-center">E-1</span>
-                <div
-                  class="relative group w-5 h-5 ml-2 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-serif font-bold cursor-pointer hover:scale-110 transition-transform duration-200"
-                >
-                  <span class="italic">i</span>
-                  <!-- Hover Tooltip -->
-                  <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
-                    {{ hoverTexts.E1 }}
-                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="space-y-4">
-              <p class="text-base text-gray-600">公司未來潛在相關風險營清說明，未來潛在風險（收入減少）、費用增加於損益</p>
-              <div>
-                <label class="text-gray-600 mt-6 mb-1">風險描述</label>
-                <textarea
-                  v-model="formData.riskDescription"
-                  rows="3"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="請輸入風險描述"
-                ></textarea>
-              </div>
+          <!-- Section E-1/E-2: Risk Section -->
+          <RiskSection
+            v-model:e1-risk-description="formData.e1_risk_description"
+            v-model:e2-risk-probability="formData.e2_risk_probability"
+            v-model:e2-risk-impact="formData.e2_risk_impact"
+            v-model:e2-risk-calculation="formData.e2_risk_calculation"
+            :probability-options="probabilityOptions"
+            :impact-options="impactOptions"
+            :disabled="isViewMode"
+          />
 
-              <!-- E-2 說明文字（在框框外面） -->
-              <div class="mb-3">
-                <p class="text-xl font-bold text-gray-900">
-                  請依上述公司盤點之風險情境評估一旦發生風險對公司之財務影響
-                  <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-sm font-medium ml-2">E-2</span>
-                </p>
-              </div>
-
-              <div class="border border-gray-300 rounded-2xl p-4 space-y-3">
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-base text-gray-600 mb-1">*風險發生可能性</label>
-                    <select
-                      v-model="formData.riskProbability"
-                      :disabled="isViewMode"
-                      class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    >
-                      <option value="" disabled>請選擇可能性等級</option>
-                      <option v-for="option in probabilityOptions" :key="option.value" :value="option.value">
-                        {{ option.label }}
-                      </option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="block text-base text-gray-600 mb-1">*風險發生衝擊程度</label>
-                    <select
-                      v-model="formData.riskImpact"
-                      class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    >
-                      <option value="" disabled>請選擇衝擊程度</option>
-                      <option v-for="option in impactOptions" :key="option.value" :value="option.value">
-                        {{ option.label }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label class="flex items-center text-base text-gray-600 mb-1">*計算說明</label>
-                  <textarea
-                    v-model="formData.riskCalculation"
-                    rows="3"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                    placeholder="請輸入風險計算說明"
-                  ></textarea>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Section F-1: 相關機會 -->
-          <div class="bg-white border border-gray-200 p-6 rounded-2xl">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center space-x-3">
-                <span class="font-bold text-gray-900 text-xl">相關機會</span>
-                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-base font-medium flex items-center">F-1</span>
-                <div
-                  class="relative group w-5 h-5 ml-2 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-serif font-bold cursor-pointer hover:scale-110 transition-transform duration-200"
-                >
-                  <span class="italic">i</span>
-                  <!-- Hover Tooltip -->
-                  <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
-                    {{ hoverTexts.F1 }}
-                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="space-y-4">
-              <p class="text-base text-gray-600">公司未來潛在相關機會營清說明，未來潛在機會（收入增加）、費用減少於收益等不會定</p>
-              <div>
-                <label class="text-gray-600 mt-6 mb-1">機會描述</label>
-                <textarea
-                  v-model="formData.opportunityDescription"
-                  rows="3"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="請輸入機會描述"
-                ></textarea>
-              </div>
-
-              <!-- F-2 說明文字（在框框外面） -->
-              <div class="mb-3">
-                <p class="text-xl font-bold text-gray-900">
-                  請依上述公司盤點之機會情境評估一旦發生機會對公司之財務影響
-                  <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-sm font-medium ml-2">F-2</span>
-                </p>
-              </div>
-
-              <div class="border border-gray-300 rounded-2xl p-4 space-y-3">
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-base text-gray-600 mb-1">*機會發生可能性</label>
-                    <select
-                      v-model="formData.opportunityProbability"
-                      class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    >
-                      <option value="" disabled>請選擇可能性等級</option>
-                      <option v-for="option in probabilityOptions" :key="option.value" :value="option.value">
-                        {{ option.label }}
-                      </option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="block text-base text-gray-600 mb-1">*機會發生衝擊程度</label>
-                    <select
-                      v-model="formData.opportunityImpact"
-                      class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    >
-                      <option value="" disabled>請選擇衝擊程度</option>
-                      <option v-for="option in impactOptions" :key="option.value" :value="option.value">
-                        {{ option.label }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label class="flex items-center text-base text-gray-600 mb-1">*計算說明</label>
-                  <textarea
-                    v-model="formData.opportunityCalculation"
-                    rows="3"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                    placeholder="請輸入機會計算說明"
-                  ></textarea>
-                </div>
-              </div>
-            </div>
-          </div>
+          <!-- Section F-1/F-2: Opportunity Section -->
+          <OpportunitySection
+            v-model:f1-opportunity-description="formData.f1_opportunity_description"
+            v-model:f2-opportunity-probability="formData.f2_opportunity_probability"
+            v-model:f2-opportunity-impact="formData.f2_opportunity_impact"
+            v-model:f2-opportunity-calculation="formData.f2_opportunity_calculation"
+            :probability-options="probabilityOptions"
+            :impact-options="impactOptions"
+            :disabled="isViewMode"
+          />
         </div>
 
         <!-- Context Text for External Impact Assessment -->
@@ -394,91 +259,19 @@
 
         <!-- Sections G, H in Grid Layout -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Section G-1: 對外負面衝擊 -->
-          <div class="bg-white border border-gray-200 p-6 rounded-2xl">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center space-x-3">
-                <span class="font-bold text-gray-900 text-xl">對外負面衝擊</span>
-                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-base font-medium flex items-center">G-1</span>
-                <div
-                  class="relative group w-5 h-5 ml-2 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-serif font-bold cursor-pointer hover:scale-110 transition-transform duration-200"
-                >
-                  <span class="italic">i</span>
-                  <!-- Hover Tooltip -->
-                  <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
-                    {{ hoverTexts.G1 }}
-                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="space-y-4">
-              <div>
-                <label class="block text-base text-gray-600 mb-1">負面衝擊程度</label>
-                <select
-                  v-model="formData.negativeImpactLevel"
-                  class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                >
-                  <option value="" disabled>請選擇衝擊程度</option>
-                  <option v-for="option in impactLevelOptions" :key="option.value" :value="option.value">
-                    {{ option.label }}
-                  </option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-base text-gray-600 mb-1">評分說明</label>
-                <textarea
-                  v-model="formData.negativeImpactDescription"
-                  rows="4"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                  placeholder="請輸入負面衝擊評分說明"
-                ></textarea>
-              </div>
-            </div>
-          </div>
+          <!-- Section G-1: Negative Impact -->
+          <NegativeImpactSection
+            v-model:g1-negative-impact-level="formData.g1_negative_impact_level"
+            v-model:g1-negative-impact-description="formData.g1_negative_impact_description"
+            :disabled="isViewMode"
+          />
 
-          <!-- Section H-1: 對外正面影響 -->
-          <div class="bg-white border border-gray-200 p-6 rounded-2xl">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center space-x-3">
-                <span class="font-bold text-gray-900 text-xl">對外正面影響</span>
-                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-base font-medium flex items-center">H-1</span>
-                <div
-                  class="relative group w-5 h-5 ml-2 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-serif font-bold cursor-pointer hover:scale-110 transition-transform duration-200"
-                >
-                  <span class="italic">i</span>
-                  <!-- Hover Tooltip -->
-                  <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
-                    {{ hoverTexts.H1 }}
-                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="space-y-4">
-              <div>
-                <label class="block text-base text-gray-600 mb-1">正面影響程度</label>
-                <select
-                  v-model="formData.positiveImpactLevel"
-                  class="w-full border border-gray-300 rounded-2xl px-3 py-2 text-center font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                >
-                  <option value="" disabled>請選擇影響程度</option>
-                  <option v-for="option in impactLevelOptions" :key="option.value" :value="option.value">
-                    {{ option.label }}
-                  </option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-base text-gray-600 mb-1">評分說明</label>
-                <textarea
-                  v-model="formData.positiveImpactDescription"
-                  rows="4"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                  placeholder="請輸入正面影響評分說明"
-                ></textarea>
-              </div>
-            </div>
-          </div>
+          <!-- Section H-1: Positive Impact -->
+          <PositiveImpactSection
+            v-model:h1-positive-impact-level="formData.h1_positive_impact_level"
+            v-model:h1-positive-impact-description="formData.h1_positive_impact_description"
+            :disabled="isViewMode"
+          />
         </div>
 
         <!-- Bottom Action Buttons -->
@@ -523,6 +316,10 @@ import {
 } from '@heroicons/vue/24/outline'
 import apiClient from '~/utils/api.js'
 import ScaleViewerModal from '~/components/Scale/ScaleViewerModal.vue'
+import RiskSection from '~/components/RiskAssessment/RiskSection.vue'
+import OpportunitySection from '~/components/RiskAssessment/OpportunitySection.vue'
+import NegativeImpactSection from '~/components/RiskAssessment/NegativeImpactSection.vue'
+import PositiveImpactSection from '~/components/RiskAssessment/PositiveImpactSection.vue'
 
 definePageMeta({
   middleware: 'auth'
@@ -559,6 +356,7 @@ const toggleSection = (sectionKey) => {
 // Probability Scale Modal state
 const showProbabilityScaleModal = ref(false)
 const isLoadingScales = ref(false)
+const isCompactMode = ref(false) // 答題模式不使用精簡模式
 
 // Scale data structures
 const probabilityScaleColumns = ref([])
@@ -583,25 +381,29 @@ const formData = ref({
   counterActionDescription: '',
   counterActionCost: '',
 
-  // E區域
-  riskDescription: '',
-  riskProbability: '',
-  riskImpact: '',
-  riskCalculation: '',
+  // E-1 區域
+  e1_risk_description: '',
 
-  // F區域
-  opportunityDescription: '',
-  opportunityProbability: '',
-  opportunityImpact: '',
-  opportunityCalculation: '',
+  // E-2 區域
+  e2_risk_probability: '',
+  e2_risk_impact: '',
+  e2_risk_calculation: '',
+
+  // F-1 區域
+  f1_opportunity_description: '',
+
+  // F-2 區域
+  f2_opportunity_probability: '',
+  f2_opportunity_impact: '',
+  f2_opportunity_calculation: '',
 
   // G區域
-  negativeImpactLevel: '',
-  negativeImpactDescription: '',
+  g1_negative_impact_level: '',
+  g1_negative_impact_description: '',
 
   // H區域
-  positiveImpactLevel: '',
-  positiveImpactDescription: ''
+  h1_positive_impact_level: '',
+  h1_positive_impact_description: ''
 })
 
 // Saving state
@@ -642,9 +444,18 @@ const loadQuestionData = async () => {
       const content = contentResponse.data.content
       formData.value.riskFactorDescription = content.a_content || ''
       formData.value.referenceText = content.b_content || ''
+      console.log('✅ 題目內容載入完成 (A, B 區段)')
     }
 
     // Load existing answer if any
+    console.log('🔍 嘗試載入現有答案...')
+    console.log('查詢參數:', { content_id: contentId, answered_by: externalUserStore.userId })
+
+    if (!externalUserStore.userId) {
+      console.warn('⚠️ userId 為空，無法載入現有答案')
+      return
+    }
+
     const responseResponse = await $fetch(`/api/v1/question-management/assessment/${questionId}/responses`, {
       query: {
         content_id: contentId,
@@ -652,16 +463,74 @@ const loadQuestionData = async () => {
       }
     })
 
+    console.log('API 回應:', responseResponse)
+
     if (responseResponse.success && responseResponse.data && responseResponse.data.length > 0) {
       const existingAnswer = responseResponse.data[0]
+      console.log('找到現有答案:', existingAnswer)
 
       // 使用分離的欄位資料
       if (existingAnswer.response_fields) {
-        Object.assign(formData.value, existingAnswer.response_fields)
+        console.log('response_fields:', existingAnswer.response_fields)
+
+        // 逐一設定每個欄位以確保響應式更新
+        const fields = existingAnswer.response_fields
+
+        // C 區域
+        if (fields.riskEventChoice !== undefined) formData.value.riskEventChoice = fields.riskEventChoice
+        if (fields.riskEventDescription !== undefined) formData.value.riskEventDescription = fields.riskEventDescription
+
+        // D 區域
+        if (fields.counterActionChoice !== undefined) formData.value.counterActionChoice = fields.counterActionChoice
+        if (fields.counterActionDescription !== undefined) formData.value.counterActionDescription = fields.counterActionDescription
+        if (fields.counterActionCost !== undefined) formData.value.counterActionCost = fields.counterActionCost
+
+        // E-1 區域
+        if (fields.e1_risk_description !== undefined) formData.value.e1_risk_description = fields.e1_risk_description
+
+        // E-2 區域
+        if (fields.e2_risk_probability !== undefined) formData.value.e2_risk_probability = fields.e2_risk_probability
+        if (fields.e2_risk_impact !== undefined) formData.value.e2_risk_impact = fields.e2_risk_impact
+        if (fields.e2_risk_calculation !== undefined) formData.value.e2_risk_calculation = fields.e2_risk_calculation
+
+        // F-1 區域
+        if (fields.f1_opportunity_description !== undefined) formData.value.f1_opportunity_description = fields.f1_opportunity_description
+
+        // F-2 區域
+        if (fields.f2_opportunity_probability !== undefined) formData.value.f2_opportunity_probability = fields.f2_opportunity_probability
+        if (fields.f2_opportunity_impact !== undefined) formData.value.f2_opportunity_impact = fields.f2_opportunity_impact
+        if (fields.f2_opportunity_calculation !== undefined) formData.value.f2_opportunity_calculation = fields.f2_opportunity_calculation
+
+        // G 區域
+        if (fields.g1_negative_impact_level !== undefined) formData.value.g1_negative_impact_level = fields.g1_negative_impact_level
+        if (fields.g1_negative_impact_description !== undefined) formData.value.g1_negative_impact_description = fields.g1_negative_impact_description
+
+        // H 區域
+        if (fields.h1_positive_impact_level !== undefined) formData.value.h1_positive_impact_level = fields.h1_positive_impact_level
+        if (fields.h1_positive_impact_description !== undefined) formData.value.h1_positive_impact_description = fields.h1_positive_impact_description
+
+        console.log('✅ 現有答案已載入到表單')
+        console.log('表單資料 E-1~H-1:')
+        console.log('  E-1 風險描述:', formData.value.e1_risk_description)
+        console.log('  E-2 風險可能性:', formData.value.e2_risk_probability)
+        console.log('  E-2 風險衝擊:', formData.value.e2_risk_impact)
+        console.log('  E-2 風險計算:', formData.value.e2_risk_calculation)
+        console.log('  F-1 機會描述:', formData.value.f1_opportunity_description)
+        console.log('  F-2 機會可能性:', formData.value.f2_opportunity_probability)
+        console.log('  F-2 機會衝擊:', formData.value.f2_opportunity_impact)
+        console.log('  F-2 機會計算:', formData.value.f2_opportunity_calculation)
+        console.log('  G-1 負面衝擊等級:', formData.value.g1_negative_impact_level)
+        console.log('  G-1 負面衝擊描述:', formData.value.g1_negative_impact_description)
+        console.log('  H-1 正面影響等級:', formData.value.h1_positive_impact_level)
+        console.log('  H-1 正面影響描述:', formData.value.h1_positive_impact_description)
+      } else {
+        console.warn('⚠️ response_fields 不存在')
       }
+    } else {
+      console.log('ℹ️ 沒有找到現有答案，這是新的填答')
     }
   } catch (error) {
-    console.error('Error loading question data:', error)
+    console.error('❌ 載入問題資料時發生錯誤:', error)
   }
 }
 
@@ -669,26 +538,26 @@ const loadQuestionData = async () => {
 const validateRequiredFields = () => {
   const errors = []
 
-  // 檢查 E-1 相關風險區域的必填欄位
-  if (!formData.value.riskProbability) {
-    errors.push('E-1 相關風險：風險發生可能性')
+  // 檢查 E-2 相關風險區域的必填欄位
+  if (!formData.value.e2_risk_probability) {
+    errors.push('E-2 相關風險：風險發生可能性')
   }
-  if (!formData.value.riskImpact) {
-    errors.push('E-1 相關風險：風險發生衝擊程度')
+  if (!formData.value.e2_risk_impact) {
+    errors.push('E-2 相關風險：風險發生衝擊程度')
   }
-  if (!formData.value.riskCalculation?.trim()) {
-    errors.push('E-1 相關風險：計算說明')
+  if (!formData.value.e2_risk_calculation?.trim()) {
+    errors.push('E-2 相關風險：計算說明')
   }
 
-  // 檢查 F-1 相關機會區域的必填欄位
-  if (!formData.value.opportunityProbability) {
-    errors.push('F-1 相關機會：機會發生可能性')
+  // 檢查 F-2 相關機會區域的必填欄位
+  if (!formData.value.f2_opportunity_probability) {
+    errors.push('F-2 相關機會：機會發生可能性')
   }
-  if (!formData.value.opportunityImpact) {
-    errors.push('F-1 相關機會：機會發生衝擊程度')
+  if (!formData.value.f2_opportunity_impact) {
+    errors.push('F-2 相關機會：機會發生衝擊程度')
   }
-  if (!formData.value.opportunityCalculation?.trim()) {
-    errors.push('F-1 相關機會：計算說明')
+  if (!formData.value.f2_opportunity_calculation?.trim()) {
+    errors.push('F-2 相關機會：計算說明')
   }
 
   return errors
@@ -991,25 +860,29 @@ const fillTestData = async () => {
       counterActionDescription: getRandomText(counterActionDescriptions),
       counterActionCost: getRandomText(counterActionCosts),
 
-      // E區域
-      riskDescription: getRandomText(riskDescriptions),
-      riskProbability: getRandomOption(probabilityOptions.value),
-      riskImpact: getRandomOption(impactOptions.value),
-      riskCalculation: getRandomText(riskCalculations),
+      // E-1 區域
+      e1_risk_description: getRandomText(riskDescriptions),
 
-      // F區域
-      opportunityDescription: getRandomText(opportunityDescriptions),
-      opportunityProbability: getRandomOption(probabilityOptions.value),
-      opportunityImpact: getRandomOption(impactOptions.value),
-      opportunityCalculation: getRandomText(opportunityCalculations),
+      // E-2 區域
+      e2_risk_probability: getRandomOption(probabilityOptions.value),
+      e2_risk_impact: getRandomOption(impactOptions.value),
+      e2_risk_calculation: getRandomText(riskCalculations),
+
+      // F-1 區域
+      f1_opportunity_description: getRandomText(opportunityDescriptions),
+
+      // F-2 區域
+      f2_opportunity_probability: getRandomOption(probabilityOptions.value),
+      f2_opportunity_impact: getRandomOption(impactOptions.value),
+      f2_opportunity_calculation: getRandomText(opportunityCalculations),
 
       // G區域
-      negativeImpactLevel: getRandomOption(impactLevelOptions),
-      negativeImpactDescription: getRandomText(negativeImpactDescriptions),
+      g1_negative_impact_level: getRandomOption(impactLevelOptions),
+      g1_negative_impact_description: getRandomText(negativeImpactDescriptions),
 
       // H區域
-      positiveImpactLevel: getRandomOption(impactLevelOptions),
-      positiveImpactDescription: getRandomText(positiveImpactDescriptions)
+      h1_positive_impact_level: getRandomOption(impactLevelOptions),
+      h1_positive_impact_description: getRandomText(positiveImpactDescriptions)
     }
 
     console.log('測試資料填入完成')
@@ -1034,9 +907,13 @@ onMounted(async () => {
   console.log('Current externalId in store:', externalUserStore.externalId)
   console.log('Is user data loaded:', externalUserStore.isLoaded)
 
-  // 如果有 token 且用戶資料尚未載入，則調用用戶資料解密 API
-  if (token && !externalUserStore.isLoaded) {
-    console.log('🔄 開始載入用戶資料...')
+  // 檢查是否需要載入用戶資料
+  if (externalUserStore.userId) {
+    // 情況 1: Store 中已經有 userId，直接使用（可能是從 pinia 持久化載入的）
+    console.log('✅ Store 中已有 userId，可以直接使用:', externalUserStore.userId)
+  } else if (token) {
+    // 情況 2: 有 token，從 token 載入用戶資料
+    console.log('🔄 從 token 載入用戶資料...')
     try {
       await externalUserStore.fetchExternalUserData(token)
       console.log('✅ 用戶資料載入完成')
@@ -1045,15 +922,14 @@ onMounted(async () => {
     } catch (error) {
       console.error('❌ 載入用戶資料失敗:', error)
     }
-  } else if (!token) {
-    console.log('⚠️ 未提供 token，無法載入用戶資料')
   } else {
-    console.log('ℹ️ 用戶資料已存在，跳過載入')
+    // 情況 3: 既沒有 userId 也沒有 token
+    console.warn('⚠️ 未提供 token 且 Store 中沒有 userId，可能無法載入答案')
   }
 
-  // 如果 userId 仍然為空，嘗試重新獲取
+  // 如果 userId 仍然為空，但有 externalId，嘗試重新獲取
   if (!externalUserStore.userId && externalUserStore.externalId) {
-    console.log('🔄 嘗試重新獲取內部用戶ID...')
+    console.log('🔄 嘗試從 externalId 重新獲取內部用戶ID...')
     try {
       const internalId = await externalUserStore.fetchInternalUserId(externalUserStore.externalId)
       if (internalId) {
@@ -1144,7 +1020,7 @@ const loadScaleData = async () => {
 
           return {
             value: value,
-            label: text ? `${value} (${text})` : value
+            text: text ? `${value} (${text})` : value // 改用 text 而非 label
           }
         }).filter(opt => opt.value) // 過濾掉空的選項
       }
@@ -1201,7 +1077,7 @@ const loadScaleData = async () => {
 
           return {
             value: value,
-            label: text ? `${value} (${text})` : value
+            text: text ? `${value} (${text})` : value // 改用 text 而非 label
           }
         }).filter(opt => opt.value) // 過濾掉空的選項
       }
