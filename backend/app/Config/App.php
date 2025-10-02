@@ -17,7 +17,7 @@ class App extends BaseConfig
      * E.g., http://example.com/
      */
     // public string $baseURL = 'http://localhost:9218/';
-    public string $baseURL = 'https://esgmate.cc-sustain.com/api/';
+    public string $baseURL = 'https://esgmate.cc-sustain.com/';
 
     /**
      * Allowed Hostnames in the Site URL other than the hostname in the baseURL.
