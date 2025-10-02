@@ -192,15 +192,120 @@ export const useApi = () => {
       localStorage.setItem('auth_token', token)
     }
   }
-  
+
   const clearAuthToken = () => {
     if (process.client) {
       localStorage.removeItem('auth_token')
       localStorage.removeItem('auth_user')
     }
   }
-  
+
+  /**
+   * === Modular API Methods ===
+   * Organized by domain for better maintainability
+   */
+
+  // Risk Assessment Module
+  const riskAssessment = {
+    // Company Assessments
+    getByCompany: async (companyId, userId = null) => {
+      const params = userId ? { userId } : {}
+      return await get(`/risk-assessment/company-assessments/company/${companyId}`, params)
+    },
+    create: async (data) => await post('/risk-assessment/company-assessments', data),
+    update: async (id, data) => await put(`/risk-assessment/company-assessments/${id}`, data),
+    delete: async (id) => await del(`/risk-assessment/company-assessments/${id}`),
+    copy: async (id, options) => await post(`/risk-assessment/company-assessments/${id}/copy`, options),
+  }
+
+  // Question Management Module
+  const questionManagement = {
+    // Structure
+    getStructure: async (assessmentId) =>
+      await get(`/question-management/assessment/${assessmentId}/structure`),
+    syncFromTemplate: async (assessmentId) =>
+      await post(`/question-management/assessment/${assessmentId}/sync-from-template`),
+    clearStructure: async (assessmentId) =>
+      await post(`/question-management/assessment/${assessmentId}/clear`),
+    getStats: async (assessmentId) =>
+      await get(`/question-management/assessment/${assessmentId}/stats`),
+
+    // Categories
+    createCategory: async (assessmentId, data) =>
+      await post(`/question-management/assessment/${assessmentId}/categories`, data),
+    updateCategory: async (categoryId, data) =>
+      await put(`/question-management/categories/${categoryId}`, data),
+    deleteCategory: async (categoryId) =>
+      await del(`/question-management/categories/${categoryId}`),
+
+    // Topics
+    createTopic: async (assessmentId, data) =>
+      await post(`/question-management/assessment/${assessmentId}/topics`, data),
+    updateTopic: async (topicId, data) =>
+      await put(`/question-management/topics/${topicId}`, data),
+    deleteTopic: async (topicId) =>
+      await del(`/question-management/topics/${topicId}`),
+
+    // Factors
+    createFactor: async (assessmentId, data) =>
+      await post(`/question-management/assessment/${assessmentId}/factors`, data),
+    updateFactor: async (factorId, data) =>
+      await put(`/question-management/factors/${factorId}`, data),
+    deleteFactor: async (factorId) =>
+      await del(`/question-management/factors/${factorId}`),
+
+    // Contents
+    getContent: async (contentId) =>
+      await get(`/question-management/contents/${contentId}`),
+    updateContent: async (contentId, data) =>
+      await put(`/question-management/contents/${contentId}`, data),
+  }
+
+  // Personnel Module
+  const personnel = {
+    getByCompany: async (companyId) =>
+      await get(`/personnel/companies/${companyId}/personnel-assignments`),
+    syncPersonnel: async (companyId) =>
+      await post(`/personnel/companies/${companyId}/sync`),
+    getAssignments: async (companyId, assessmentId) =>
+      await get(`/personnel/companies/${companyId}/assessments/${assessmentId}/assignments`),
+    createAssignment: async (data) =>
+      await post('/personnel/assignments', data),
+    batchCreateAssignments: async (data) =>
+      await post('/personnel/assignments/batch', data),
+    removeAssignment: async (data) =>
+      await del('/personnel/assignments', data),
+    removePersonnelFromAssessment: async (companyId, assessmentId, personnelId) =>
+      await del(`/personnel/companies/${companyId}/assessments/${assessmentId}/personnel/${personnelId}`),
+    updateAssignmentStatus: async (assignmentId, status) =>
+      await put(`/personnel/assignments/${assignmentId}/status`, { status }),
+  }
+
+  // Companies Module
+  const companies = {
+    getAll: async (params = {}) => {
+      const queryParams = new URLSearchParams(params).toString()
+      const endpoint = queryParams ? `/risk-assessment/local-companies?${queryParams}` : '/risk-assessment/local-companies'
+      return await get(endpoint)
+    },
+    getById: async (id) =>
+      await get(`/risk-assessment/local-companies/${id}`),
+    getByExternalId: async (externalId) =>
+      await get(`/risk-assessment/local-companies/external/${externalId}`),
+    create: async (data) =>
+      await post('/risk-assessment/local-companies', data),
+    update: async (id, data) =>
+      await put(`/risk-assessment/local-companies/${id}`, data),
+    delete: async (id) =>
+      await del(`/risk-assessment/local-companies/${id}`),
+    getStats: async () =>
+      await get('/risk-assessment/local-companies/stats'),
+    resolve: async (companyData) =>
+      await post('/risk-assessment/local-companies/resolve', companyData),
+  }
+
   return {
+    // Generic methods
     get,
     post,
     put,
@@ -210,6 +315,12 @@ export const useApi = () => {
     getAuthToken,
     getAuthHeaders,
     setAuthToken,
-    clearAuthToken
+    clearAuthToken,
+
+    // Modular API methods
+    riskAssessment,
+    questionManagement,
+    personnel,
+    companies,
   }
 }
