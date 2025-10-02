@@ -14,6 +14,8 @@
  */
 
 export const useQuestionStructure = () => {
+  // Use unified API service
+  const api = useApi()
 
   // 狀態管理
   const structureLoading = ref(false)
@@ -39,18 +41,15 @@ export const useQuestionStructure = () => {
     lastError.value = null
 
     try {
-      const fullApiUrl = `/api/v1/question-management/assessment/${assessmentId}/structure`
       console.log('=== 🚀 API CALL ===')
       console.log('📁 Frontend File: /frontend/composables/useQuestionStructure.js')
       console.log('⚙️  Function: getAssessmentStructure')
-      console.log('🌐 Full API URL:', fullApiUrl)
       console.log('🔧 Backend File: /backend/app/Controllers/Api/V1/QuestionManagement/QuestionManagementController.php')
       console.log('📝 Backend Method: getAssessmentStructure')
       console.log('===================')
 
-      const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/structure`, {
-        method: 'GET'
-      })
+      const result = await api.questionManagement.getStructure(assessmentId)
+      const response = result.data
 
       if (response.success) {
         // 更新本地狀態
@@ -85,18 +84,15 @@ export const useQuestionStructure = () => {
     lastError.value = null
 
     try {
-      const fullApiUrl = `/api/v1/question-management/assessment/${assessmentId}/sync-from-template`
       console.log('=== 🚀 API CALL ===')
       console.log('📁 Frontend File: /frontend/composables/useQuestionStructure.js')
       console.log('⚙️  Function: syncFromTemplate')
-      console.log('🌐 Full API URL:', fullApiUrl)
       console.log('🔧 Backend File: /backend/app/Controllers/Api/V1/QuestionManagement/QuestionManagementController.php')
       console.log('📝 Backend Method: syncFromTemplate')
       console.log('===================')
 
-      const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/sync-from-template`, {
-        method: 'POST'
-      })
+      const result = await api.questionManagement.syncFromTemplate(assessmentId)
+      const response = result.data
 
       if (response.success) {
         // 重新載入架構資料
@@ -131,9 +127,8 @@ export const useQuestionStructure = () => {
 
     try {
       // Use the existing structure endpoint instead of non-existent categories endpoint
-      const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/structure`, {
-        method: 'GET'
-      })
+      const result = await api.questionManagement.getStructure(assessmentId)
+      const response = result.data
 
       if (response.success) {
         // Extract categories from the structure response
@@ -171,10 +166,8 @@ export const useQuestionStructure = () => {
     }
 
     try {
-      const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/categories`, {
-        method: 'POST',
-        body: categoryData
-      })
+      const result = await api.questionManagement.createCategory(assessmentId, categoryData)
+      const response = result.data
 
       if (response.success) {
         // 重新載入分類列表
@@ -202,10 +195,8 @@ export const useQuestionStructure = () => {
     }
 
     try {
-      const response = await $fetch(`/api/v1/question-management/categories/${categoryId}`, {
-        method: 'PUT',
-        body: categoryData
-      })
+      const result = await api.questionManagement.updateCategory(categoryId, categoryData)
+      const response = result.data
 
       if (response.success) {
         return response.data
@@ -230,9 +221,8 @@ export const useQuestionStructure = () => {
     }
 
     try {
-      const response = await $fetch(`/api/v1/question-management/categories/${categoryId}`, {
-        method: 'DELETE'
-      })
+      const result = await api.questionManagement.deleteCategory(categoryId)
+      const response = result.data
 
       if (response.success) {
         return true
@@ -266,9 +256,8 @@ export const useQuestionStructure = () => {
 
     try {
       // Use the existing structure endpoint instead of non-existent topics endpoint
-      const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/structure`, {
-        method: 'GET'
-      })
+      const result = await api.questionManagement.getStructure(assessmentId)
+      const response = result.data
 
       if (response.success) {
         // Extract topics from the structure response
@@ -313,10 +302,8 @@ export const useQuestionStructure = () => {
     }
 
     try {
-      const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/topics`, {
-        method: 'POST',
-        body: topicData
-      })
+      const result = await api.questionManagement.createTopic(assessmentId, topicData)
+      const response = result.data
 
       if (response.success) {
         // 重新載入主題列表
@@ -344,10 +331,8 @@ export const useQuestionStructure = () => {
     }
 
     try {
-      const response = await $fetch(`/api/v1/question-management/topics/${topicId}`, {
-        method: 'PUT',
-        body: topicData
-      })
+      const result = await api.questionManagement.updateTopic(topicId, topicData)
+      const response = result.data
 
       if (response.success) {
         return response.data
@@ -372,9 +357,8 @@ export const useQuestionStructure = () => {
     }
 
     try {
-      const response = await $fetch(`/api/v1/question-management/topics/${topicId}`, {
-        method: 'DELETE'
-      })
+      const result = await api.questionManagement.deleteTopic(topicId)
+      const response = result.data
 
       if (response.success) {
         return true
@@ -409,9 +393,8 @@ export const useQuestionStructure = () => {
 
     try {
       // Use the existing structure endpoint instead of non-existent factors endpoint
-      const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/structure`, {
-        method: 'GET'
-      })
+      const result = await api.questionManagement.getStructure(assessmentId)
+      const response = result.data
 
       if (response.success) {
         // Extract factors from the structure response
@@ -462,10 +445,8 @@ export const useQuestionStructure = () => {
     }
 
     try {
-      const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/factors`, {
-        method: 'POST',
-        body: factorData
-      })
+      const result = await api.questionManagement.createFactor(assessmentId, factorData)
+      const response = result.data
 
       if (response.success) {
         // 重新載入因子列表
@@ -493,10 +474,8 @@ export const useQuestionStructure = () => {
     }
 
     try {
-      const response = await $fetch(`/api/v1/question-management/factors/${factorId}`, {
-        method: 'PUT',
-        body: factorData
-      })
+      const result = await api.questionManagement.updateFactor(factorId, factorData)
+      const response = result.data
 
       if (response.success) {
         return response.data
@@ -521,9 +500,8 @@ export const useQuestionStructure = () => {
     }
 
     try {
-      const response = await $fetch(`/api/v1/question-management/factors/${factorId}`, {
-        method: 'DELETE'
-      })
+      const result = await api.questionManagement.deleteFactor(factorId)
+      const response = result.data
 
       if (response.success) {
         return true
@@ -550,9 +528,8 @@ export const useQuestionStructure = () => {
     }
 
     try {
-      const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/stats`, {
-        method: 'GET'
-      })
+      const result = await api.questionManagement.getStats(assessmentId)
+      const response = result.data
 
       if (response.success) {
         return response.data
@@ -577,9 +554,8 @@ export const useQuestionStructure = () => {
     }
 
     try {
-      const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/clear`, {
-        method: 'DELETE'
-      })
+      const result = await api.questionManagement.clearStructure(assessmentId)
+      const response = result.data
 
       if (response.success) {
         // 清空本地狀態
