@@ -14,18 +14,18 @@
  */
 
 export const useQuestionStructure = () => {
-  // Use unified API service
+  // Initialize API inside the composable function (SSR safe)
   const api = useApi()
 
-  // 狀態管理
-  const structureLoading = ref(false)
-  const categories = ref([])
-  const topics = ref([])
-  const factors = ref([])
-  const contents = ref([])
+  // Use useState for SSR-safe reactive state
+  const structureLoading = useState('questionStructure_loading', () => false)
+  const categories = useState('questionStructure_categories', () => [])
+  const topics = useState('questionStructure_topics', () => [])
+  const factors = useState('questionStructure_factors', () => [])
+  const contents = useState('questionStructure_contents', () => [])
 
-  // 錯誤處理
-  const lastError = ref(null)
+  // Error handling
+  const lastError = useState('questionStructure_lastError', () => null)
 
   /**
    * 取得評估記錄的完整架構資訊
@@ -41,13 +41,6 @@ export const useQuestionStructure = () => {
     lastError.value = null
 
     try {
-      console.log('=== 🚀 API CALL ===')
-      console.log('📁 Frontend File: /frontend/composables/useQuestionStructure.js')
-      console.log('⚙️  Function: getAssessmentStructure')
-      console.log('🔧 Backend File: /backend/app/Controllers/Api/V1/QuestionManagement/QuestionManagementController.php')
-      console.log('📝 Backend Method: getAssessmentStructure')
-      console.log('===================')
-
       const result = await api.questionManagement.getStructure(assessmentId)
       const response = result.data
 
@@ -84,13 +77,6 @@ export const useQuestionStructure = () => {
     lastError.value = null
 
     try {
-      console.log('=== 🚀 API CALL ===')
-      console.log('📁 Frontend File: /frontend/composables/useQuestionStructure.js')
-      console.log('⚙️  Function: syncFromTemplate')
-      console.log('🔧 Backend File: /backend/app/Controllers/Api/V1/QuestionManagement/QuestionManagementController.php')
-      console.log('📝 Backend Method: syncFromTemplate')
-      console.log('===================')
-
       const result = await api.questionManagement.syncFromTemplate(assessmentId)
       const response = result.data
 

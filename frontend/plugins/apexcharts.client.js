@@ -8,8 +8,18 @@ const APEXCHARTS_LOADED_KEY = '__NUXT_APEXCHARTS_LOADED__'
 
 export default defineNuxtPlugin({
   name: 'apexcharts-plugin',
-  enforce: 'default', // Load at default priority
+  enforce: 'post', // Load after other plugins to ensure nuxt is fully initialized
   setup: async (nuxtApp) => {
+    // Check if nuxtApp is available (SSR safety)
+    if (!nuxtApp) {
+      console.warn('[ApexCharts] NuxtApp not available')
+      return {
+        provide: {
+          apexCharts: null
+        }
+      }
+    }
+
     // Only run on client side
     if (!process.client) {
       // Server-side: provide null

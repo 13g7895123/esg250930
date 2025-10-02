@@ -1,3 +1,5 @@
+import { storage } from '~/utils/storage'
+
 /**
  * Base API composable for handling HTTP requests
  */
@@ -14,36 +16,24 @@ export const useApi = () => {
     const apiBaseUrl = config.public.apiBaseUrl || config.public.backendUrl
 
     if (apiBaseUrl) {
-      console.log('[API] Using configured API URL:', apiBaseUrl)
       return apiBaseUrl
     }
 
     // Fallback for development - directly connect to backend
     const isDev = process.dev || process.env.NODE_ENV === 'development'
     if (isDev) {
-      // const devUrl = 'http://localhost:9218/api/v1'
-      const devUrl = '/api/v1'
-      console.log('[API] Using development API URL:', devUrl)
-      return devUrl
+      return '/api/v1'
     }
 
     // Ensure we never use relative paths in production
-    const productionUrl = 'https://project.mercylife.cc/api'
-    console.log('[API] Using fallback production URL:', productionUrl)
-    return productionUrl
+    return 'https://project.mercylife.cc/api'
   }
-  
+
   const baseURL = getBaseURL()
-  
-  // Log the resolved base URL for debugging
-  console.log('[API] Base URL resolved to:', baseURL)
-  
-  // Get authentication token
+
+  // Get authentication token using SSR-safe storage
   const getAuthToken = () => {
-    if (process.client) {
-      return localStorage.getItem('auth_token')
-    }
-    return null
+    return storage.getItem('auth_token')
   }
   
   // Get authentication headers
@@ -97,11 +87,9 @@ export const useApi = () => {
       if (ENABLE_AUTH && (error.status === 401 || error.statusCode === 401)) {
         console.warn('[API] Authentication error - clearing auth state')
 
-        // Clear authentication data
-        if (process.client) {
-          localStorage.removeItem('auth_token')
-          localStorage.removeItem('auth_user')
-        }
+        // Clear authentication data using SSR-safe storage
+        storage.removeItem('auth_token')
+        storage.removeItem('auth_user')
 
         // Redirect to login page (only if not already on login page)
         if (process.client && !window.location.pathname.includes('/auth/login')) {

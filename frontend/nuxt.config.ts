@@ -1,8 +1,13 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
-  ssr: false,
+  ssr: true,
   devServer: {
     port: 3101
+  },
+  routeRules: {
+    // Client-side only pages that must not be pre-rendered
+    '/risk-assessment/**': { ssr: false },
+    '/settings/**': { ssr: false }
   },
   app: {
     head: {

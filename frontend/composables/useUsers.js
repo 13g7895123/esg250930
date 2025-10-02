@@ -1,12 +1,12 @@
-// Use unified API service
-const api = useApi()
-
-// Store for users data indexed by company ID
-const usersByCompany = ref({})
-const isLoading = ref(false)
-const loadingCompanies = ref(new Set())
-
 export const useUsers = () => {
+  // Initialize API inside the composable function (SSR safe)
+  const api = useApi()
+
+  // Use useState for SSR-safe reactive state
+  const usersByCompany = useState('users_byCompany', () => ({}))
+  const isLoading = useState('users_loading', () => false)
+  const loadingCompanies = useState('users_loadingCompanies', () => new Set())
+
   // Get users by company ID with API call
   const getUsersByCompanyId = (companyId) => {
     const numericCompanyId = parseInt(companyId)
