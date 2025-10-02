@@ -2,37 +2,13 @@
   <div class="p-6">
     <!-- Page Header -->
     <div class="mb-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            {{ showQuestionnaireView ? '風險評估問卷檢視' : '題項管理 - 公司列表' }}
-          </h1>
-          <p class="text-gray-600 dark:text-gray-400">
-            {{ showQuestionnaireView ? '檢視問卷內容與用戶填答結果' : '選擇公司進入題項管理系統，管理各公司的風險評估題項' }}
-          </p>
-        </div>
-
-        <!-- View Toggle -->
-        <div class="flex items-center space-x-2">
-          <button
-            @click="toggleView('list')"
-            :class="!showQuestionnaireView
-              ? 'bg-primary-600 text-white'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'"
-            class="px-4 py-2 rounded-lg transition-colors duration-200"
-          >
-            公司列表
-          </button>
-          <button
-            @click="toggleView('questionnaire')"
-            :class="showQuestionnaireView
-              ? 'bg-primary-600 text-white'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'"
-            class="px-4 py-2 rounded-lg transition-colors duration-200"
-          >
-            問卷檢視
-          </button>
-        </div>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          題項管理 - 公司列表
+        </h1>
+        <p class="text-gray-600 dark:text-gray-400">
+          選擇公司進入題項管理系統，管理各公司的風險評估題項
+        </p>
       </div>
 
       <!-- Error Message -->
