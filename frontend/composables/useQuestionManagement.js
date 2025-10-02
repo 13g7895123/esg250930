@@ -1,5 +1,6 @@
-// Base API URL
-const API_BASE_URL = 'http://localhost:9218/api/v1/risk-assessment'
+// Base API URL - use runtime config
+const config = useRuntimeConfig()
+const API_BASE_URL = `${config.public.apiBaseUrl}/risk-assessment`
 
 // Question management data organized by company ID
 const questionManagement = ref({})
