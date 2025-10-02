@@ -1,13 +1,12 @@
-// Base API URL - use runtime config
-const config = useRuntimeConfig()
-const API_BASE_URL = `${config.public.apiBaseUrl}/risk-assessment`
+// Use unified API service
+const api = useApi()
 
 // Debug: Log runtime config values
+const config = useRuntimeConfig()
 console.log('=== 🔍 Runtime Config Debug ===')
 console.log('📁 File: /frontend/composables/useQuestionManagement.js')
 console.log('🔧 config.public.apiBaseUrl:', config.public.apiBaseUrl)
 console.log('🔧 config.public.backendUrl:', config.public.backendUrl)
-console.log('🌐 Final API_BASE_URL:', API_BASE_URL)
 console.log('📋 Environment Variables Check:')
 console.log('   NUXT_PUBLIC_API_BASE_URL should be:', 'https://esgmate.cc-sustain.com/api/v1')
 console.log('   NUXT_PUBLIC_BACKEND_URL should be:', 'https://esgmate.cc-sustain.com/api/v1')
@@ -59,16 +58,15 @@ const loadCompanyAssessments = async (companyId, userId = null) => {
   if (!process.client) return
 
   try {
-    const fullApiUrl = `${API_BASE_URL}/company-assessments/company/${companyId}`
     console.log('=== 🚀 API CALL ===')
     console.log('📁 Frontend File: /frontend/composables/useQuestionManagement.js')
     console.log('⚙️  Function: loadCompanyAssessments')
-    console.log('🌐 Full API URL:', fullApiUrl)
     console.log('🔧 Backend File: /backend/app/Controllers/Api/V1/RiskAssessment/CompanyAssessmentController.php')
     console.log('📝 Backend Method: getByCompany')
     console.log('===================')
 
-    const response = await $fetch(`${API_BASE_URL}/company-assessments/company/${companyId}`)
+    const result = await api.riskAssessment.getByCompany(companyId, userId)
+    const response = result.data
     if (response.success && response.data.assessments) {
       let assessments = response.data.assessments
 
@@ -81,7 +79,8 @@ const loadCompanyAssessments = async (companyId, userId = null) => {
           try {
             console.log(`Checking assignments for assessment ${assessment.id}...`)
 
-            const assignmentResponse = await $fetch(`/api/v1/personnel/companies/${companyId}/assessments/${assessment.id}/assignments`)
+            const assignmentResult = await api.personnel.getAssignments(companyId, assessment.id)
+            const assignmentResponse = assignmentResult.data
 
             if (assignmentResponse.success && assignmentResponse.data) {
               const assignments = assignmentResponse.data.assignments || []
@@ -138,11 +137,9 @@ const loadCompanyAssessments = async (companyId, userId = null) => {
 
 // Save individual assessment to API
 const saveAssessmentToAPI = async (assessmentData) => {
-  const fullApiUrl = `${API_BASE_URL}/company-assessments`
   console.log('=== 🚀 API CALL ===')
   console.log('📁 Frontend File: /frontend/composables/useQuestionManagement.js')
   console.log('⚙️  Function: saveAssessmentToAPI')
-  console.log('🌐 Full API URL:', fullApiUrl)
   console.log('🔧 Backend File: /backend/app/Controllers/Api/V1/RiskAssessment/CompanyAssessmentController.php')
   console.log('📝 Backend Method: create (POST)')
   console.log('📋 Request Data:', assessmentData)
@@ -155,20 +152,19 @@ const saveAssessmentToAPI = async (assessmentData) => {
 
   try {
     console.log('🔥 [FRONTEND] Making API request...')
-    const response = await $fetch(`${API_BASE_URL}/company-assessments`, {
-      method: 'POST',
-      body: assessmentData
-    })
+    const result = await api.riskAssessment.create(assessmentData)
 
-    console.log('🔥 [FRONTEND] API raw response:', response)
-    console.log('🔥 [FRONTEND] Response success:', response.success)
-    console.log('🔥 [FRONTEND] Response data:', response.data)
+    console.log('🔥 [FRONTEND] API result:', result)
+    console.log('🔥 [FRONTEND] Result success:', result.success)
+    console.log('🔥 [FRONTEND] Result data:', result.data)
 
-    return response.success ? response.data : null
+    if (result.success && result.data) {
+      return result.data.success ? result.data.data : null
+    }
+    return null
   } catch (error) {
     console.error('🔥 [FRONTEND] Error saving assessment to API:', error)
     console.error('🔥 [FRONTEND] Error details:', error.message)
-    console.error('🔥 [FRONTEND] Error response:', error.response)
     return null
   }
 }
@@ -221,7 +217,8 @@ export const useQuestionManagement = () => {
           console.log('🔥 [FRONTEND] Checking structure for assessment:', savedAssessment.id)
 
           // 檢查是否有架構資料，如果沒有則手動同步
-          const structureResponse = await $fetch(`/api/v1/question-management/assessment/${savedAssessment.id}/structure`)
+          const structureResult = await api.questionManagement.getStructure(savedAssessment.id)
+          const structureResponse = structureResult.data
           console.log('🔥 [FRONTEND] Structure response:', structureResponse)
 
           if (structureResponse.success) {
@@ -237,9 +234,8 @@ export const useQuestionManagement = () => {
 
             if (!hasStructure) {
               console.log('🔥 [FRONTEND] No template structure found, manually syncing...')
-              const syncResponse = await $fetch(`/api/v1/question-management/assessment/${savedAssessment.id}/sync-from-template`, {
-                method: 'POST'
-              })
+              const syncResult = await api.questionManagement.syncFromTemplate(savedAssessment.id)
+              const syncResponse = syncResult.data
               console.log('🔥 [FRONTEND] Manual sync response:', syncResponse)
               console.log('🔥 [FRONTEND] Template structure synced successfully')
             } else {
@@ -297,10 +293,8 @@ export const useQuestionManagement = () => {
       }
 
       // Update via API
-      const response = await $fetch(`${API_BASE_URL}/company-assessments/${itemId}`, {
-        method: 'PUT',
-        body: apiData
-      })
+      const result = await api.riskAssessment.update(itemId, apiData)
+      const response = result.data
       
       if (response.success && response.data) {
         // Update local cache
@@ -328,9 +322,8 @@ export const useQuestionManagement = () => {
     
     try {
       // Delete from API
-      const response = await $fetch(`${API_BASE_URL}/company-assessments/${itemId}`, {
-        method: 'DELETE'
-      })
+      const result = await api.riskAssessment.delete(itemId)
+      const response = result.data
       
       if (response.success) {
         // Update local cache
@@ -363,10 +356,8 @@ export const useQuestionManagement = () => {
       }
 
       // Copy via API
-      const response = await $fetch(`${API_BASE_URL}/company-assessments/${itemId}/copy`, {
-        method: 'POST',
-        body: copyData
-      })
+      const result = await api.riskAssessment.copy(itemId, copyData)
+      const response = result.data
       
       if (response.success && response.data) {
         // Transform API response to match localStorage format
