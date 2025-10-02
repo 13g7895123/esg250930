@@ -309,7 +309,8 @@ class TemplateContentController extends BaseController
             }
 
             // Check if category exists and belongs to template
-            $categoryId = $input['categoryId'] ?? null;
+            // IMPORTANT: Preserve original category_id if not provided in input
+            $categoryId = isset($input['categoryId']) ? $input['categoryId'] : $content['category_id'];
             if (!empty($categoryId)) {
                 $category = $this->categoryModel->where('id', $categoryId)
                                                 ->where('template_id', $templateId)

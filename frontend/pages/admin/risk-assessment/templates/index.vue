@@ -878,8 +878,8 @@ const formData = ref({
 // Template refs for focus management
 const versionNameInput = ref(null)
 
-// Notification system using Nuxt UI
-const toast = useToast()
+// Notification system using SweetAlert
+const { showSuccess, showError } = useNotification()
 
 // Get templates from store - use computed to ensure reactivity
 const templates = computed(() => templatesStore.templates)
@@ -1034,18 +1034,10 @@ const editTemplate = (template) => {
 const copyTemplate = async (template) => {
   try {
     await templatesStore.copyTemplate(template.id, `${template.version_name} (副本)`)
-    toast.add({
-      title: '複製成功',
-      description: `範本「${template.version_name}」已成功複製`,
-      color: 'green'
-    })
+    await showSuccess('複製成功', `範本「${template.version_name}」已成功複製`)
   } catch (error) {
     console.error('Copy template error:', error)
-    toast.add({
-      title: '複製失敗',
-      description: '複製範本時發生錯誤，請稍後再試',
-      color: 'red'
-    })
+    await showError('複製失敗', '複製範本時發生錯誤，請稍後再試')
   }
 }
 
@@ -1058,18 +1050,10 @@ const confirmDelete = async () => {
   if (templateToDelete.value) {
     try {
       await templatesStore.deleteTemplate(templateToDelete.value.id)
-      toast.add({
-        title: '刪除成功',
-        description: `範本「${templateToDelete.value.version_name}」已成功刪除`,
-        color: 'green'
-      })
+      await showSuccess('刪除成功', `範本「${templateToDelete.value.version_name}」已成功刪除`)
     } catch (error) {
       console.error('Delete template error:', error)
-      toast.add({
-        title: '刪除失敗',
-        description: '刪除範本時發生錯誤，請稍後再試',
-        color: 'red'
-      })
+      await showError('刪除失敗', '刪除範本時發生錯誤，請稍後再試')
     }
   }
   showDeleteModal.value = false
@@ -1083,18 +1067,10 @@ const viewTemplateContent = (template) => {
 const refreshTemplates = async () => {
   try {
     await templatesStore.fetchTemplates()
-    toast.add({
-      title: '重新整理完成',
-      description: '範本資料已更新',
-      color: 'green'
-    })
+    await showSuccess('重新整理完成', '範本資料已更新')
   } catch (error) {
     console.error('Refresh templates error:', error)
-    toast.add({
-      title: '重新整理失敗',
-      description: '無法更新範本資料，請稍後再試',
-      color: 'red'
-    })
+    await showError('重新整理失敗', '無法更新範本資料，請稍後再試')
   }
 }
 
@@ -1108,7 +1084,7 @@ const manageTemplateStructure = (template) => {
   showTemplateManagementModal.value = true
 }
 
-const toggleTemplateRiskTopics = (templateId) => {
+const toggleTemplateRiskTopics = async (templateId) => {
   try {
     templatesStore.toggleRiskTopics(templateId)
 
@@ -1120,18 +1096,10 @@ const toggleTemplateRiskTopics = (templateId) => {
       }
     }
 
-    toast.add({
-      title: '設定已更新',
-      description: '範本風險主題設定已更新',
-      color: 'green'
-    })
+    await showSuccess('設定已更新', '範本風險主題設定已更新')
   } catch (error) {
     console.error('Toggle risk topics error:', error)
-    toast.add({
-      title: '設定失敗',
-      description: '更新風險主題設定時發生錯誤',
-      color: 'red'
-    })
+    await showError('設定失敗', '更新風險主題設定時發生錯誤')
   }
 }
 
@@ -1144,11 +1112,7 @@ const openManagementModal = async (type) => {
           await templatesStore.fetchRiskCategories(managingTemplate.value.id)
         } catch (error) {
           console.error('Failed to load risk categories:', error)
-          toast.add({
-            title: '載入失敗',
-            description: '無法載入風險分類資料，請稍後再試',
-            color: 'red'
-          })
+          await showError('載入失敗', '無法載入風險分類資料，請稍後再試')
           return
         }
       }
@@ -1161,11 +1125,7 @@ const openManagementModal = async (type) => {
           await templatesStore.fetchRiskTopics(managingTemplate.value.id)
         } catch (error) {
           console.error('Failed to load risk topics:', error)
-          toast.add({
-            title: '載入失敗',
-            description: '無法載入風險主題資料，請稍後再試',
-            color: 'red'
-          })
+          await showError('載入失敗', '無法載入風險主題資料，請稍後再試')
           return
         }
       }
@@ -1178,11 +1138,7 @@ const openManagementModal = async (type) => {
           await templatesStore.fetchRiskFactors(managingTemplate.value.id)
         } catch (error) {
           console.error('Failed to load risk factors:', error)
-          toast.add({
-            title: '載入失敗',
-            description: '無法載入風險因子資料，請稍後再試',
-            color: 'red'
-          })
+          await showError('載入失敗', '無法載入風險因子資料，請稍後再試')
           return
         }
       }
@@ -1232,22 +1188,14 @@ const submitRiskCategoryForm = async () => {
   try {
     if (showAddRiskCategoryModal.value) {
       await templatesStore.addRiskCategory(managingTemplate.value.id, riskCategoryFormData.value)
-      toast.add({
-        title: '新增成功',
-        description: `風險類別「${riskCategoryFormData.value.category_name}」已成功建立`,
-        color: 'green'
-      })
+      await showSuccess('新增成功', `風險類別「${riskCategoryFormData.value.category_name}」已成功建立`)
     } else if (showEditRiskCategoryModal.value && editingRiskCategory.value) {
       await templatesStore.updateRiskCategory(
         managingTemplate.value.id,
         editingRiskCategory.value.id,
         riskCategoryFormData.value
       )
-      toast.add({
-        title: '更新成功',
-        description: `風險類別「${riskCategoryFormData.value.category_name}」已成功更新`,
-        color: 'green'
-      })
+      await showSuccess('更新成功', `風險類別「${riskCategoryFormData.value.category_name}」已成功更新`)
     }
 
     // Refresh risk categories data after successful operation
@@ -1255,11 +1203,7 @@ const submitRiskCategoryForm = async () => {
     closeRiskCategoryModals()
   } catch (error) {
     console.error('風險類別操作錯誤:', error)
-    toast.add({
-      title: showAddRiskCategoryModal.value ? '新增失敗' : '更新失敗',
-      description: '操作時發生錯誤，請稍後再試',
-      color: 'red'
-    })
+    await showError(showAddRiskCategoryModal.value ? '新增失敗' : '更新失敗', '操作時發生錯誤，請稍後再試')
   }
 }
 
@@ -1268,22 +1212,14 @@ const confirmDeleteRiskCategory = async () => {
 
   try {
     await templatesStore.deleteRiskCategory(managingTemplate.value.id, deletingRiskCategory.value.id)
-    toast.add({
-      title: '刪除成功',
-      description: `風險類別「${deletingRiskCategory.value.category_name}」已成功刪除`,
-      color: 'green'
-    })
+    await showSuccess('刪除成功', `風險類別「${deletingRiskCategory.value.category_name}」已成功刪除`)
 
     // Refresh risk categories data after successful deletion
     await templatesStore.fetchRiskCategories(managingTemplate.value.id)
     closeRiskCategoryModals()
   } catch (error) {
     console.error('刪除風險類別錯誤:', error)
-    toast.add({
-      title: '刪除失敗',
-      description: '刪除風險類別時發生錯誤，請稍後再試',
-      color: 'red'
-    })
+    await showError('刪除失敗', '刪除風險類別時發生錯誤，請稍後再試')
   }
 }
 
@@ -1336,33 +1272,21 @@ const submitRiskFactorForm = async () => {
 
   // Validation: If risk topics are enabled, topic_id is required
   if (managingTemplate.value?.risk_topics_enabled && !riskFactorFormData.value.topic_id) {
-    toast.add({
-      title: '驗證失敗',
-      description: '風險主題為必填欄位',
-      color: 'red'
-    })
+    await showError('驗證失敗', '風險主題為必填欄位')
     return
   }
 
   try {
     if (showAddRiskFactorModal.value) {
       await templatesStore.addRiskFactor(managingTemplate.value.id, riskFactorFormData.value)
-      toast.add({
-        title: '新增成功',
-        description: `風險因子「${riskFactorFormData.value.factor_name}」已成功建立`,
-        color: 'green'
-      })
+      await showSuccess('新增成功', `風險因子「${riskFactorFormData.value.factor_name}」已成功建立`)
     } else if (showEditRiskFactorModal.value && editingRiskFactor.value) {
       await templatesStore.updateRiskFactor(
         managingTemplate.value.id,
         editingRiskFactor.value.id,
         riskFactorFormData.value
       )
-      toast.add({
-        title: '更新成功',
-        description: `風險因子「${riskFactorFormData.value.factor_name}」已成功更新`,
-        color: 'green'
-      })
+      await showSuccess('更新成功', `風險因子「${riskFactorFormData.value.factor_name}」已成功更新`)
     }
 
     // Refresh risk factors data after successful operation
@@ -1370,11 +1294,7 @@ const submitRiskFactorForm = async () => {
     closeRiskFactorModals()
   } catch (error) {
     console.error('風險因子操作錯誤:', error)
-    toast.add({
-      title: showAddRiskFactorModal.value ? '新增失敗' : '更新失敗',
-      description: '操作時發生錯誤，請稍後再試',
-      color: 'red'
-    })
+    await showError(showAddRiskFactorModal.value ? '新增失敗' : '更新失敗', '操作時發生錯誤，請稍後再試')
   }
 }
 
@@ -1383,22 +1303,14 @@ const confirmDeleteRiskFactor = async () => {
 
   try {
     await templatesStore.deleteRiskFactor(managingTemplate.value.id, deletingRiskFactor.value.id)
-    toast.add({
-      title: '刪除成功',
-      description: `風險因子「${deletingRiskFactor.value.factor_name}」已成功刪除`,
-      color: 'green'
-    })
+    await showSuccess('刪除成功', `風險因子「${deletingRiskFactor.value.factor_name}」已成功刪除`)
 
     // Refresh risk factors data after successful deletion
     await templatesStore.fetchRiskFactors(managingTemplate.value.id)
     closeRiskFactorModals()
   } catch (error) {
     console.error('刪除風險因子錯誤:', error)
-    toast.add({
-      title: '刪除失敗',
-      description: '刪除風險因子時發生錯誤，請稍後再試',
-      color: 'red'
-    })
+    await showError('刪除失敗', '刪除風險因子時發生錯誤，請稍後再試')
   }
 }
 
@@ -1472,22 +1384,14 @@ const submitRiskTopicForm = async () => {
   try {
     if (showAddRiskTopicModal.value) {
       await templatesStore.addRiskTopic(managingTemplate.value.id, riskTopicFormData.value)
-      toast.add({
-        title: '新增成功',
-        description: `風險主題「${riskTopicFormData.value.topic_name}」已成功建立`,
-        color: 'green'
-      })
+      await showSuccess('新增成功', `風險主題「${riskTopicFormData.value.topic_name}」已成功建立`)
     } else if (showEditRiskTopicModal.value && editingRiskTopic.value) {
       await templatesStore.updateRiskTopic(
         managingTemplate.value.id,
         editingRiskTopic.value.id,
         riskTopicFormData.value
       )
-      toast.add({
-        title: '更新成功',
-        description: `風險主題「${riskTopicFormData.value.topic_name}」已成功更新`,
-        color: 'green'
-      })
+      await showSuccess('更新成功', `風險主題「${riskTopicFormData.value.topic_name}」已成功更新`)
     }
 
     // Refresh risk topics data after successful operation
@@ -1495,11 +1399,7 @@ const submitRiskTopicForm = async () => {
     closeRiskTopicModals()
   } catch (error) {
     console.error('風險主題操作錯誤:', error)
-    toast.add({
-      title: showAddRiskTopicModal.value ? '新增失敗' : '更新失敗',
-      description: '操作時發生錯誤，請稍後再試',
-      color: 'red'
-    })
+    await showError(showAddRiskTopicModal.value ? '新增失敗' : '更新失敗', '操作時發生錯誤，請稍後再試')
   }
 }
 
@@ -1508,22 +1408,14 @@ const confirmDeleteRiskTopic = async () => {
 
   try {
     await templatesStore.deleteRiskTopic(managingTemplate.value.id, deletingRiskTopic.value.id)
-    toast.add({
-      title: '刪除成功',
-      description: `風險主題「${deletingRiskTopic.value.topic_name}」已成功刪除`,
-      color: 'green'
-    })
+    await showSuccess('刪除成功', `風險主題「${deletingRiskTopic.value.topic_name}」已成功刪除`)
 
     // Refresh risk topics data after successful deletion
     await templatesStore.fetchRiskTopics(managingTemplate.value.id)
     closeRiskTopicModals()
   } catch (error) {
     console.error('刪除風險主題錯誤:', error)
-    toast.add({
-      title: '刪除失敗',
-      description: '刪除風險主題時發生錯誤，請稍後再試',
-      color: 'red'
-    })
+    await showError('刪除失敗', '刪除風險主題時發生錯誤，請稍後再試')
   }
 }
 
@@ -1542,43 +1434,31 @@ const closeRiskTopicModals = () => {
 
 const submitForm = async () => {
   if (isSubmitting.value) return
-  
+
   isSubmitting.value = true
-  
+
   try {
     if (showAddModal.value) {
       // Add new template
       await templatesStore.addTemplate({
         versionName: formData.value.versionName
       })
-      
-      toast.add({
-        title: '新增成功',
-        description: `範本「${formData.value.versionName}」已成功建立`,
-        color: 'green'
-      })
+
+      await showSuccess('新增成功', `範本「${formData.value.versionName}」已成功建立`)
     } else if (showEditModal.value) {
       // Update existing template
       await templatesStore.updateTemplate(editingTemplate.value.id, {
         versionName: formData.value.versionName
       })
-      
-      toast.add({
-        title: '更新成功',
-        description: `範本「${formData.value.versionName}」已成功更新`,
-        color: 'green'
-      })
+
+      await showSuccess('更新成功', `範本「${formData.value.versionName}」已成功更新`)
     }
-    
+
     closeModals()
   } catch (error) {
     console.error('Form submission error:', error)
-    
-    toast.add({
-      title: showAddModal.value ? '新增失敗' : '更新失敗',
-      description: '操作時發生錯誤，請稍後再試',
-      color: 'red'
-    })
+
+    await showError(showAddModal.value ? '新增失敗' : '更新失敗', '操作時發生錯誤，請稍後再試')
   } finally {
     isSubmitting.value = false
   }
@@ -1630,11 +1510,7 @@ watch(() => riskFactorFormData.value.category_id, async (newCategoryId, oldCateg
         console.log('Topics loaded successfully')
       } catch (error) {
         console.error('Failed to load risk topics:', error)
-        toast.add({
-          title: '載入失敗',
-          description: '無法載入風險主題資料，請稍後再試',
-          color: 'red'
-        })
+        await showError('載入失敗', '無法載入風險主題資料，請稍後再試')
       } finally {
         isLoadingTopics.value = false
       }

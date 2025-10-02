@@ -334,8 +334,16 @@ const pageTitle = computed(() => {
 
 const pageSubtitle = computed(() => {
   if (editorMode === 'template') {
-    const categoryName = '未知類別' // TODO: 從資料取得
-    return `類別：${categoryName} | 編輯完整的ESG評估題目內容`
+    const categoryName = questionData.value?.category_name || '未分類'
+    const topicName = questionData.value?.topic_name || ''
+    const factorName = questionData.value?.factor_name || ''
+
+    let subtitle = `類別：${categoryName}`
+    if (topicName) subtitle += ` > ${topicName}`
+    if (factorName) subtitle += ` > ${factorName}`
+    subtitle += ' | 編輯完整的ESG評估題目內容'
+
+    return subtitle
   }
   return features.value.pageSubtitle
 })
@@ -450,17 +458,17 @@ const handleSave = async () => {
     await saveQuestion(backendData, questionData.value)
 
     // 顯示成功訊息
-    const { $toast } = useNuxtApp()
-    $toast.success('題目已成功儲存')
+    const { $notify } = useNuxtApp()
+    await $notify.success('儲存成功', '題目已成功儲存')
 
     // 返回列表頁
     setTimeout(() => {
       handleBack()
-    }, 1000)
+    }, 1500)
   } catch (error) {
     console.error('[Editor] Save failed:', error)
-    const { $toast } = useNuxtApp()
-    $toast.error('儲存失敗，請稍後再試')
+    const { $notify } = useNuxtApp()
+    $notify.error('儲存失敗', error.message || '請稍後再試')
   } finally {
     isSaving.value = false
   }
@@ -474,8 +482,8 @@ const fillTestData = () => {
 
   formData.value = generateTestData()
 
-  const { $toast } = useNuxtApp()
-  $toast.success('測試資料已填入')
+  const { $notify } = useNuxtApp()
+  $notify.toast.success('測試資料已填入')
 }
 
 /**
@@ -496,8 +504,8 @@ const saveHoverText = () => {
   formData.value.hoverTexts[editingSection.value] = editingHoverText.value
   cancelHoverEdit()
 
-  const { $toast } = useNuxtApp()
-  $toast.success('提示文字已更新')
+  const { $notify } = useNuxtApp()
+  $notify.toast.success('提示文字已更新')
 }
 
 /**
@@ -513,10 +521,11 @@ const cancelHoverEdit = () => {
  * 儲存量表資料
  */
 const handleScaleSave = async () => {
+  const { $notify } = useNuxtApp()
+
   if (editorMode === 'question' || editorMode === 'preview') {
     // question 模式不允許編輯量表
-    const { $toast } = useNuxtApp()
-    $toast.info('此模式下量表為唯讀')
+    $notify.info('提示', '此模式下量表為唯讀')
     return
   }
 
@@ -549,12 +558,10 @@ const handleScaleSave = async () => {
 
     showScaleModal.value = false
 
-    const { $toast } = useNuxtApp()
-    $toast.success('量表已成功儲存')
+    await $notify.success('儲存成功', '量表已成功儲存')
   } catch (error) {
     console.error('[Editor] Scale save failed:', error)
-    const { $toast } = useNuxtApp()
-    $toast.error('量表儲存失敗')
+    $notify.error('儲存失敗', error.message || '量表儲存失敗，請稍後再試')
   }
 }
 </script>

@@ -151,9 +151,17 @@ export const useDataMapper = () => {
    * @returns {Object} 後端 API 接受的資料格式
    */
   const formToBackend = (formData, originalData = {}) => {
+    // 排除結構欄位（風險類別、風險主題、風險因子），這些欄位不應該在編輯題目時被更新
+    const {
+      category_id,
+      topic_id,
+      risk_factor_id,
+      ...originalDataWithoutStructure
+    } = originalData
+
     return {
-      // 保留原始資料中的所有欄位
-      ...originalData,
+      // 保留原始資料中的所有欄位（排除結構欄位）
+      ...originalDataWithoutStructure,
 
       // ===== Section A: 風險因子議題描述 (雙重對應) =====
       a_content: formData.riskFactorDescription,
@@ -330,33 +338,50 @@ export const useDataMapper = () => {
     const randomLevel = () => Math.floor(Math.random() * 5) + 1
 
     return {
+      // Section A: 風險因子議題描述
       riskFactorDescription: '<p><strong>企業營運高度依賴自然資源風險評估</strong></p><p>企業的營運往往高度依賴自然資源，如水資源、石油、天然氣、動植物資源、海洋魚類供給、土壤、森林等。隨著氣候變遷、生態退化與資源稀缺問題日益嚴峻，若企業未能妥善管理資源使用及環境衝擊，可能面臨供應中斷、成本上升與合規壓力等風險。</p>',
+
+      // Section B: 參考文字
       referenceText: '<p><strong>🔵 去年報告書文字或第三方背景資料整理：</strong></p><ul><li>台灣與生產據點的用水，皆不屬於水資源稀缺地區</li><li>政府調查顯示有' + (Math.floor(Math.random() * 5) + 3) + '個生產據點位於水稀缺風險地區</li></ul><p><strong>🔵 可能思考之風險情境面：</strong></p><ol><li>自然資源依賴性(對內)</li><li>自然資源衝擊性(對外)</li></ol>',
+
+      // Section C: 風險事件
       hasRiskEvent: Math.random() > 0.5 ? 'yes' : 'no',
       riskEventDescription: '去年發生供應鏈中斷事件，造成短期生產調整',
+
+      // Section D: 對應作為
       hasCounterAction: Math.random() > 0.5 ? 'yes' : 'no',
-      counterActionDescription: '導入TNFD框架，加強自然資源風險評估',
-      counterActionCost: '顧問費用約80萬元，系統建置費用約200萬元',
+      counterActionDescription: '導入TNFD框架，加強自然資源風險評估與管理機制，建立更完善的風險預警系統',
+      counterActionCost: '顧問費用約80萬元，系統建置費用約200萬元，年度維運成本約50萬元',
+
+      // Section E: 風險評估 (E1描述 + E2可能性/衝擊/計算)
       risk: {
         description: randomPick(riskDescriptions),
-        probability: randomLevel(),
-        impactLevel: randomLevel(),
-        calculation: '根據歷史數據分析，預估影響程度約為營收的2-5%'
+        probability: randomLevel(), // 1-5的數字，對應量表選項
+        impactLevel: randomLevel(), // 1-5的數字，對應量表選項
+        calculation: '根據歷史數據分析與專家評估，考量發生機率與影響程度，預估此風險對公司營收的潛在影響約為2-5%，建議持續監控並建立應變機制'
       },
+
+      // Section F: 機會評估 (F1描述 + F2可能性/衝擊/計算)
       opportunity: {
         description: randomPick(opportunityDescriptions),
-        probability: randomLevel(),
-        impactLevel: randomLevel(),
-        calculation: '考量市場趨勢，預期可帶來5-10%的營收成長'
+        probability: randomLevel(), // 1-5的數字，對應量表選項
+        impactLevel: randomLevel(), // 1-5的數字，對應量表選項
+        calculation: '考量ESG市場趨勢與客戶需求轉變，結合公司既有優勢，預期此機會可帶來5-10%的營收成長，並提升品牌價值與市場競爭力'
       },
+
+      // Section G: 對外負面衝擊
       negativeImpact: {
-        level: randomLevel(),
+        level: randomLevel(), // 1-5的數字
         description: randomPick(negativeImpactDescriptions)
       },
+
+      // Section H: 對外正面影響
       positiveImpact: {
-        level: randomLevel(),
+        level: randomLevel(), // 1-5的數字
         description: randomPick(positiveImpactDescriptions)
       },
+
+      // Hover 資訊圖示文字
       hoverTexts: {
         E1: '相關風險說明：企業面臨的風險評估相關資訊',
         F1: '相關機會說明：企業可能的機會評估相關資訊',

@@ -43,7 +43,7 @@
             <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*機會發生可能性</label>
             <select
               :value="f2OpportunityProbability"
-              @change="$emit('update:f2OpportunityProbability', $event.target.value)"
+              @change="$emit('update:f2OpportunityProbability', parseInt($event.target.value))"
               :disabled="disabled"
               class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -57,7 +57,7 @@
             <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*機會發生衝擊程度</label>
             <select
               :value="f2OpportunityImpact"
-              @change="$emit('update:f2OpportunityImpact', $event.target.value)"
+              @change="$emit('update:f2OpportunityImpact', parseInt($event.target.value))"
               :disabled="disabled"
               class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -87,8 +87,8 @@
 <script setup>
 defineProps({
   f1OpportunityDescription: String,
-  f2OpportunityProbability: String,
-  f2OpportunityImpact: String,
+  f2OpportunityProbability: [String, Number],
+  f2OpportunityImpact: [String, Number],
   f2OpportunityCalculation: String,
   probabilityOptions: {
     type: Array,

@@ -8,6 +8,14 @@ class AddE2FieldsToQuestionContents extends Migration
 {
     public function up()
     {
+        $db = \Config\Database::connect();
+
+        // Check if e2_select_1 already exists, if so, skip this migration
+        if ($db->fieldExists('e2_select_1', 'question_contents')) {
+            echo "⏭️  E2/F2 欄位已存在於 question_contents，跳過此 migration\n";
+            return;
+        }
+
         // Add new E-2 fields
         $fields = [
             'e2_select_1' => [

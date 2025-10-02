@@ -43,7 +43,7 @@
             <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*風險發生可能性</label>
             <select
               :value="e2RiskProbability"
-              @change="$emit('update:e2RiskProbability', $event.target.value)"
+              @change="$emit('update:e2RiskProbability', parseInt($event.target.value))"
               :disabled="disabled"
               class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -57,7 +57,7 @@
             <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">*風險發生衝擊程度</label>
             <select
               :value="e2RiskImpact"
-              @change="$emit('update:e2RiskImpact', $event.target.value)"
+              @change="$emit('update:e2RiskImpact', parseInt($event.target.value))"
               :disabled="disabled"
               class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -89,8 +89,8 @@ import { onMounted } from 'vue';
 
 const props = defineProps({
   e1RiskDescription: String,
-  e2RiskProbability: String,
-  e2RiskImpact: String,
+  e2RiskProbability: [String, Number],
+  e2RiskImpact: [String, Number],
   e2RiskCalculation: String,
   probabilityOptions: {
     type: Array,

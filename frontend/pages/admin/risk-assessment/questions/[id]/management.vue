@@ -981,8 +981,8 @@ import {
 const route = useRoute()
 const companyId = computed(() => route.params.id)
 
-// Notification system using Nuxt UI
-const toast = useToast()
+// Notification system using SweetAlert
+const { showSuccess, showError } = useNotification()
 
 // Get templates from store
 const templatesStore = useTemplatesStore()
@@ -1307,11 +1307,10 @@ const saveQuestionCategory = async () => {
     showEditCategoryModal.value = false
 
     // Show success notification
-    toast.add({
-      title: isEditing ? '更新成功' : '新增成功',
-      description: `風險分類「${data.category_name}」已成功${isEditing ? '更新' : '建立'}`,
-      color: 'green'
-    })
+    await showSuccess(
+      isEditing ? '更新成功' : '新增成功',
+      `風險分類「${data.category_name}」已成功${isEditing ? '更新' : '建立'}`
+    )
 
     console.log('Category saved successfully')
   } catch (error) {
@@ -1319,11 +1318,10 @@ const saveQuestionCategory = async () => {
 
     // Show error notification
     const isEditing = !!editingStructureItem.value.id
-    toast.add({
-      title: isEditing ? '更新失敗' : '新增失敗',
-      description: error.message || '操作時發生錯誤，請稍後再試',
-      color: 'red'
-    })
+    await showError(
+      isEditing ? '更新失敗' : '新增失敗',
+      error.message || '操作時發生錯誤，請稍後再試'
+    )
   }
 }
 
@@ -1352,11 +1350,10 @@ const saveQuestionTopic = async () => {
     showEditTopicModal.value = false
 
     // Show success notification
-    toast.add({
-      title: isEditing ? '更新成功' : '新增成功',
-      description: `風險主題「${data.topic_name}」已成功${isEditing ? '更新' : '建立'}`,
-      color: 'green'
-    })
+    await showSuccess(
+      isEditing ? '更新成功' : '新增成功',
+      `風險主題「${data.topic_name}」已成功${isEditing ? '更新' : '建立'}`
+    )
 
     console.log('Topic saved successfully')
   } catch (error) {
@@ -1364,11 +1361,10 @@ const saveQuestionTopic = async () => {
 
     // Show error notification
     const isEditing = !!editingStructureItem.value.id
-    toast.add({
-      title: isEditing ? '更新失敗' : '新增失敗',
-      description: error.message || '操作時發生錯誤，請稍後再試',
-      color: 'red'
-    })
+    await showError(
+      isEditing ? '更新失敗' : '新增失敗',
+      error.message || '操作時發生錯誤，請稍後再試'
+    )
   }
 }
 
@@ -1397,11 +1393,10 @@ const saveQuestionFactor = async () => {
     showEditFactorModal.value = false
 
     // Show success notification
-    toast.add({
-      title: isEditing ? '更新成功' : '新增成功',
-      description: `風險因子「${data.factor_name}」已成功${isEditing ? '更新' : '建立'}`,
-      color: 'green'
-    })
+    await showSuccess(
+      isEditing ? '更新成功' : '新增成功',
+      `風險因子「${data.factor_name}」已成功${isEditing ? '更新' : '建立'}`
+    )
 
     console.log('Factor saved successfully')
   } catch (error) {
@@ -1409,11 +1404,10 @@ const saveQuestionFactor = async () => {
 
     // Show error notification
     const isEditing = !!editingStructureItem.value.id
-    toast.add({
-      title: isEditing ? '更新失敗' : '新增失敗',
-      description: error.message || '操作時發生錯誤，請稍後再試',
-      color: 'red'
-    })
+    await showError(
+      isEditing ? '更新失敗' : '新增失敗',
+      error.message || '操作時發生錯誤，請稍後再試'
+    )
   }
 }
 
@@ -1471,11 +1465,10 @@ const confirmDeleteStructureItem = async () => {
       'factor': '風險因子'
     }
 
-    toast.add({
-      title: '刪除成功',
-      description: `${typeNames[structureEditType.value]}「${itemName}」已成功刪除`,
-      color: 'green'
-    })
+    await showSuccess(
+      '刪除成功',
+      `${typeNames[structureEditType.value]}「${itemName}」已成功刪除`
+    )
 
     console.log(`${structureEditType.value} deleted successfully`)
   } catch (error) {
@@ -1488,11 +1481,10 @@ const confirmDeleteStructureItem = async () => {
       'factor': '風險因子'
     }
 
-    toast.add({
-      title: '刪除失敗',
-      description: error.message || `刪除${typeNames[structureEditType.value]}時發生錯誤`,
-      color: 'red'
-    })
+    await showError(
+      '刪除失敗',
+      error.message || `刪除${typeNames[structureEditType.value]}時發生錯誤`
+    )
   }
 }
 

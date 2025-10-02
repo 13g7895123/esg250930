@@ -20,16 +20,16 @@
         <label class="block text-base text-gray-600 dark:text-gray-400 mb-1">正面影響程度</label>
         <select
           :value="h1PositiveImpactLevel"
-          @change="$emit('update:h1PositiveImpactLevel', $event.target.value)"
+          @change="$emit('update:h1PositiveImpactLevel', parseInt($event.target.value))"
           :disabled="disabled"
           class="w-full border border-gray-300 dark:border-gray-600 rounded-2xl px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <option value="">請選擇</option>
-          <option value="level-1">1</option>
-          <option value="level-2">2</option>
-          <option value="level-3">3</option>
-          <option value="level-4">4</option>
-          <option value="level-5">5</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
         </select>
       </div>
       <div>
@@ -49,7 +49,7 @@
 
 <script setup>
 defineProps({
-  h1PositiveImpactLevel: String,
+  h1PositiveImpactLevel: [String, Number],
   h1PositiveImpactDescription: String,
   disabled: {
     type: Boolean,

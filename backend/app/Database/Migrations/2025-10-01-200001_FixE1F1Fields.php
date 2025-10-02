@@ -69,6 +69,8 @@ class FixE1F1Fields extends Migration
                    OR e1_risk_calculation IS NOT NULL
             ");
             echo "✅ 已遷移 E-1 資料到 E-2\n";
+        } else {
+            echo "⏭️  E-1 欄位已不存在，跳過資料遷移\n";
         }
 
         // 遷移 F-1 的 probability/impact/calculation 資料到 F-2
@@ -84,6 +86,8 @@ class FixE1F1Fields extends Migration
                    OR f1_opportunity_calculation IS NOT NULL
             ");
             echo "✅ 已遷移 F-1 資料到 F-2\n";
+        } else {
+            echo "⏭️  F-1 欄位已不存在，跳過資料遷移\n";
         }
 
         // 刪除 E-1 的 probability/impact/calculation 欄位（這些應該只在 E-2）

@@ -8,6 +8,14 @@ class AddE2F2FieldsToQuestionResponses extends Migration
 {
     public function up()
     {
+        $db = \Config\Database::connect();
+
+        // Check if e2_risk_probability already exists, if so, skip this migration
+        if ($db->fieldExists('e2_risk_probability', 'question_responses')) {
+            echo "⏭️  E2/F2 欄位已存在於 question_responses，跳過此 migration\n";
+            return;
+        }
+
         // Add E-2 and F-2 fields to question_responses
         $fields = [
             // E-2區域 - 風險財務影響評估
