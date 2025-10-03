@@ -301,46 +301,41 @@ class TemplateController extends ResourceController
                 ], 500);
             }
 
-            // Copy template contents
+            // Copy template structure and contents
             $db = \Config\Database::connect();
 
-            // 1. Copy template contents with all fields
+            // 1. Copy risk categories with all fields
             $db->query("
-                INSERT INTO template_contents (
-                    template_id, category_id, topic_id, risk_factor_id, description, sort_order, is_required,
-                    a_content, b_content, c_placeholder, d_placeholder_1, d_placeholder_2,
-                    e1_placeholder_1, e2_select_1, e2_select_2, e2_placeholder,
-                    f2_select_1, f2_select_2, f2_placeholder,
-                    e1_info, f1_info, g1_info, h1_info,
-                    created_at, updated_at
-                )
-                SELECT
-                    ?, category_id, topic_id, risk_factor_id, description, sort_order, is_required,
-                    a_content, b_content, c_placeholder, d_placeholder_1, d_placeholder_2,
-                    e1_placeholder_1, e2_select_1, e2_select_2, e2_placeholder,
-                    f2_select_1, f2_select_2, f2_placeholder,
-                    e1_info, f1_info, g1_info, h1_info,
-                    NOW(), NOW()
-                FROM template_contents
+                INSERT INTO risk_categories (template_id, category_name, category_code, description, sort_order, created_at, updated_at)
+                SELECT ?, category_name, category_code, description, sort_order, NOW(), NOW()
+                FROM risk_categories
                 WHERE template_id = ?
             ", [$newTemplateId, $id]);
 
-            // 2. Copy risk categories association (if exists in your schema)
-            // Note: Based on your schema, categories seem to be global, not template-specific
-            // So we don't need to copy them
+            // Get mapping of old category IDs to new category IDs
+            $oldCategories = $db->query("SELECT id FROM risk_categories WHERE template_id = ? ORDER BY sort_order", [$id])->getResultArray();
+            $newCategories = $db->query("SELECT id FROM risk_categories WHERE template_id = ? ORDER BY sort_order", [$newTemplateId])->getResultArray();
 
-            // 3. Copy risk topics with all fields
-            $db->query("
-                INSERT INTO risk_topics (template_id, category_id, topic_name, topic_code, description, sort_order, status, created_at, updated_at)
-                SELECT ?, category_id, topic_name, topic_code, description, sort_order, status, NOW(), NOW()
-                FROM risk_topics
-                WHERE template_id = ?
-            ", [$newTemplateId, $id]);
+            $categoryMapping = [];
+            for ($i = 0; $i < count($oldCategories); $i++) {
+                if (isset($newCategories[$i])) {
+                    $categoryMapping[$oldCategories[$i]['id']] = $newCategories[$i]['id'];
+                }
+            }
 
-            // 4. Copy risk factors
-            // First, we need to get the mapping of old topic IDs to new topic IDs
-            $oldTopics = $db->query("SELECT id FROM risk_topics WHERE template_id = ? ORDER BY sort_order", [$id])->getResultArray();
-            $newTopics = $db->query("SELECT id FROM risk_topics WHERE template_id = ? ORDER BY sort_order", [$newTemplateId])->getResultArray();
+            // 3. Copy risk topics with updated category_id mapping
+            foreach ($categoryMapping as $oldCategoryId => $newCategoryId) {
+                $db->query("
+                    INSERT INTO risk_topics (template_id, category_id, topic_name, topic_code, description, sort_order, status, created_at, updated_at)
+                    SELECT ?, ?, topic_name, topic_code, description, sort_order, status, NOW(), NOW()
+                    FROM risk_topics
+                    WHERE template_id = ? AND category_id = ?
+                ", [$newTemplateId, $newCategoryId, $id, $oldCategoryId]);
+            }
+
+            // 4. Get mapping of old topic IDs to new topic IDs
+            $oldTopics = $db->query("SELECT id, category_id FROM risk_topics WHERE template_id = ? ORDER BY category_id, sort_order", [$id])->getResultArray();
+            $newTopics = $db->query("SELECT id, category_id FROM risk_topics WHERE template_id = ? ORDER BY category_id, sort_order", [$newTemplateId])->getResultArray();
 
             $topicMapping = [];
             for ($i = 0; $i < count($oldTopics); $i++) {
@@ -349,14 +344,83 @@ class TemplateController extends ResourceController
                 }
             }
 
-            // Copy risk factors with updated topic_id and all fields
+            // 5. Copy risk factors with updated topic_id and category_id mapping
             foreach ($topicMapping as $oldTopicId => $newTopicId) {
-                $db->query("
-                    INSERT INTO risk_factors (template_id, topic_id, category_id, factor_name, description, status, created_at, updated_at)
-                    SELECT ?, ?, category_id, factor_name, description, status, NOW(), NOW()
-                    FROM risk_factors
-                    WHERE template_id = ? AND topic_id = ?
-                ", [$newTemplateId, $newTopicId, $id, $oldTopicId]);
+                // Get the old and new category_id for this topic
+                $oldTopic = array_values(array_filter($oldTopics, function($t) use ($oldTopicId) {
+                    return $t['id'] == $oldTopicId;
+                }))[0] ?? null;
+
+                $newTopic = array_values(array_filter($newTopics, function($t) use ($newTopicId) {
+                    return $t['id'] == $newTopicId;
+                }))[0] ?? null;
+
+                if ($oldTopic && $newTopic) {
+                    $db->query("
+                        INSERT INTO risk_factors (template_id, topic_id, category_id, factor_name, description, status, created_at, updated_at)
+                        SELECT ?, ?, ?, factor_name, description, status, NOW(), NOW()
+                        FROM risk_factors
+                        WHERE template_id = ? AND topic_id = ? AND category_id = ?
+                    ", [$newTemplateId, $newTopicId, $newTopic['category_id'], $id, $oldTopicId, $oldTopic['category_id']]);
+                }
+            }
+
+            // 6. Get mapping of old risk_factor IDs to new risk_factor IDs
+            $oldFactors = $db->query("SELECT id, topic_id, category_id FROM risk_factors WHERE template_id = ? ORDER BY category_id, topic_id, sort_order", [$id])->getResultArray();
+            $newFactors = $db->query("SELECT id, topic_id, category_id FROM risk_factors WHERE template_id = ? ORDER BY category_id, topic_id, sort_order", [$newTemplateId])->getResultArray();
+
+            $factorMapping = [];
+            for ($i = 0; $i < count($oldFactors); $i++) {
+                if (isset($newFactors[$i])) {
+                    $factorMapping[$oldFactors[$i]['id']] = $newFactors[$i]['id'];
+                }
+            }
+
+            // 7. Copy template_contents with updated IDs
+            $contents = $db->query("SELECT * FROM template_contents WHERE template_id = ?", [$id])->getResultArray();
+
+            foreach ($contents as $content) {
+                $newCategoryId = $categoryMapping[$content['category_id']] ?? null;
+                $newTopicId = isset($content['topic_id']) ? ($topicMapping[$content['topic_id']] ?? null) : null;
+                $newFactorId = isset($content['risk_factor_id']) ? ($factorMapping[$content['risk_factor_id']] ?? null) : null;
+
+                // Only insert if we have valid mapped IDs (at least category_id should exist)
+                if ($newCategoryId) {
+                    $db->query("
+                        INSERT INTO template_contents (
+                            template_id, category_id, topic_id, risk_factor_id, description, sort_order, is_required,
+                            a_content, b_content, c_placeholder, d_placeholder_1, d_placeholder_2,
+                            e1_placeholder_1, e2_select_1, e2_select_2, e2_placeholder,
+                            f2_select_1, f2_select_2, f2_placeholder,
+                            e1_info, f1_info, g1_info, h1_info,
+                            created_at, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+                    ", [
+                        $newTemplateId,
+                        $newCategoryId,
+                        $newTopicId,
+                        $newFactorId,
+                        $content['description'],
+                        $content['sort_order'],
+                        $content['is_required'],
+                        $content['a_content'],
+                        $content['b_content'],
+                        $content['c_placeholder'],
+                        $content['d_placeholder_1'],
+                        $content['d_placeholder_2'],
+                        $content['e1_placeholder_1'],
+                        $content['e2_select_1'],
+                        $content['e2_select_2'],
+                        $content['e2_placeholder'],
+                        $content['f2_select_1'],
+                        $content['f2_select_2'],
+                        $content['f2_placeholder'],
+                        $content['e1_info'],
+                        $content['f1_info'],
+                        $content['g1_info'],
+                        $content['h1_info']
+                    ]);
+                }
             }
 
             // Get the newly created template
