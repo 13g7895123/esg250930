@@ -248,4 +248,73 @@ class TemplateController extends ResourceController
             ], 500);
         }
     }
+
+    /**
+     * Copy a template
+     * POST /api/v1/risk-assessment/templates/{id}/copy
+     */
+    public function copy($id = null)
+    {
+        try {
+            // Find the original template
+            $originalTemplate = $this->model->find($id);
+            if (!$originalTemplate) {
+                return $this->respond([
+                    'success' => false,
+                    'message' => 'Template not found'
+                ], 404);
+            }
+
+            // Get input data
+            $input = $this->request->getJSON(true) ?: $this->request->getPost();
+
+            // Validation rules
+            $rules = [
+                'version_name' => 'required|max_length[255]',
+                'description' => 'permit_empty|string'
+            ];
+
+            if (!$this->validate($rules, $input)) {
+                return $this->respond([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $this->validator->getErrors()
+                ], 400);
+            }
+
+            // Prepare data for the new template
+            $data = [
+                'version_name' => $input['version_name'],
+                'description' => $input['description'] ?? $originalTemplate['description'],
+                'status' => 'draft', // New copy starts as draft
+                'copied_from' => $id
+            ];
+
+            // Create the new template
+            $newTemplateId = $this->model->insert($data);
+
+            if (!$newTemplateId) {
+                return $this->respond([
+                    'success' => false,
+                    'message' => 'Failed to copy template',
+                    'errors' => $this->model->errors()
+                ], 500);
+            }
+
+            // Get the newly created template
+            $newTemplate = $this->model->find($newTemplateId);
+
+            return $this->respond([
+                'success' => true,
+                'message' => 'Template copied successfully',
+                'data' => $newTemplate
+            ], 201);
+
+        } catch (\Exception $e) {
+            return $this->respond([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

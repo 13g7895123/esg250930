@@ -16,44 +16,50 @@ export default defineNuxtPlugin(() => {
   // 定義常用的通知方法
   const notification = {
     // 成功通知
-    success: (title = '成功！', text = '') => {
+    success: (message = '操作成功') => {
       return $swal.fire({
         icon: 'success',
-        title,
-        text,
-        showConfirmButton: true,
+        title: '系統提示',
+        html: message, // 使用 html 以支援後端回傳的 HTML 格式
+        showConfirmButton: false,
         timer: 3000,
         timerProgressBar: true
       })
     },
 
     // 錯誤通知
-    error: (title = '錯誤！', text = '') => {
+    error: (message = '操作失敗') => {
       return $swal.fire({
         icon: 'error',
-        title,
-        html: text, // 使用 html 而不是 text 以支援 HTML 格式
-        showConfirmButton: true
+        title: '系統提示',
+        html: message, // 使用 html 以支援後端回傳的 HTML 格式
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
       })
     },
 
     // 警告通知
-    warning: (title = '注意！', text = '') => {
+    warning: (message = '請注意') => {
       return $swal.fire({
         icon: 'warning',
-        title,
-        html: text, // 使用 html 而不是 text 以支援 HTML 格式
-        showConfirmButton: true
+        title: '系統提示',
+        html: message, // 使用 html 以支援後端回傳的 HTML 格式
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
       })
     },
 
     // 訊息通知
-    info: (title = '提示', text = '') => {
+    info: (message = '提示訊息') => {
       return $swal.fire({
         icon: 'info',
-        title,
-        html: text, // 使用 html 而不是 text 以支援 HTML 格式
-        showConfirmButton: true
+        title: '系統提示',
+        html: message, // 使用 html 以支援後端回傳的 HTML 格式
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
       })
     },
 

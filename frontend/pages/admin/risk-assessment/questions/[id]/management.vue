@@ -1545,14 +1545,16 @@ const isLoadingQuestionManagement = ref(false)
 const loadQuestionManagementData = async () => {
   isLoadingQuestionManagement.value = true
   try {
+    // 使用 refreshCompanyAssessments 強制從後端重新載入資料
+    await refreshCompanyAssessments(companyId.value)
     const data = await getQuestionManagementByCompany(companyId.value)
     questionManagement.value = data || []
-    
+
     console.log('=== /admin/risk-assessment/questions/1/management 頁面資料 ===')
     console.log('Company ID:', companyId.value)
     console.log('Company Name:', companyName.value)
     console.log('Question Management Data:', data)
-    
+
     // 檢查建立日期格式 - 現在直接存儲顯示格式
     if (data && data.length > 0) {
       console.log('=== 建立日期格式檢查 ===')
@@ -1562,7 +1564,7 @@ const loadQuestionManagementData = async () => {
       })
       console.log('=== 建立日期格式檢查結束 ===')
     }
-    
+
     console.log('Available Templates:', availableTemplates.value)
     console.log('Available Users:', availableUsers.value)
     console.log('=== 資料結束 ===')
