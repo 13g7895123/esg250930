@@ -1673,6 +1673,12 @@ const columns = ref([
     cellClass: 'text-base text-gray-900 dark:text-white'
   },
   {
+    key: 'templateVersion',
+    label: '範本版本',
+    sortable: true,
+    cellClass: 'text-base text-gray-900 dark:text-white'
+  },
+  {
     key: 'year',
     label: '年份',
     sortable: true,
@@ -1760,8 +1766,10 @@ const confirmDelete = async () => {
     try {
       await deleteQuestionManagementItem(companyId.value, itemToDelete.value.id)
       await loadQuestionManagementData() // Reload data after deletion
+      await showSuccess('題項管理已成功刪除')
     } catch (error) {
       console.error('Error deleting item:', error)
+      await showError(error?.message || '刪除題項管理時發生錯誤，請稍後再試')
     }
   }
   showDeleteModal.value = false
@@ -1826,17 +1834,18 @@ const submitForm = async () => {
 
       // Reload data after adding
       await loadQuestionManagementData()
+      await showSuccess('題項管理已成功新增')
     } else if (showEditModal.value) {
       // Update existing item
       const oldTemplateId = editingItem.value.templateId
       const newTemplateId = parseInt(formData.value.templateId)
-      
+
       const itemData = {
         templateId: newTemplateId,
         templateVersion: template ? template.version_name : '',
         year: parseInt(formData.value.year)
       }
-      
+
       console.log('編輯項目資料:', itemData)
       console.log('編輯的項目:', editingItem.value)
       await updateQuestionManagementItem(companyId.value, editingItem.value.id, itemData)
@@ -1862,9 +1871,11 @@ const submitForm = async () => {
 
       // Reload data after updating
       await loadQuestionManagementData()
+      await showSuccess('題項管理已成功更新')
     }
   } catch (error) {
     console.error('Error in submitForm:', error)
+    await showError(error?.message || '操作失敗，請稍後再試')
   }
   
   console.log('=== 表單提交結束 ===')
