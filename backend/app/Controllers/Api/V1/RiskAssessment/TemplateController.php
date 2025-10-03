@@ -329,10 +329,10 @@ class TemplateController extends ResourceController
             // Note: Based on your schema, categories seem to be global, not template-specific
             // So we don't need to copy them
 
-            // 3. Copy risk topics
+            // 3. Copy risk topics with all fields
             $db->query("
-                INSERT INTO risk_topics (template_id, topic_name, sort_order, created_at, updated_at)
-                SELECT ?, topic_name, sort_order, NOW(), NOW()
+                INSERT INTO risk_topics (template_id, category_id, topic_name, topic_code, description, sort_order, status, created_at, updated_at)
+                SELECT ?, category_id, topic_name, topic_code, description, sort_order, status, NOW(), NOW()
                 FROM risk_topics
                 WHERE template_id = ?
             ", [$newTemplateId, $id]);
@@ -349,11 +349,11 @@ class TemplateController extends ResourceController
                 }
             }
 
-            // Copy risk factors with updated topic_id
+            // Copy risk factors with updated topic_id and all fields
             foreach ($topicMapping as $oldTopicId => $newTopicId) {
                 $db->query("
-                    INSERT INTO risk_factors (template_id, topic_id, category_id, factor_name, sort_order, created_at, updated_at)
-                    SELECT ?, ?, category_id, factor_name, sort_order, NOW(), NOW()
+                    INSERT INTO risk_factors (template_id, topic_id, category_id, factor_name, description, status, created_at, updated_at)
+                    SELECT ?, ?, category_id, factor_name, description, status, NOW(), NOW()
                     FROM risk_factors
                     WHERE template_id = ? AND topic_id = ?
                 ", [$newTemplateId, $newTopicId, $id, $oldTopicId]);

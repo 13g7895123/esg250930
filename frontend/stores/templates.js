@@ -262,18 +262,22 @@ export const useTemplatesStore = defineStore('templates', () => {
       if (response.success && response.data) {
         // Add new template to the list
         templates.value.unshift(response.data)
-        
+
         // Initialize empty content and categories for new template
         templateContent.value[response.data.id] = []
         riskCategories.value[response.data.id] = []
-        
+
         return response.data
       } else {
-        throw new Error('Failed to copy template')
+        // Extract API error message
+        const apiMessage = response.message || response.error?.message || 'Failed to copy template'
+        throw new Error(apiMessage)
       }
     } catch (err) {
       handleError(err, 'Failed to copy template')
-      throw err
+      // Extract and throw the actual error message
+      const errorMessage = err.error?.message || err.response?.data?.message || err.message || 'Failed to copy template'
+      throw new Error(errorMessage)
     } finally {
       isCopyingTemplate.value = false
     }
