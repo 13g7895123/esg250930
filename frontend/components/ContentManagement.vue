@@ -12,7 +12,7 @@
       :data="contentData"
       :columns="columns"
       search-placeholder="搜尋題目..."
-      :search-fields="['description', 'topic', 'risk_factor']"
+      :search-fields="['risk_category', 'risk_topic', 'risk_factor']"
       empty-title="還沒有題目內容"
       empty-message="開始建立您的第一個題目內容"
       no-search-results-title="沒有找到符合的題目"
