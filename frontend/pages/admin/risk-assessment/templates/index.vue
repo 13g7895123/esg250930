@@ -187,6 +187,43 @@
       @confirm="confirmDelete"
     />
 
+    <!-- Copy Template Modal -->
+    <Modal
+      :model-value="showCopyModal"
+      title="複製範本"
+      size="md"
+      :show-default-footer="true"
+      cancel-text="取消"
+      confirm-text="確認複製"
+      @update:model-value="(value) => showCopyModal = value"
+      @close="closeCopyModal"
+      @confirm="confirmCopy"
+    >
+      <div class="space-y-4">
+        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <p class="text-sm text-blue-800 dark:text-blue-200">
+            預設名稱：<span class="font-medium">{{ copyDefaultName }}</span>
+          </p>
+          <p class="text-sm text-blue-600 dark:text-blue-300 mt-1">
+            如要使用預設名稱，請直接點擊「確認複製」
+          </p>
+        </div>
+
+        <div>
+          <label for="copy-version-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            自訂版本名稱（選填）
+          </label>
+          <input
+            id="copy-version-name"
+            v-model="copyVersionName"
+            type="text"
+            :placeholder="copyDefaultName"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+          />
+        </div>
+      </div>
+    </Modal>
+
     <!-- Template Structure Management Modal -->
     <Modal
       :model-value="showTemplateManagementModal"
@@ -818,7 +855,11 @@ const templatesStore = useTemplatesStore()
 const showAddModal = ref(false)
 const showEditModal = ref(false)
 const showDeleteModal = ref(false)
+const showCopyModal = ref(false)
 const templateToDelete = ref(null)
+const templateToCopy = ref(null)
+const copyVersionName = ref('')
+const copyDefaultName = computed(() => templateToCopy.value ? `${templateToCopy.value.version_name} (副本)` : '')
 const editingTemplate = ref(null)
 const isSubmitting = ref(false)
 
@@ -879,7 +920,7 @@ const formData = ref({
 const versionNameInput = ref(null)
 
 // Notification system using SweetAlert
-const { showSuccess, showError, showInput, showLoading, closeAll } = useNotification()
+const { showSuccess, showError, showLoading, closeAll } = useNotification()
 
 // Get templates from store - use computed to ensure reactivity
 const templates = computed(() => templatesStore.templates)
@@ -1031,32 +1072,37 @@ const editTemplate = (template) => {
   showEditModal.value = true
 }
 
-const copyTemplate = async (template) => {
+const copyTemplate = (template) => {
+  templateToCopy.value = template
+  copyVersionName.value = ''
+  showCopyModal.value = true
+}
+
+const closeCopyModal = () => {
+  showCopyModal.value = false
+  templateToCopy.value = null
+  copyVersionName.value = ''
+}
+
+const confirmCopy = async () => {
+  if (!templateToCopy.value) return
+
+  const versionName = copyVersionName.value?.trim() || copyDefaultName.value
+
+  // Close modal first
+  closeCopyModal()
+
+  // Show loading
+  showLoading('系統提示', '正在複製範本...')
+
   try {
-    // Show input dialog for version name
-    const result = await showInput(
-      '複製範本',
-      '請輸入新範本的版本名稱',
-      'text',
-      `${template.version_name} (副本)`
-    )
-
-    if (result.isConfirmed && result.value) {
-      // Show loading
-      showLoading('系統提示', '正在複製範本...')
-
-      try {
-        await templatesStore.copyTemplate(template.id, result.value)
-        closeAll()
-        await showSuccess(`範本「${template.version_name}」已成功複製`)
-      } catch (error) {
-        closeAll()
-        console.error('Copy template error:', error)
-        await showError(error?.message || '複製範本時發生錯誤，請稍後再試')
-      }
-    }
+    await templatesStore.copyTemplate(templateToCopy.value.id, versionName)
+    closeAll()
+    await showSuccess(`範本「${templateToCopy.value.version_name}」已成功複製`)
   } catch (error) {
-    console.error('Copy template dialog error:', error)
+    closeAll()
+    console.error('Copy template error:', error)
+    await showError(error?.message || '複製範本時發生錯誤，請稍後再試')
   }
 }
 

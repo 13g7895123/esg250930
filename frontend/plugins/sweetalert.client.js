@@ -95,7 +95,7 @@ export default defineNuxtPlugin(() => {
     },
 
     // 表單輸入對話框
-    input: (title = '請輸入', text = '', inputType = 'text', inputPlaceholder = '') => {
+    input: (title = '請輸入', text = '', inputType = 'text', inputPlaceholder = '', allowEmpty = false) => {
       return $swal.fire({
         title,
         text,
@@ -103,7 +103,7 @@ export default defineNuxtPlugin(() => {
         inputPlaceholder,
         showCancelButton: true,
         inputValidator: (value) => {
-          if (!value) {
+          if (!value && !allowEmpty) {
             return '請輸入內容！'
           }
         }
