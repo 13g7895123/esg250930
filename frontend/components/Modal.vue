@@ -36,7 +36,7 @@
       </div>
 
       <!-- Modal Body -->
-      <div :class="['p-6', bodyClass]">
+      <div :class="['p-6 overflow-y-auto flex-1', bodyClass]">
         <slot />
       </div>
 
@@ -147,7 +147,7 @@ const sizeClasses = computed(() => {
     xl: 'w-full max-w-xl',
     '2xl': 'w-full max-w-2xl',
     '3xl': 'w-full max-w-3xl',
-    '4xl': 'w-full max-w-4xl max-h-[80vh] overflow-hidden',
+    '4xl': 'w-full max-w-4xl max-h-[90vh] flex flex-col',
     full: 'w-full h-full max-w-none max-h-none m-0 rounded-none'
   }
   return sizeMap[props.size]
