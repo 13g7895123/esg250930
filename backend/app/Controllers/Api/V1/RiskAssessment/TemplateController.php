@@ -114,6 +114,15 @@ class TemplateController extends ResourceController
                 ], 400);
             }
 
+            // Check if version_name already exists
+            $existingTemplate = $this->model->where('version_name', $input['version_name'])->first();
+            if ($existingTemplate) {
+                return $this->respond([
+                    'success' => false,
+                    'message' => '版本名稱已存在，請使用不同的名稱'
+                ], 400);
+            }
+
             $data = [
                 'version_name' => $input['version_name'],
                 'description' => $input['description'] ?? null,
@@ -279,6 +288,15 @@ class TemplateController extends ResourceController
                     'success' => false,
                     'message' => 'Validation failed',
                     'errors' => $this->validator->getErrors()
+                ], 400);
+            }
+
+            // Check if version_name already exists
+            $existingTemplate = $this->model->where('version_name', $input['version_name'])->first();
+            if ($existingTemplate) {
+                return $this->respond([
+                    'success' => false,
+                    'message' => '版本名稱已存在，請使用不同的名稱'
                 ], 400);
             }
 
