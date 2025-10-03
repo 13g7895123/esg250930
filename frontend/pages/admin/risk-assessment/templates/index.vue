@@ -337,7 +337,7 @@
     <!-- Risk Category Management Modal -->
     <Modal
       :model-value="showRiskCategoryManagementModal"
-      :title="`風險類別管理 - ${managingTemplate?.version_name}`"
+      :title="`管理風險類別 - ${managingTemplate?.version_name}`"
       size="4xl"
       @update:model-value="(value) => showRiskCategoryManagementModal = value"
       @close="showRiskCategoryManagementModal = false"
@@ -478,7 +478,7 @@
     <!-- Risk Factor Management Modal -->
     <Modal
       :model-value="showRiskFactorManagementModal"
-      :title="`風險因子管理 - ${managingTemplate?.version_name}`"
+      :title="`管理風險因子 - ${managingTemplate?.version_name}`"
       size="4xl"
       @update:model-value="(value) => showRiskFactorManagementModal = value"
       @close="showRiskFactorManagementModal = false"
@@ -665,7 +665,7 @@
     <!-- Risk Topic Management Modal -->
     <Modal
       :model-value="showRiskTopicManagementModal"
-      :title="`風險主題管理 - ${managingTemplate?.version_name}`"
+      :title="`管理風險主題 - ${managingTemplate?.version_name}`"
       size="4xl"
       @update:model-value="(value) => showRiskTopicManagementModal = value"
       @close="showRiskTopicManagementModal = false"
