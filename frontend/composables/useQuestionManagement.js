@@ -173,11 +173,12 @@ export const useQuestionManagement = () => {
 
         return newItem
       }
+
+      throw new Error('新增失敗，可能是同一範本同一年份已存在')
     } catch (error) {
       console.error('Error adding question management item:', error)
+      throw error
     }
-
-    return null
   }
 
   // Update question management item
