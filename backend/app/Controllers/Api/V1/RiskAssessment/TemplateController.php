@@ -301,6 +301,51 @@ class TemplateController extends ResourceController
                 ], 500);
             }
 
+            // Copy template contents
+            $db = \Config\Database::connect();
+
+            // 1. Copy template contents
+            $db->query("
+                INSERT INTO template_contents (template_id, topic, description, sort_order, created_at, updated_at)
+                SELECT ?, topic, description, sort_order, NOW(), NOW()
+                FROM template_contents
+                WHERE template_id = ?
+            ", [$newTemplateId, $id]);
+
+            // 2. Copy risk categories association (if exists in your schema)
+            // Note: Based on your schema, categories seem to be global, not template-specific
+            // So we don't need to copy them
+
+            // 3. Copy risk topics
+            $db->query("
+                INSERT INTO risk_topics (template_id, topic_name, sort_order, created_at, updated_at)
+                SELECT ?, topic_name, sort_order, NOW(), NOW()
+                FROM risk_topics
+                WHERE template_id = ?
+            ", [$newTemplateId, $id]);
+
+            // 4. Copy risk factors
+            // First, we need to get the mapping of old topic IDs to new topic IDs
+            $oldTopics = $db->query("SELECT id FROM risk_topics WHERE template_id = ? ORDER BY sort_order", [$id])->getResultArray();
+            $newTopics = $db->query("SELECT id FROM risk_topics WHERE template_id = ? ORDER BY sort_order", [$newTemplateId])->getResultArray();
+
+            $topicMapping = [];
+            for ($i = 0; $i < count($oldTopics); $i++) {
+                if (isset($newTopics[$i])) {
+                    $topicMapping[$oldTopics[$i]['id']] = $newTopics[$i]['id'];
+                }
+            }
+
+            // Copy risk factors with updated topic_id
+            foreach ($topicMapping as $oldTopicId => $newTopicId) {
+                $db->query("
+                    INSERT INTO risk_factors (template_id, topic_id, category_id, factor_name, sort_order, created_at, updated_at)
+                    SELECT ?, ?, category_id, factor_name, sort_order, NOW(), NOW()
+                    FROM risk_factors
+                    WHERE template_id = ? AND topic_id = ?
+                ", [$newTemplateId, $newTopicId, $id, $oldTopicId]);
+            }
+
             // Get the newly created template
             $newTemplate = $this->model->find($newTemplateId);
 

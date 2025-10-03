@@ -1033,11 +1033,30 @@ const editTemplate = (template) => {
 
 const copyTemplate = async (template) => {
   try {
-    await templatesStore.copyTemplate(template.id, `${template.version_name} (副本)`)
-    await showSuccess('複製成功', `範本「${template.version_name}」已成功複製`)
+    // Show input dialog for version name
+    const result = await showInput(
+      '複製範本',
+      '請輸入新範本的版本名稱',
+      'text',
+      `${template.version_name} (副本)`
+    )
+
+    if (result.isConfirmed && result.value) {
+      // Show loading
+      showLoading('系統提示', '正在複製範本...')
+
+      try {
+        await templatesStore.copyTemplate(template.id, result.value)
+        closeAll()
+        await showSuccess(`範本「${template.version_name}」已成功複製`)
+      } catch (error) {
+        closeAll()
+        console.error('Copy template error:', error)
+        await showError(error?.message || '複製範本時發生錯誤，請稍後再試')
+      }
+    }
   } catch (error) {
-    console.error('Copy template error:', error)
-    await showError('複製失敗', '複製範本時發生錯誤，請稍後再試')
+    console.error('Copy template dialog error:', error)
   }
 }
 
