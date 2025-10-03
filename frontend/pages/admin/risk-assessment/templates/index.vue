@@ -487,7 +487,7 @@
         :data="currentTemplateRiskFactors"
         :columns="riskFactorColumns"
         search-placeholder="搜尋風險因子..."
-        :search-fields="['factor_name', 'category_name', 'description']"
+        :search-fields="['factor_name', 'category_name', 'topic_name']"
         empty-title="還沒有風險因子"
         empty-message="開始建立您的第一個風險因子"
         no-search-results-title="沒有找到符合的風險因子"

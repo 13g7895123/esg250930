@@ -84,7 +84,6 @@ class RiskFactorModel extends Model
                 ->like('risk_factors.factor_name', $search)
                 ->orLike('risk_categories.category_name', $search)
                 ->orLike('risk_topics.topic_name', $search)
-                ->orLike('risk_factors.description', $search)
                 ->groupEnd();
         }
 
