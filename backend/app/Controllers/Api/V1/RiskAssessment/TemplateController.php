@@ -366,8 +366,8 @@ class TemplateController extends ResourceController
             }
 
             // 6. Get mapping of old risk_factor IDs to new risk_factor IDs
-            $oldFactors = $db->query("SELECT id, topic_id, category_id FROM risk_factors WHERE template_id = ? ORDER BY category_id, topic_id, sort_order", [$id])->getResultArray();
-            $newFactors = $db->query("SELECT id, topic_id, category_id FROM risk_factors WHERE template_id = ? ORDER BY category_id, topic_id, sort_order", [$newTemplateId])->getResultArray();
+            $oldFactors = $db->query("SELECT id, topic_id, category_id FROM risk_factors WHERE template_id = ? ORDER BY category_id, topic_id, id", [$id])->getResultArray();
+            $newFactors = $db->query("SELECT id, topic_id, category_id FROM risk_factors WHERE template_id = ? ORDER BY category_id, topic_id, id", [$newTemplateId])->getResultArray();
 
             $factorMapping = [];
             for ($i = 0; $i < count($oldFactors); $i++) {
