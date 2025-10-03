@@ -70,12 +70,11 @@ export const useNotification = () => {
 
   /**
    * 顯示載入中對話框
-   * @param {string} title - 標題（選填，預設：處理中...）
-   * @param {string} message - 訊息（選填，預設：請稍候）
+   * @param {string} message - 訊息（選填，預設：處理中...請稍候）
    * @returns {Promise}
    */
-  const showLoading = (title = '處理中...', message = '請稍候') => {
-    return $notify.loading(title, message)
+  const showLoading = (message = '處理中...請稍候') => {
+    return $notify.loading(message)
   }
 
   /**
@@ -142,7 +141,7 @@ export const useNotification = () => {
 
     try {
       // 顯示載入中對話框
-      showLoading('系統提示', loadingMessage)
+      showLoading(loadingMessage)
 
       // 執行非同步操作
       const result = await asyncFn()

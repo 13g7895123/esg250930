@@ -1096,7 +1096,7 @@ const confirmCopy = async () => {
   closeCopyModal()
 
   // Show loading
-  showLoading('系統提示', '正在複製範本...')
+  showLoading('正在複製範本...')
 
   try {
     await templatesStore.copyTemplate(templateId, versionName)

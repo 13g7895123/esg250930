@@ -304,10 +304,23 @@ class TemplateController extends ResourceController
             // Copy template contents
             $db = \Config\Database::connect();
 
-            // 1. Copy template contents
+            // 1. Copy template contents with all fields
             $db->query("
-                INSERT INTO template_contents (template_id, category_id, topic, content, sort_order, created_at, updated_at)
-                SELECT ?, category_id, topic, content, sort_order, NOW(), NOW()
+                INSERT INTO template_contents (
+                    template_id, category_id, topic_id, risk_factor_id, description, sort_order, is_required,
+                    a_content, b_content, c_placeholder, d_placeholder_1, d_placeholder_2,
+                    e1_placeholder_1, e2_select_1, e2_select_2, e2_placeholder,
+                    f2_select_1, f2_select_2, f2_placeholder,
+                    e1_info, f1_info, g1_info, h1_info,
+                    created_at, updated_at
+                )
+                SELECT
+                    ?, category_id, topic_id, risk_factor_id, description, sort_order, is_required,
+                    a_content, b_content, c_placeholder, d_placeholder_1, d_placeholder_2,
+                    e1_placeholder_1, e2_select_1, e2_select_2, e2_placeholder,
+                    f2_select_1, f2_select_2, f2_placeholder,
+                    e1_info, f1_info, g1_info, h1_info,
+                    NOW(), NOW()
                 FROM template_contents
                 WHERE template_id = ?
             ", [$newTemplateId, $id]);

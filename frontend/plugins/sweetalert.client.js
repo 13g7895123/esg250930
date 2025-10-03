@@ -76,10 +76,11 @@ export default defineNuxtPlugin(() => {
     },
 
     // 載入中對話框
-    loading: (title = '處理中...', text = '請稍候') => {
+    loading: (message = '處理中...請稍候') => {
       return $swal.fire({
-        title,
-        text,
+        icon: 'info',
+        title: '系統提示',
+        html: message,
         allowOutsideClick: false,
         allowEscapeKey: false,
         showConfirmButton: false,
