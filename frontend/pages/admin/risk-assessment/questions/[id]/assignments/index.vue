@@ -1,20 +1,12 @@
 <template>
   <div class="p-6">
     <!-- Page Header -->
-    <div class="mb-6">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-4">
-          <button
-            @click="$router.back()"
-            class="p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
-          >
-            <ArrowLeftIcon class="w-5 h-5" />
-          </button>
-          <div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">評估表指派狀況</h1>
-            <p class="text-gray-600 dark:text-gray-400">{{ assessmentInfo.templateVersion }} ({{ assessmentInfo.year }}年)</p>
-          </div>
-        </div>
+    <PageHeader
+      title="評估表指派狀況"
+      :description="`${assessmentInfo.templateVersion} (${assessmentInfo.year}年)`"
+      :show-back-button="true"
+    >
+      <template #actions>
         <div v-if="assessmentStats" class="flex items-center space-x-4">
           <div class="text-center">
             <div class="text-2xl font-bold text-green-600">{{ assessmentStats.completed }}</div>
@@ -29,8 +21,8 @@
             <div class="text-sm text-gray-500">未開始</div>
           </div>
         </div>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- Loading State -->
     <div v-if="loading" class="flex items-center justify-center py-12">
@@ -139,7 +131,6 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  ArrowLeftIcon,
   ArrowPathIcon,
   EyeIcon,
   UsersIcon

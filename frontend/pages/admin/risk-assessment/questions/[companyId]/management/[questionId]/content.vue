@@ -12,6 +12,7 @@
     <ContentManagement
       :title="`題項內容管理 - ${questionInfo?.year || new Date().getFullYear()}年度`"
       description="管理風險評估題項的主題內容"
+      :show-back-button="true"
       :content-data="questionContent || []"
       :risk-categories="questionCategories || riskCategories || []"
       :risk-topics="questionTopics || []"

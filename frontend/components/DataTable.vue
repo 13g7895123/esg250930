@@ -134,8 +134,20 @@
 
         <!-- Table Body -->
         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-          <tr 
-            v-for="(item, index) in paginatedData" 
+          <!-- Loading State -->
+          <tr v-if="loading">
+            <td :colspan="selectable ? columns.length + 1 : columns.length" class="px-6 py-12">
+              <div class="flex flex-col items-center justify-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mb-4"></div>
+                <p class="text-gray-500 dark:text-gray-400">載入中...</p>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Data Rows -->
+          <tr
+            v-else
+            v-for="(item, index) in paginatedData"
             :key="getRowKey(item, index)"
             :class="[
               'hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200',
@@ -177,7 +189,7 @@
       </table>
 
       <!-- Empty State -->
-      <div v-if="paginatedData.length === 0" class="p-12 text-center">
+      <div v-if="!loading && paginatedData.length === 0" class="p-12 text-center">
         <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
           <DocumentTextIcon class="w-8 h-8 text-gray-400" />
         </div>
@@ -337,6 +349,10 @@ const props = defineProps({
   sortable: {
     type: Boolean,
     default: true
+  },
+  loading: {
+    type: Boolean,
+    default: false
   },
   
   // Search

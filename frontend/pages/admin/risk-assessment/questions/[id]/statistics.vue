@@ -1,16 +1,11 @@
 <template>
   <div class="p-6">
     <!-- Page Header -->
-    <div class="mb-6">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          評估表統計結果
-        </h1>
-        <p v-if="assessmentInfo" class="text-gray-600 dark:text-gray-400">
-          {{ assessmentInfo.template_version }} - {{ assessmentInfo.year }}年
-        </p>
-      </div>
-    </div>
+    <PageHeader
+      title="評估表統計結果"
+      :description="assessmentInfo ? `${assessmentInfo.template_version} - ${assessmentInfo.year}年` : ''"
+      :show-back-button="true"
+    />
 
     <!-- Loading State -->
     <div v-if="loading" class="flex justify-center items-center py-12">

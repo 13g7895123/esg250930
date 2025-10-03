@@ -1,10 +1,11 @@
 <template>
   <div class="p-6">
     <!-- Page Header -->
-    <div class="mb-6">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">題項管理 - {{ companyName }}</h1>
-      <p class="text-gray-600 dark:text-gray-400">管理 {{ companyName }} 的風險評估題項與相關資料</p>
-    </div>
+    <PageHeader
+      :title="`題項管理 - ${companyName}`"
+      :description="`管理 ${companyName} 的風險評估題項與相關資料`"
+      :show-back-button="true"
+    />
 
     <!-- Company Warning Message -->
     <div v-if="showCompanyWarning" class="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
@@ -40,6 +41,7 @@
     <DataTable
       :data="questionManagement"
       :columns="columns"
+      :loading="isLoadingQuestionManagement"
       search-placeholder="搜尋年份或範本版本..."
       :search-fields="['year', 'templateVersion']"
       empty-title="還沒有題項管理資料"
@@ -360,7 +362,7 @@
       @update:model-value="(value) => showQuestionStructureModal = value"
       @close="showQuestionStructureModal = false"
     >
-      <div class="space-y-6">
+      <div class="space-y-6 max-h-[80vh] overflow-y-auto">
         <!-- Template Information -->
         <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
           <div class="flex items-center justify-between">
@@ -1523,9 +1525,11 @@ const {
 
 // Reactive data for question management items
 const questionManagement = ref([])
+const isLoadingQuestionManagement = ref(false)
 
 // Load question management data
 const loadQuestionManagementData = async () => {
+  isLoadingQuestionManagement.value = true
   try {
     const data = await getQuestionManagementByCompany(companyId.value)
     questionManagement.value = data || []
@@ -1551,6 +1555,8 @@ const loadQuestionManagementData = async () => {
   } catch (error) {
     console.error('Error loading question management data:', error)
     questionManagement.value = []
+  } finally {
+    isLoadingQuestionManagement.value = false
   }
 }
 

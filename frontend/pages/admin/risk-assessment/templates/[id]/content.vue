@@ -8,6 +8,7 @@
     v-else
     :title="`範本內容管理 - ${templateInfo?.versionName || '未知範本'}`"
     description="管理風險評估範本的主題內容"
+    :show-back-button="true"
     :content-data="templateContent"
     :risk-categories="riskCategories"
     :risk-topics="riskTopics"
