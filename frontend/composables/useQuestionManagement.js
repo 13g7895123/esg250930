@@ -119,10 +119,15 @@ export const useQuestionManagement = () => {
       if (result.success && result.data) {
         return result.data
       }
-      return null
+
+      // If result is not successful, throw error with API message
+      const errorMessage = result.error?.message || result.message || '新增失敗'
+      throw new Error(errorMessage)
     } catch (error) {
       console.error('Error saving assessment to API:', error)
-      return null
+      // Re-throw error with API message if available
+      const apiMessage = error.data?.error?.message || error.data?.message || error.message
+      throw new Error(apiMessage)
     }
   }
 
@@ -151,30 +156,26 @@ export const useQuestionManagement = () => {
         assessment_year: itemData.year
       }
 
-      // Save to API
+      // Save to API (will throw error if fails)
       const savedAssessment = await saveAssessmentToAPI(apiData)
 
-      if (savedAssessment) {
-        // Transform API response to match localStorage format
-        const newItem = {
-          id: savedAssessment.id,
-          templateId: savedAssessment.template_id,
-          templateVersion: savedAssessment.template_version || savedAssessment.template_version_name,
-          year: savedAssessment.assessment_year,
-          createdAt: formatDateForDisplay(new Date(savedAssessment.created_at)),
-          status: savedAssessment.status
-        }
-
-        // Update local cache
-        if (!questionManagement.value[id]) {
-          questionManagement.value[id] = []
-        }
-        questionManagement.value[id].unshift(newItem)
-
-        return newItem
+      // Transform API response to match localStorage format
+      const newItem = {
+        id: savedAssessment.id,
+        templateId: savedAssessment.template_id,
+        templateVersion: savedAssessment.template_version || savedAssessment.template_version_name,
+        year: savedAssessment.assessment_year,
+        createdAt: formatDateForDisplay(new Date(savedAssessment.created_at)),
+        status: savedAssessment.status
       }
 
-      throw new Error('新增失敗，可能是同一範本同一年份已存在')
+      // Update local cache
+      if (!questionManagement.value[id]) {
+        questionManagement.value[id] = []
+      }
+      questionManagement.value[id].unshift(newItem)
+
+      return newItem
     } catch (error) {
       console.error('Error adding question management item:', error)
       throw error
