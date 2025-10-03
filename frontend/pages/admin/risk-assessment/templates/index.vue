@@ -1087,18 +1087,21 @@ const closeCopyModal = () => {
 const confirmCopy = async () => {
   if (!templateToCopy.value) return
 
+  // Save template info before closing modal
+  const templateId = templateToCopy.value.id
+  const templateName = templateToCopy.value.version_name
   const versionName = copyVersionName.value?.trim() || copyDefaultName.value
 
-  // Close modal first
+  // Close modal
   closeCopyModal()
 
   // Show loading
   showLoading('系統提示', '正在複製範本...')
 
   try {
-    await templatesStore.copyTemplate(templateToCopy.value.id, versionName)
+    await templatesStore.copyTemplate(templateId, versionName)
     closeAll()
-    await showSuccess(`範本「${templateToCopy.value.version_name}」已成功複製`)
+    await showSuccess(`範本「${templateName}」已成功複製`)
   } catch (error) {
     closeAll()
     console.error('Copy template error:', error)
