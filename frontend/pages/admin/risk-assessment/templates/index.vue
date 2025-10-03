@@ -346,7 +346,7 @@
         :data="currentTemplateRiskCategories"
         :columns="riskCategoryColumns"
         search-placeholder="搜尋風險類別..."
-        :search-fields="['category_name', 'description']"
+        :search-fields="['category_name']"
         empty-title="還沒有風險類別"
         empty-message="開始建立您的第一個風險類別"
         no-search-results-title="沒有找到符合的風險類別"
