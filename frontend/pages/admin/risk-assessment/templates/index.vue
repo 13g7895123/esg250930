@@ -1115,17 +1115,26 @@ const deleteTemplate = (template) => {
 }
 
 const confirmDelete = async () => {
-  if (templateToDelete.value) {
-    try {
-      await templatesStore.deleteTemplate(templateToDelete.value.id)
-      await showSuccess('刪除成功', `範本「${templateToDelete.value.version_name}」已成功刪除`)
-    } catch (error) {
-      console.error('Delete template error:', error)
-      await showError('刪除失敗', '刪除範本時發生錯誤，請稍後再試')
-    }
-  }
+  if (!templateToDelete.value) return
+
+  // Save template info and close modal
+  const templateId = templateToDelete.value.id
+  const templateName = templateToDelete.value.version_name
   showDeleteModal.value = false
   templateToDelete.value = null
+
+  // Show loading
+  showLoading('正在刪除範本...')
+
+  try {
+    await templatesStore.deleteTemplate(templateId)
+    closeAll()
+    await showSuccess(`範本「${templateName}」已成功刪除`)
+  } catch (error) {
+    closeAll()
+    console.error('Delete template error:', error)
+    await showError(error?.message || '刪除範本時發生錯誤，請稍後再試')
+  }
 }
 
 const viewTemplateContent = (template) => {
