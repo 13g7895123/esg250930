@@ -1528,13 +1528,14 @@ const copyOptions = ref({
 // Date is now stored in display format, no need for formatDate function
 
 // Question management composable
-const { 
+const {
   getQuestionManagementByCompany,
   addQuestionManagementItem,
   updateQuestionManagementItem,
   deleteQuestionManagementItem,
   copyQuestionManagementItem,
-  initializeCompanyQuestionManagement
+  initializeCompanyQuestionManagement,
+  refreshCompanyAssessments
 } = useQuestionManagement()
 
 // Reactive data for question management items
