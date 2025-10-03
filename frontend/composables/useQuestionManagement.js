@@ -117,7 +117,7 @@ export const useQuestionManagement = () => {
       const result = await api.riskAssessment.create(assessmentData)
 
       if (result.success && result.data) {
-        return result.data.success ? result.data.data : null
+        return result.data
       }
       return null
     } catch (error) {

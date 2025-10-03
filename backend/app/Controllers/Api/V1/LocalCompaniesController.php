@@ -32,24 +32,51 @@ class LocalCompaniesController extends BaseController
             $sort = $this->request->getGet('sort') ?? 'created_at';
             $order = $this->request->getGet('order') ?? 'desc';
 
+            log_message('info', "LocalCompanies index called - search: {$search}, page: {$page}, limit: {$limit}, sort: {$sort}, order: {$order}");
+
             $builder = $this->localCompanyModel->getAllCompanies($search, $page, $limit, $sort, $order);
-            
-            // Get paginated results
-            $companies = $builder->paginate($limit, 'default', $page);
-            $pager = $this->localCompanyModel->pager;
+
+            // Get total count
+            $total = $builder->countAllResults(false);
+
+            // Get paginated results using limit/offset
+            $offset = ($page - 1) * $limit;
+            $companies = $builder->limit($limit, $offset)->findAll();
+
+            // Get the complete SQL query with bound parameters
+            $rawSql = $this->db->getLastQuery()->getQuery();
+            // Clean up SQL: remove newlines and extra spaces for direct use
+            $sql = preg_replace('/\s+/', ' ', str_replace(["\n", "\r", "\t"], ' ', $rawSql));
+
+            log_message('info', "LocalCompanies SQL: " . $sql);
+            log_message('info', "LocalCompanies found {$total} total, returning " . count($companies) . " companies");
+
+            $totalPages = ceil($total / $limit);
 
             return $this->respond([
                 'success' => true,
                 'data' => [
                     'companies' => $companies,
                     'pagination' => [
-                        'currentPage' => $pager->getCurrentPage(),
-                        'totalPages' => $pager->getPageCount(),
-                        'perPage' => $pager->getPerPage(),
-                        'total' => $pager->getTotal()
+                        'currentPage' => $page,
+                        'totalPages' => $totalPages,
+                        'perPage' => $limit,
+                        'total' => $total
                     ]
                 ],
-                'message' => '成功獲取公司列表'
+                'message' => '成功獲取公司列表',
+                'debug' => [
+                    'sql' => $sql,
+                    'params' => [
+                        'search' => $search,
+                        'page' => $page,
+                        'limit' => $limit,
+                        'sort' => $sort,
+                        'order' => $order
+                    ],
+                    'total_found' => $total,
+                    'returned_count' => count($companies)
+                ]
             ]);
 
         } catch (\Exception $e) {

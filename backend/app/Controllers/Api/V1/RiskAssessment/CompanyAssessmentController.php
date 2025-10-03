@@ -32,6 +32,8 @@ class CompanyAssessmentController extends BaseController
                 ]);
             }
 
+            log_message('info', "CompanyAssessment getByCompany called with companyId: {$companyId} (type: " . gettype($companyId) . ")");
+
             $search = $this->request->getGet('search');
             $year = $this->request->getGet('year');
             $status = $this->request->getGet('status');
@@ -44,8 +46,22 @@ class CompanyAssessmentController extends BaseController
                 $companyId, $search, $year, $status, $page, $limit, $sort, $order
             );
 
+            // Get total count first (with false to preserve builder state)
             $total = $builder->countAllResults(false);
-            $assessments = $builder->paginate($limit, 'default', $page);
+
+            // Get paginated results - use findAll() instead of paginate() after countAllResults()
+            $offset = ($page - 1) * $limit;
+            $assessments = $builder->limit($limit, $offset)->findAll();
+
+            // Get the complete SQL query with bound parameters
+            $db = \Config\Database::connect();
+            $rawSql = $db->getLastQuery()->getQuery();
+            // Clean up SQL: remove newlines and extra spaces for direct use
+            $sql = preg_replace('/\s+/', ' ', str_replace(["\n", "\r", "\t"], ' ', $rawSql));
+
+            log_message('info', "CompanyAssessment getByCompany found {$total} assessments for company {$companyId}");
+            log_message('info', "CompanyAssessment getByCompany returned " . count($assessments) . " assessments");
+            log_message('info', "CompanyAssessment getByCompany SQL: " . $sql);
 
             $pagination = [
                 'current_page' => $page,
@@ -61,6 +77,22 @@ class CompanyAssessmentController extends BaseController
                 'data' => [
                     'assessments' => $assessments,
                     'pagination' => $pagination
+                ],
+                'debug' => [
+                    'sql' => $sql,
+                    'params' => [
+                        'company_id' => $companyId,
+                        'company_id_type' => gettype($companyId),
+                        'search' => $search,
+                        'year' => $year,
+                        'status' => $status,
+                        'page' => $page,
+                        'limit' => $limit,
+                        'sort' => $sort,
+                        'order' => $order
+                    ],
+                    'total_found' => $total,
+                    'returned_count' => count($assessments)
                 ]
             ]);
 
@@ -247,6 +279,7 @@ class CompanyAssessmentController extends BaseController
             ];
 
             log_message('info', 'Inserting assessment data: ' . json_encode($data));
+            log_message('info', "company_id type: " . gettype($data['company_id']) . ", value: '{$data['company_id']}'");
             $assessmentId = $this->assessmentModel->insert($data);
             log_message('info', "Assessment inserted with ID: {$assessmentId}");
 

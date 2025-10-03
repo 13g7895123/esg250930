@@ -281,24 +281,29 @@ export const useApi = () => {
   // Companies Module
   const companies = {
     getAll: async (params = {}) => {
-      const queryParams = new URLSearchParams(params).toString()
-      const endpoint = queryParams ? `/risk-assessment/local-companies?${queryParams}` : '/risk-assessment/local-companies'
+      // Filter out null/undefined values to prevent "null" string in query
+      const filteredParams = Object.entries(params)
+        .filter(([_, value]) => value !== null && value !== undefined && value !== '')
+        .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {})
+
+      const queryParams = new URLSearchParams(filteredParams).toString()
+      const endpoint = queryParams ? `/local-companies?${queryParams}` : '/local-companies'
       return await get(endpoint)
     },
     getById: async (id) =>
-      await get(`/risk-assessment/local-companies/${id}`),
+      await get(`/local-companies/${id}`),
     getByExternalId: async (externalId) =>
-      await get(`/risk-assessment/local-companies/external/${externalId}`),
+      await get(`/local-companies/external/${externalId}`),
     create: async (data) =>
-      await post('/risk-assessment/local-companies', data),
+      await post('/local-companies', data),
     update: async (id, data) =>
-      await put(`/risk-assessment/local-companies/${id}`, data),
+      await put(`/local-companies/${id}`, data),
     delete: async (id) =>
-      await del(`/risk-assessment/local-companies/${id}`),
+      await del(`/local-companies/${id}`),
     getStats: async () =>
-      await get('/risk-assessment/local-companies/stats'),
+      await get('/local-companies/stats'),
     resolve: async (companyData) =>
-      await post('/risk-assessment/local-companies/resolve', companyData),
+      await post('/local-companies/resolve', companyData),
   }
 
   return {

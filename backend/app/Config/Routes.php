@@ -53,6 +53,34 @@ $routes->group('api/admin', function($routes) {
     $routes->resource('templates', ['controller' => 'Admin\TemplateController']);
 });
 
+// V1 Local Companies API Routes (Outside risk-assessment group for direct /api/v1 access)
+$routes->group('api/v1', function($routes) {
+    // Local Companies CORS preflight options
+    $routes->options('local-companies', function() {
+        return service('response')->setStatusCode(200);
+    });
+    $routes->options('local-companies/(:any)', function() {
+        return service('response')->setStatusCode(200);
+    });
+    $routes->options('local-companies/external/(:any)', function() {
+        return service('response')->setStatusCode(200);
+    });
+    $routes->options('local-companies/stats', function() {
+        return service('response')->setStatusCode(200);
+    });
+    $routes->options('local-companies/resolve', function() {
+        return service('response')->setStatusCode(200);
+    });
+
+    // Local Companies routes - Put specific routes before resource routes
+    $routes->get('local-companies/stats', 'Api\V1\LocalCompaniesController::stats');
+    $routes->get('local-companies/external/(:segment)', 'Api\V1\LocalCompaniesController::findByExternalId/$1');
+    $routes->post('local-companies/resolve', 'Api\V1\LocalCompaniesController::resolveCompany');
+
+    // Local Companies CRUD routes
+    $routes->resource('local-companies', ['controller' => 'Api\V1\LocalCompaniesController']);
+});
+
 // V1 Risk Assessment API Routes (New Structure)
 $routes->group('api/v1/risk-assessment', function($routes) {
     // Handle CORS preflight OPTIONS requests
@@ -101,7 +129,7 @@ $routes->group('api/v1/risk-assessment', function($routes) {
     $routes->options('templates/(:num)/factors/stats', function() {
         return service('response')->setStatusCode(200);
     });
-    
+
     // Company Assessments CORS preflight options
     $routes->options('company-assessments', function() {
         return service('response')->setStatusCode(200);
@@ -119,23 +147,6 @@ $routes->group('api/v1/risk-assessment', function($routes) {
         return service('response')->setStatusCode(200);
     });
     $routes->options('company-assessments/(:num)/status', function() {
-        return service('response')->setStatusCode(200);
-    });
-    
-    // Local Companies CORS preflight options
-    $routes->options('local-companies', function() {
-        return service('response')->setStatusCode(200);
-    });
-    $routes->options('local-companies/(:any)', function() {
-        return service('response')->setStatusCode(200);
-    });
-    $routes->options('local-companies/external/(:any)', function() {
-        return service('response')->setStatusCode(200);
-    });
-    $routes->options('local-companies/stats', function() {
-        return service('response')->setStatusCode(200);
-    });
-    $routes->options('local-companies/resolve', function() {
         return service('response')->setStatusCode(200);
     });
     
@@ -185,15 +196,7 @@ $routes->group('api/v1/risk-assessment', function($routes) {
     
     // Company Assessments CRUD routes
     $routes->resource('company-assessments', ['controller' => 'Api\V1\RiskAssessment\CompanyAssessmentController']);
-    
-    // Local Companies routes - Put specific routes before resource routes
-    $routes->get('local-companies/stats', 'Api\V1\LocalCompaniesController::stats');
-    $routes->get('local-companies/external/(:segment)', 'Api\V1\LocalCompaniesController::findByExternalId/$1');
-    $routes->post('local-companies/resolve', 'Api\V1\LocalCompaniesController::resolveCompany');
-    
-    // Local Companies CRUD routes
-    $routes->resource('local-companies', ['controller' => 'Api\V1\LocalCompaniesController']);
-    
+
     // Template CRUD routes - Temporarily redirect to working endpoint
     $routes->get('templates', 'Api\V1\RiskAssessment\TemplateRedirectController::index');
     $routes->post('templates', 'Api\V1\RiskAssessment\TemplateRedirectController::create');
