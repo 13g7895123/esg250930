@@ -155,28 +155,6 @@ export const useQuestionManagement = () => {
       const savedAssessment = await saveAssessmentToAPI(apiData)
 
       if (savedAssessment) {
-        // 後端應該已經自動同步範本架構，但為了確保同步成功，我們在前端也檢查一下
-        try {
-          // 檢查是否有架構資料，如果沒有則手動同步
-          const structureResult = await api.questionManagement.getStructure(savedAssessment.id)
-          const structureResponse = structureResult.data
-
-          if (structureResponse.success) {
-            const structure = structureResponse.data.structure
-            const hasStructure = (structure.categories && structure.categories.length > 0) ||
-                               (structure.topics && structure.topics.length > 0) ||
-                               (structure.factors && structure.factors.length > 0)
-
-            if (!hasStructure) {
-              const syncResult = await api.questionManagement.syncFromTemplate(savedAssessment.id)
-              const syncResponse = syncResult.data
-            }
-          }
-        } catch (syncError) {
-          console.error('Template structure sync check failed:', syncError)
-          // 不影響主要流程，只記錄警告
-        }
-
         // Transform API response to match localStorage format
         const newItem = {
           id: savedAssessment.id,
