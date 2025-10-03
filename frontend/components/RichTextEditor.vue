@@ -1,7 +1,7 @@
 <template>
   <div class="rich-text-editor-wrapper">
     <!-- 富文本編輯工具列 -->
-    <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-t-xl px-4 py-2">
+    <div v-if="!readonly" class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-t-xl px-4 py-2">
       <div class="flex items-center flex-wrap gap-1">
         <!-- 格式化工具組 -->
         <div class="flex items-center bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
@@ -95,8 +95,12 @@
     <!-- 編輯區域 -->
     <div
       ref="editorRef"
-      class="w-full min-h-[200px] px-4 py-3 border border-gray-200 dark:border-gray-700 border-t-0 rounded-b-xl focus-within:ring-2 focus-within:ring-green-500 focus-within:border-transparent bg-white dark:bg-gray-800"
-      contenteditable="true"
+      :class="[
+        'w-full min-h-[200px] px-4 py-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800',
+        readonly ? 'rounded-xl' : 'border-t-0 rounded-b-xl focus-within:ring-2 focus-within:ring-green-500 focus-within:border-transparent',
+        readonly ? 'cursor-default' : ''
+      ]"
+      :contenteditable="!readonly"
       @input="handleInput"
       @blur="handleBlur"
       @focus="handleFocus"
@@ -148,6 +152,10 @@ const props = defineProps({
   minHeight: {
     type: String,
     default: '200px'
+  },
+  readonly: {
+    type: Boolean,
+    default: false
   }
 })
 

@@ -224,7 +224,7 @@
               <select
                 v-model="formData.riskFactorId"
                 required
-                :disabled="!formData.categoryId || (riskTopicsEnabled && !formData.topicId)"
+                :disabled="!formData.categoryId"
                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">{{ getFactorOptionText() }}</option>
@@ -545,38 +545,49 @@ const isDevelopment = computed(() => {
 })
 
 // DataTable columns configuration
-const columns = ref([
-  {
-    key: 'actions',
-    label: '功能',
-    sortable: false,
-    cellClass: 'text-base text-gray-900 dark:text-white'
-  },
-  {
-    key: 'risk_category',
-    label: '風險類別',
-    sortable: false,
-    cellClass: 'text-base text-gray-900 dark:text-white'
-  },
-  {
-    key: 'risk_topic',
-    label: '風險主題',
-    sortable: false,
-    cellClass: 'text-base font-medium text-gray-900 dark:text-white'
-  },
-  {
-    key: 'risk_factor',
-    label: '風險因子',
-    sortable: false,
-    cellClass: 'text-base text-gray-900 dark:text-white'
-  },
-  {
-    key: 'description',
-    label: '風險因子描述',
-    sortable: true,
-    cellClass: 'text-base text-gray-500 dark:text-gray-400'
+const columns = computed(() => {
+  const baseColumns = [
+    {
+      key: 'actions',
+      label: '功能',
+      sortable: false,
+      cellClass: 'text-base text-gray-900 dark:text-white'
+    },
+    {
+      key: 'risk_category',
+      label: '風險類別',
+      sortable: false,
+      cellClass: 'text-base text-gray-900 dark:text-white'
+    }
+  ]
+
+  // 只有當風險主題啟用時才顯示風險主題欄位
+  if (props.riskTopicsEnabled) {
+    baseColumns.push({
+      key: 'risk_topic',
+      label: '風險主題',
+      sortable: false,
+      cellClass: 'text-base font-medium text-gray-900 dark:text-white'
+    })
   }
-])
+
+  baseColumns.push(
+    {
+      key: 'risk_factor',
+      label: '風險因子',
+      sortable: false,
+      cellClass: 'text-base text-gray-900 dark:text-white'
+    },
+    {
+      key: 'description',
+      label: '風險因子描述',
+      sortable: true,
+      cellClass: 'text-base text-gray-500 dark:text-gray-400'
+    }
+  )
+
+  return baseColumns
+})
 
 
 // DataTable columns configuration for risk categories
@@ -615,9 +626,6 @@ const getRiskFactorName = (riskFactorId) => {
 const getFactorOptionText = () => {
   if (!formData.value.categoryId) {
     return '請先選擇風險類別'
-  }
-  if (props.riskTopicsEnabled && !formData.value.topicId) {
-    return '請先選擇風險主題'
   }
   return '請選擇風險因子'
 }
@@ -667,16 +675,16 @@ const filteredRiskFactors = computed(() => {
       return match
     })
     console.log('After topic filter:', factors.length)
-  } else if (formData.value.categoryId) {
-    // 如果沒有選擇主題，則按分類篩選（包括透過主題關聯的因子）
+  } else {
+    // 如果主題未啟用或未選擇主題，則按分類篩選
     factors = factors.filter(factor => {
       // 檢查直接分類匹配
       const directCategoryMatch = factor.category_id == formData.value.categoryId
-      
+
       // 檢查透過主題的分類匹配（後端已經在SQL中處理了這個邏輯）
       // 從API返回的category_name應該已經正確反映了分類資訊
       const hasCategoryName = !!factor.category_name
-      
+
       const match = directCategoryMatch || hasCategoryName
       console.log(`Factor ${factor.id} (${factor.factor_name}) - direct: ${directCategoryMatch}, has category_name: ${hasCategoryName}, final: ${match}`)
       return match

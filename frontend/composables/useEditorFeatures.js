@@ -19,9 +19,9 @@ export const useEditorFeatures = (mode) => {
 
       /**
        * 顯示「填入測試資料」按鈕
-       * 僅在 template 模式顯示，方便開發測試
+       * template 和 question 模式顯示，方便開發測試
        */
-      showTestDataButton: currentMode === 'template',
+      showTestDataButton: currentMode === 'template' || currentMode === 'question',
 
       /**
        * 顯示「儲存」按鈕
@@ -71,9 +71,7 @@ export const useEditorFeatures = (mode) => {
        */
       scaleMode: currentMode === 'preview' || currentMode === 'answer'
         ? 'viewer-compact'
-        : currentMode === 'question'
-          ? 'viewer'
-          : 'editor',
+        : 'editor',
 
       /**
        * 顯示量表按鈕
@@ -86,9 +84,7 @@ export const useEditorFeatures = (mode) => {
        */
       scaleButtonText: currentMode === 'preview'
         ? '可能性量表'
-        : currentMode === 'question'
-          ? '檢視量表'
-          : '可能性量表',
+        : '可能性量表',
 
       // ========== 表單欄位狀態 ==========
 

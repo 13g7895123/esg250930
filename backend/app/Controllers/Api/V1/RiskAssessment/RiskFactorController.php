@@ -179,8 +179,8 @@ class RiskFactorController extends BaseController
             }
 
             // Check if topic exists and belongs to template and category (if provided)
-            $topicId = $input['topic_id'] ?? null;
-            if (!empty($topicId)) {
+            $topicId = !empty($input['topic_id']) ? $input['topic_id'] : null;
+            if ($topicId !== null) {
                 $topic = $this->topicModel->where('template_id', $templateId)
                     ->where('category_id', $input['category_id'])
                     ->find($topicId);
@@ -196,7 +196,7 @@ class RiskFactorController extends BaseController
             $data = [
                 'template_id' => $templateId,
                 'category_id' => $input['category_id'],
-                'topic_id' => $topicId,
+                'topic_id' => $topicId,  // Will be null if not provided or empty
                 'factor_name' => $input['factor_name'] ?? ($input['topic'] ?? ''), // Support both field names
                 'description' => !empty($input['description']) ? $input['description'] : null,
                 'status' => $input['status'] ?? 'active'
@@ -297,8 +297,8 @@ class RiskFactorController extends BaseController
             }
 
             // Check if topic exists and belongs to template and category (if provided)
-            $topicId = $input['topic_id'] ?? null;
-            if (!empty($topicId)) {
+            $topicId = !empty($input['topic_id']) ? $input['topic_id'] : null;
+            if ($topicId !== null) {
                 $topic = $this->topicModel->where('template_id', $templateId)
                     ->where('category_id', $input['category_id'])
                     ->find($topicId);
@@ -313,7 +313,7 @@ class RiskFactorController extends BaseController
 
             $data = [
                 'category_id' => $input['category_id'],
-                'topic_id' => $topicId,
+                'topic_id' => $topicId,  // Will be null if not provided or empty
                 'factor_name' => $input['factor_name'] ?? ($input['topic'] ?? ''), // Support both field names
                 'description' => isset($input['description']) ? (!empty($input['description']) ? $input['description'] : null) : $factor['description'],
                 'status' => $input['status'] ?? $factor['status']

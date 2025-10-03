@@ -21,28 +21,42 @@
 
         <!-- Tabs -->
         <div class="border-b border-gray-200 dark:border-gray-700">
-          <nav class="flex px-6" aria-label="Tabs">
+          <nav class="flex items-center justify-between px-6" aria-label="Tabs">
+            <div class="flex">
+              <button
+                @click="activeTab = 'probability'"
+                :class="[
+                  'py-4 px-6 text-sm font-medium border-b-2 transition-colors duration-200',
+                  activeTab === 'probability'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                ]"
+              >
+                風險發生可能性量表
+              </button>
+              <button
+                @click="activeTab = 'impact'"
+                :class="[
+                  'py-4 px-6 text-sm font-medium border-b-2 transition-colors duration-200',
+                  activeTab === 'impact'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                ]"
+              >
+                財務衝擊量表
+              </button>
+            </div>
+            <!-- 切換檢視模式按鈕 -->
             <button
-              @click="activeTab = 'probability'"
-              :class="[
-                'py-4 px-6 text-sm font-medium border-b-2 transition-colors duration-200',
-                activeTab === 'probability'
-                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              ]"
+              v-if="showViewToggle"
+              @click="$emit('toggle-view')"
+              class="py-2 px-4 text-sm text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors duration-200 my-2"
             >
-              風險發生可能性量表
-            </button>
-            <button
-              @click="activeTab = 'impact'"
-              :class="[
-                'py-4 px-6 text-sm font-medium border-b-2 transition-colors duration-200',
-                activeTab === 'impact'
-                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              ]"
-            >
-              財務衝擊量表
+              <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              切換到檢視模式
             </button>
           </nav>
         </div>
@@ -305,6 +319,10 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  showViewToggle: {
+    type: Boolean,
+    default: false
+  },
   impactDescriptionText: {
     type: String,
     default: ''
@@ -335,7 +353,8 @@ const emit = defineEmits([
   'remove-impact-row',
   'add-impact-description',
   'remove-impact-description',
-  'save'
+  'save',
+  'toggle-view'
 ])
 
 const activeTab = ref('probability')

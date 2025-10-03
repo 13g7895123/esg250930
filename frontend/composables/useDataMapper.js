@@ -110,11 +110,9 @@ export const useDataMapper = () => {
 
       // ===== Section G: 對外負面衝擊 =====
       negativeImpact: {
-        level: parseInt(
-          apiData.g1_negative_impact_level ||
+        level: apiData.g1_negative_impact_level ||
           apiData.negative_impact_level ||
-          2
-        ),
+          'level-2',
         description:
           apiData.g1_negative_impact_description ||
           apiData.negative_impact_description ||
@@ -123,11 +121,9 @@ export const useDataMapper = () => {
 
       // ===== Section H: 對外正面影響 =====
       positiveImpact: {
-        level: parseInt(
-          apiData.h1_positive_impact_level ||
+        level: apiData.h1_positive_impact_level ||
           apiData.positive_impact_level ||
-          2
-        ),
+          'level-2',
         description:
           apiData.h1_positive_impact_description ||
           apiData.positive_impact_description ||
@@ -257,11 +253,11 @@ export const useDataMapper = () => {
         calculation: ''
       },
       negativeImpact: {
-        level: 2,
+        level: 'level-2',
         description: ''
       },
       positiveImpact: {
-        level: 2,
+        level: 'level-2',
         description: ''
       },
       hoverTexts: {
@@ -287,10 +283,16 @@ export const useDataMapper = () => {
       counterActionDescription: formData.counterActionDescription || '',
       counterActionCost: formData.counterActionCost || '',
       riskDescription: formData.risk?.description || '',
+      riskProbability: formData.risk?.probability || 1,
+      riskImpactLevel: formData.risk?.impactLevel || 1,
       riskCalculation: formData.risk?.calculation || '',
       opportunityDescription: formData.opportunity?.description || '',
+      opportunityProbability: formData.opportunity?.probability || 1,
+      opportunityImpactLevel: formData.opportunity?.impactLevel || 3,
       opportunityCalculation: formData.opportunity?.calculation || '',
+      negativeImpactLevel: formData.negativeImpact?.level || 'level-2',
       negativeImpactDescription: formData.negativeImpact?.description || '',
+      positiveImpactLevel: formData.positiveImpact?.level || 'level-2',
       positiveImpactDescription: formData.positiveImpact?.description || '',
       riskEventChoice: formData.hasRiskEvent || 'no',
       counterActionChoice: formData.hasCounterAction || 'yes'

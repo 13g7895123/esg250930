@@ -20,15 +20,91 @@
         <!-- Modal Header -->
         <div
           :class="[
-            'flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700',
+            'p-6 border-b border-gray-200 dark:border-gray-700',
             isCompactMode ? 'cursor-move bg-gray-50 dark:bg-gray-700' : ''
           ]"
           @mousedown="startDrag"
         >
-          <div class="flex items-center space-x-4">
+          <div class="flex items-center justify-between">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white">量表檢視</h2>
-            <!-- 精簡模式的量表切換按鈕 (放在標題旁邊) -->
-            <div v-if="isCompactMode" class="inline-flex rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 p-1">
+            <div class="flex items-center space-x-2">
+              <!-- 切換精簡模式按鈕 -->
+              <button
+                @click="toggleCompactMode"
+                class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+                :title="isCompactMode ? '展開' : '精簡化'"
+              >
+                <svg v-if="!isCompactMode" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+              </button>
+              <!-- 關閉按鈕 -->
+              <button
+                @click="closeModal"
+                class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+              >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div v-if="loading" class="flex items-center justify-center p-12">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        </div>
+
+        <!-- Modal Content (Tabs) -->
+        <div v-else class="p-6">
+          <!-- Tab Navigation (完整模式) -->
+          <div v-if="!isCompactMode" class="border-b border-gray-200 dark:border-gray-700 mb-6">
+            <nav class="-mb-px flex items-center justify-between">
+              <div class="flex space-x-8">
+                <button
+                  @click="activeTab = 'probability'"
+                  :class="[
+                    activeTab === 'probability'
+                      ? 'border-green-600 text-green-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                    'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
+                  ]"
+                >
+                  風險發生可能性量表
+                </button>
+                <button
+                  @click="activeTab = 'impact'"
+                  :class="[
+                    activeTab === 'impact'
+                      ? 'border-green-600 text-green-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                    'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
+                  ]"
+                >
+                  財務衝擊量表
+                </button>
+              </div>
+              <!-- 切換編輯模式按鈕 -->
+              <button
+                v-if="showEditToggle"
+                @click="$emit('toggle-edit')"
+                class="py-2 px-4 text-sm text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors duration-200 my-2"
+              >
+                <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                切換到編輯模式
+              </button>
+            </nav>
+          </div>
+
+          <!-- Tab Navigation (精簡模式) -->
+          <div v-else class="mb-4 flex items-center justify-between">
+            <div class="inline-flex rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 p-1">
               <button
                 @click="activeTab = 'probability'"
                 :class="[
@@ -52,66 +128,17 @@
                 財務衝擊量表
               </button>
             </div>
-          </div>
-          <div class="flex items-center space-x-2">
-            <!-- 切換精簡模式按鈕 -->
+            <!-- 切換編輯模式按鈕 (精簡模式) -->
             <button
-              @click="toggleCompactMode"
-              class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-              :title="isCompactMode ? '展開' : '精簡化'"
+              v-if="showEditToggle"
+              @click="$emit('toggle-edit')"
+              class="py-1 px-3 text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors duration-200"
             >
-              <svg v-if="!isCompactMode" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <svg class="w-3 h-3 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
-              <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-              </svg>
+              編輯
             </button>
-            <!-- 關閉按鈕 -->
-            <button
-              @click="closeModal"
-              class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-            >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Loading State -->
-        <div v-if="loading" class="flex items-center justify-center p-12">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-        </div>
-
-        <!-- Modal Content (Tabs) -->
-        <div v-else class="p-6">
-          <!-- Tab Navigation (完整模式) -->
-          <div v-if="!isCompactMode" class="border-b border-gray-200 dark:border-gray-700 mb-6">
-            <nav class="-mb-px flex space-x-8">
-              <button
-                @click="activeTab = 'probability'"
-                :class="[
-                  activeTab === 'probability'
-                    ? 'border-green-600 text-green-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-                  'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
-                ]"
-              >
-                風險發生可能性量表
-              </button>
-              <button
-                @click="activeTab = 'impact'"
-                :class="[
-                  activeTab === 'impact'
-                    ? 'border-green-600 text-green-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-                  'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
-                ]"
-              >
-                財務衝擊量表
-              </button>
-            </nav>
           </div>
 
           <!-- Probability Scale Tab Content -->
@@ -232,7 +259,7 @@
             </div>
           </div>
 
-          <!-- Close Button (隱藏於精簡模式) -->
+          <!-- Footer (隱藏於精簡模式) -->
           <div v-if="!isCompactMode" class="flex justify-end items-center pt-6 border-t border-gray-200 dark:border-gray-700 mt-6">
             <button
               @click="closeModal"
@@ -286,10 +313,14 @@ const props = defineProps({
   defaultCompactMode: {
     type: Boolean,
     default: false
+  },
+  showEditToggle: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'toggle-edit'])
 
 // Modal state
 const activeTab = ref('probability')

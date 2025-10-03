@@ -26,7 +26,7 @@
         <EditorHeader
           :title="pageTitle"
           :subtitle="pageSubtitle"
-          :features="features"
+          :features="computedFeatures"
           :is-saving="isSaving"
           @back="handleBack"
           @preview="handlePreview"
@@ -40,12 +40,12 @@
           <EditorSection
             section-id="A"
             title="風險因子議題描述"
-            :collapsible="features.collapsibleSections"
+            :collapsible="computedFeatures.collapsibleSections"
             v-model:expanded="expandedSections.sectionA"
           >
             <RichTextEditor
               v-model="formData.riskFactorDescription"
-              :readonly="features.readonly"
+              :readonly="computedFeatures.readonly"
               :show-html-info="false"
               placeholder="請輸入風險因子議題描述..."
             />
@@ -55,12 +55,12 @@
           <EditorSection
             section-id="B"
             title="參考文字&模組工具評估結果"
-            :collapsible="features.collapsibleSections"
+            :collapsible="computedFeatures.collapsibleSections"
             v-model:expanded="expandedSections.sectionB"
           >
             <RichTextEditor
               v-model="formData.referenceText"
-              :readonly="features.readonly"
+              :readonly="computedFeatures.readonly"
               :show-html-info="false"
               placeholder="請輸入參考文字..."
             />
@@ -70,7 +70,7 @@
           <EditorRiskEventSection
             v-model:choice="formData.hasRiskEvent"
             v-model:description="formData.riskEventDescription"
-            :readonly="features.readonly"
+            :readonly="computedFeatures.readonly"
           />
 
           <!-- Section D: 對應作為 -->
@@ -78,14 +78,14 @@
             v-model:choice="formData.hasCounterAction"
             v-model:description="formData.counterActionDescription"
             v-model:cost="formData.counterActionCost"
-            :readonly="features.readonly"
+            :readonly="computedFeatures.readonly"
           />
 
           <!-- 量表按鈕區 -->
           <EditorScaleBar
             :mode="features.scaleMode"
             :show-button="features.showScaleButton"
-            @open-scale="showScaleModal = true"
+            @open-scale="openScaleModal"
           />
 
           <!-- Section E & F: 風險與機會 (Grid Layout) -->
@@ -97,7 +97,7 @@
               v-model:e2-risk-calculation="formData.risk.calculation"
               :probability-options="probabilityScaleOptions"
               :impact-options="impactScaleOptions"
-              :disabled="features.readonly"
+              :disabled="computedFeatures.readonly"
             />
 
             <OpportunitySection
@@ -107,7 +107,7 @@
               v-model:f2-opportunity-calculation="formData.opportunity.calculation"
               :probability-options="probabilityScaleOptions"
               :impact-options="impactScaleOptions"
-              :disabled="features.readonly"
+              :disabled="computedFeatures.readonly"
             />
           </div>
 
@@ -123,13 +123,13 @@
             <NegativeImpactSection
               v-model:g1-negative-impact-level="formData.negativeImpact.level"
               v-model:g1-negative-impact-description="formData.negativeImpact.description"
-              :disabled="features.readonly"
+              :disabled="computedFeatures.readonly"
             />
 
             <PositiveImpactSection
               v-model:h1-positive-impact-level="formData.positiveImpact.level"
               v-model:h1-positive-impact-description="formData.positiveImpact.description"
-              :disabled="features.readonly"
+              :disabled="computedFeatures.readonly"
             />
           </div>
         </div>
@@ -185,11 +185,13 @@
 
     <!-- Scale Modal - Editor Mode -->
     <ScaleEditorModal
-      v-if="showScaleModal && features.scaleMode === 'editor'"
+      v-if="showScaleModal && (features.scaleMode === 'editor' && scaleViewMode === 'editor')"
       v-model="showScaleModal"
       title="量表編輯"
       :is-loading="isLoadingScales"
       :mode="features.scaleMode"
+      :show-view-toggle="editorMode === 'question' || editorMode === 'template'"
+      @toggle-view="scaleViewMode = 'viewer'"
       :probability-columns="probabilityScaleColumns"
       :probability-rows="probabilityScaleRows"
       :selected-probability-display-column="selectedProbabilityDisplayColumn"
@@ -221,7 +223,7 @@
 
     <!-- Scale Modal - Viewer Mode -->
     <ScaleViewerModal
-      v-if="showScaleModal && features.scaleMode !== 'editor'"
+      v-if="showScaleModal && (features.scaleMode !== 'editor' || scaleViewMode === 'viewer')"
       v-model="showScaleModal"
       :loading="isLoadingScales"
       :default-compact-mode="features.scaleMode === 'viewer-compact'"
@@ -231,6 +233,8 @@
       :show-description-text="showDescriptionText"
       :impact-scale-columns="impactScaleColumns"
       :impact-scale-rows="impactScaleRows"
+      :show-edit-toggle="editorMode === 'question' || editorMode === 'template'"
+      @toggle-edit="scaleViewMode = 'editor'"
     />
   </div>
 </template>
@@ -320,6 +324,8 @@ const isLoadingScales = ref(false)
 const showHoverEditModal = ref(false)
 const editingSection = ref('')
 const editingHoverText = ref('')
+const isPreviewMode = ref(false)
+const scaleViewMode = ref('editor') // 'editor' | 'viewer'
 
 // Section 展開狀態
 const expandedSections = ref(features.value.defaultExpandedSections)
@@ -346,6 +352,23 @@ const pageSubtitle = computed(() => {
     return subtitle
   }
   return features.value.pageSubtitle
+})
+
+// 計算動態 features (支援預覽模式切換)
+const computedFeatures = computed(() => {
+  if (isPreviewMode.value) {
+    return {
+      ...features.value,
+      readonly: true,
+      showPreviewButton: true,
+      previewButtonText: '結束預覽',
+      showSaveButton: false,
+      showTestDataButton: false,
+      showBackButton: false,
+      collapsibleSections: true
+    }
+  }
+  return features.value
 })
 
 // ===== 生命週期 =====
@@ -420,23 +443,24 @@ const handleBack = () => {
 }
 
 /**
- * 開啟預覽
+ * 切換預覽模式 (原地預覽)
  */
 const handlePreview = () => {
   if (editorMode === 'preview') return
 
-  const previewRoute = getPreviewPath(id, contentId)
-  if (previewRoute) {
-    router.push({
-      path: previewRoute.path,
-      query: {
-        ...previewRoute.query,
-        ...preparePreviewQuery(formData.value)
-      }
-    })
+  // 切換預覽狀態
+  isPreviewMode.value = !isPreviewMode.value
+
+  if (isPreviewMode.value) {
+    // 進入預覽模式: Section A 展開, Section B 收折
+    expandedSections.value.sectionA = true
+    expandedSections.value.sectionB = false
+    console.log('[Editor] 進入預覽模式')
   } else {
-    // 不支援預覽的模式
-    console.log('Preview not available for this mode')
+    // 結束預覽模式: 全部展開
+    expandedSections.value.sectionA = true
+    expandedSections.value.sectionB = true
+    console.log('[Editor] 結束預覽模式')
   }
 }
 
@@ -515,6 +539,14 @@ const cancelHoverEdit = () => {
   showHoverEditModal.value = false
   editingSection.value = ''
   editingHoverText.value = ''
+}
+
+/**
+ * 開啟量表 Modal
+ */
+const openScaleModal = () => {
+  scaleViewMode.value = 'editor' // 重置為編輯模式
+  showScaleModal.value = true
 }
 
 /**

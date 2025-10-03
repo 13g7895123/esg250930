@@ -37,7 +37,7 @@
           @click="$emit('preview')"
           class="px-4 py-2 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-600 rounded-2xl hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors duration-200"
         >
-          預覽
+          {{ features.previewButtonText || '預覽' }}
         </button>
 
         <!-- 儲存按鈕 -->
