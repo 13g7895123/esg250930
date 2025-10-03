@@ -879,7 +879,7 @@ const formData = ref({
 const versionNameInput = ref(null)
 
 // Notification system using SweetAlert
-const { showSuccess, showError } = useNotification()
+const { showSuccess, showError, showInput, showLoading, closeAll } = useNotification()
 
 // Get templates from store - use computed to ensure reactivity
 const templates = computed(() => templatesStore.templates)
