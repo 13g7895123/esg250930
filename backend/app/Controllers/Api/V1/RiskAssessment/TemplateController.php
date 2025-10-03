@@ -306,8 +306,8 @@ class TemplateController extends ResourceController
 
             // 1. Copy template contents
             $db->query("
-                INSERT INTO template_contents (template_id, topic, description, sort_order, created_at, updated_at)
-                SELECT ?, topic, description, sort_order, NOW(), NOW()
+                INSERT INTO template_contents (template_id, category_id, topic, content, sort_order, created_at, updated_at)
+                SELECT ?, category_id, topic, content, sort_order, NOW(), NOW()
                 FROM template_contents
                 WHERE template_id = ?
             ", [$newTemplateId, $id]);
