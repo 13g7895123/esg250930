@@ -275,8 +275,9 @@ export const useTemplatesStore = defineStore('templates', () => {
       }
     } catch (err) {
       handleError(err, 'Failed to copy template')
-      // Extract and throw the actual error message
-      const errorMessage = err.error?.message || err.response?.data?.message || err.message || 'Failed to copy template'
+      // Extract and throw the actual error message from API response
+      // API client returns error in format: { error: { message: '...' } }
+      const errorMessage = err.error?.message || err.data?.message || err.message || 'Failed to copy template'
       throw new Error(errorMessage)
     } finally {
       isCopyingTemplate.value = false
