@@ -85,7 +85,6 @@ class RiskTopicModel extends Model
             $builder->groupStart()
                 ->like('risk_topics.topic_name', $search)
                 ->orLike('risk_categories.category_name', $search)
-                ->orLike('risk_topics.description', $search)
                 ->groupEnd();
         }
 

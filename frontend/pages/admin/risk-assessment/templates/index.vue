@@ -674,7 +674,7 @@
         :data="currentTemplateRiskTopics"
         :columns="riskTopicColumns"
         search-placeholder="搜尋風險主題..."
-        :search-fields="['topic_name', 'category_name', 'description']"
+        :search-fields="['topic_name', 'category_name']"
         empty-title="還沒有風險主題"
         empty-message="開始建立您的第一個風險主題"
         no-search-results-title="沒有找到符合的風險主題"
