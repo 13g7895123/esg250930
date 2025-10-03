@@ -1144,10 +1144,8 @@ const viewTemplateContent = (template) => {
 const refreshTemplates = async () => {
   try {
     await templatesStore.fetchTemplates()
-    await showSuccess('重新整理完成', '範本資料已更新')
   } catch (error) {
     console.error('Refresh templates error:', error)
-    await showError('重新整理失敗', '無法更新範本資料，請稍後再試')
   }
 }
 
