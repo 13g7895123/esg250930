@@ -6,8 +6,8 @@
   </div>
   <ContentManagement
     v-else
-    :title="`範本內容管理 - ${templateInfo?.versionName || '未知範本'}`"
-    description="管理風險評估範本的主題內容"
+    :title="`範本內容管理 - ${templateInfo?.version_name || templateInfo?.versionName || '未知範本'}`"
+    description="管理風險評估範本的內容"
     :show-back-button="true"
     :content-data="templateContent"
     :risk-categories="riskCategories"
@@ -39,7 +39,7 @@ const templateId = parseInt(route.params.id)
 // Use templates store
 const templatesStore = useTemplatesStore()
 
-// Template information for breadcrumb
+// Template information for breadcrumb - getTemplateById already returns a computed ref
 const templateInfo = templatesStore.getTemplateById(templateId)
 
 // Ensure template data is available before rendering

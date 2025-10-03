@@ -20,6 +20,15 @@
       <!-- Actions Slot -->
       <template #actions>
         <div class="flex items-center space-x-3">
+          <!-- Add Button -->
+          <button
+            @click="showAddModal = true"
+            class="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200"
+          >
+            <PlusIcon class="w-4 h-4 mr-2" />
+            新增範本
+          </button>
+
           <!-- Refresh Button -->
           <button
             @click="refreshTemplates"
@@ -30,16 +39,7 @@
               class="w-4 h-4 mr-2"
               :class="{ 'animate-spin': templatesStore.isFetchingTemplates }"
             />
-            {{ templatesStore.isFetchingTemplates ? '重新整理中...' : '重新整理' }}
-          </button>
-
-          <!-- Add Button -->
-          <button
-            @click="showAddModal = true"
-            class="flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200"
-          >
-            <PlusIcon class="w-4 h-4 mr-2" />
-            新增範本
+            重新整理
           </button>
         </div>
       </template>

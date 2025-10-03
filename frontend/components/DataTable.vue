@@ -51,7 +51,7 @@
                 v-if="!column.group"
                 rowspan="2"
                 :class="[
-                  'px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-600 whitespace-nowrap',
+                  'px-6 py-3 text-left text-base font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-600 whitespace-nowrap',
                   column.sortable ? 'cursor-pointer hover:text-gray-700 dark:hover:text-gray-100' : ''
                 ]"
                 @click="column.sortable ? handleSort(column.key) : null"
@@ -99,7 +99,7 @@
               <th
                 v-if="!shouldShowGroupHeader || column.group"
                 :class="[
-                  'px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-600 whitespace-nowrap',
+                  'px-6 py-3 text-left text-base font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-600 whitespace-nowrap',
                   column.sortable ? 'cursor-pointer hover:text-gray-700 dark:hover:text-gray-100' : '',
                   hasGroups && isFirstColumnInGroup(index) ? 'border-l border-gray-300 dark:border-gray-600' : (hasGroups && column.group ? 'border-l border-gray-200 dark:border-gray-600' : ''),
                   hasGroups && column.group ? 'bg-gray-100/50 dark:bg-gray-600/30' : ''
@@ -180,7 +180,7 @@
               </div>
               
               <!-- Default Cell Content -->
-              <div v-else :class="column.cellClass || 'text-base text-gray-900 dark:text-white'">
+              <div v-else :class="column.cellClass || 'text-lg text-gray-900 dark:text-white'">
                 {{ formatCellValue(item, column) }}
               </div>
             </td>

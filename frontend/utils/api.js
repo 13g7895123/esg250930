@@ -321,6 +321,54 @@ class ApiClient {
       return this.request(`/templates/${templateId}/factors/stats`, { method: 'GET' })
     }
   }
+
+  // Local Companies API
+  companies = {
+    // Get company by ID
+    getById: (id) => {
+      // Local companies API uses different base path
+      const url = `/api/v1/local-companies/${id}`
+      const requestId = this.generateRequestId()
+      const startTime = Date.now()
+
+      const config = {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId,
+        },
+      }
+
+      return $fetch(url, config).then(response => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+
+        console.log(`[API ${requestId}] ✅ Success (${duration}ms)`, {
+          endpoint: url,
+          method: 'GET',
+          duration
+        })
+
+        return {
+          success: true,
+          data: response.data || response,
+          meta: response.meta || {
+            api_version: '1.0',
+            execution_time: duration,
+            timestamp: new Date().toISOString(),
+            request_id: requestId
+          },
+          message: response.message || 'Request successful'
+        }
+      }).catch(error => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+        const enhancedError = this.handleEnhancedError(error, requestId, duration, url)
+        console.error(`[API ${requestId}] ❌ Error (${duration}ms)`, enhancedError)
+        throw enhancedError
+      })
+    }
+  }
 }
 
 // Create singleton instance

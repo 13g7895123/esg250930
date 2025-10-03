@@ -20,35 +20,8 @@
         <!-- Separator -->
         <div class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
         
-        <!-- Breadcrumb Navigation -->
-        <nav class="flex" aria-label="Breadcrumb">
-          <ol class="flex items-center space-x-2 text-sm">
-            <li>
-              <NuxtLink
-                to="/"
-                class="text-gray-500 dark:text-gray-400 hover:text-primary-500 transition-colors duration-200"
-              >
-                {{ t('common.home') }}
-              </NuxtLink>
-            </li>
-            <li v-for="(item, index) in breadcrumbItems" :key="index" class="flex items-center">
-              <ChevronRightIcon class="w-4 h-4 mx-2 text-gray-400" />
-              <NuxtLink
-                v-if="item.href && index < breadcrumbItems.length - 1"
-                :to="item.href"
-                class="text-gray-500 dark:text-gray-400 hover:text-primary-500 transition-colors duration-200"
-              >
-                {{ item.name }}
-              </NuxtLink>
-              <span
-                v-else
-                class="text-gray-700 dark:text-gray-300 font-medium"
-              >
-                {{ item.name }}
-              </span>
-            </li>
-          </ol>
-        </nav>
+        <!-- Custom Breadcrumb Navigation -->
+        <CustomBreadcrumbs />
       </div>
     </div>
 
