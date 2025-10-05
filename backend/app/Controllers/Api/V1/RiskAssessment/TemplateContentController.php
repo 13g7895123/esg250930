@@ -723,6 +723,16 @@ class TemplateContentController extends BaseController
             // Get template contents with category information
             $contents = $this->contentModel->getContentsWithCategory($templateId)->findAll();
 
+            // Log for debugging: check if factor_description is included
+            if (!empty($contents)) {
+                $firstContent = $contents[0];
+                $hasFactorDesc = isset($firstContent['factor_description']);
+                log_message('info', "Export Excel: First content has factor_description: " . ($hasFactorDesc ? 'yes' : 'no'));
+                if ($hasFactorDesc) {
+                    log_message('info', "Export Excel: Sample factor_description: " . substr($firstContent['factor_description'] ?? '', 0, 100));
+                }
+            }
+
             // Create Excel file
             $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();

@@ -383,6 +383,28 @@
             </button>
           </div>
 
+          <!-- Download Template Button (moved above upload area) -->
+          <div class="mb-6 flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div class="flex items-center">
+              <InformationCircleIcon class="w-5 h-5 text-blue-600 dark:text-blue-400 mr-3" />
+              <div>
+                <p class="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  第一次使用匯入功能？
+                </p>
+                <p class="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                  下載範本了解正確的格式
+                </p>
+              </div>
+            </div>
+            <button
+              @click="downloadTemplate"
+              class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
+            >
+              <DocumentTextIcon class="w-4 h-4 mr-2" />
+              下載範本
+            </button>
+          </div>
+
           <!-- Drag and Drop Area -->
           <div
             @drop.prevent="handleFileDrop"
@@ -406,28 +428,6 @@
             <p v-if="selectedFileName" class="text-sm font-medium text-primary-600 dark:text-primary-400 mt-4">
               已選擇：{{ selectedFileName }}
             </p>
-          </div>
-
-          <!-- Download Template Button -->
-          <div class="mt-6 flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <div class="flex items-center">
-              <InformationCircleIcon class="w-5 h-5 text-blue-600 dark:text-blue-400 mr-3" />
-              <div>
-                <p class="text-sm font-medium text-blue-900 dark:text-blue-100">
-                  第一次使用匯入功能？
-                </p>
-                <p class="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                  下載範本了解正確的格式
-                </p>
-              </div>
-            </div>
-            <button
-              @click="downloadTemplate"
-              class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
-            >
-              <DocumentTextIcon class="w-4 h-4 mr-2" />
-              下載範本
-            </button>
           </div>
 
           <!-- Instructions -->
@@ -1491,6 +1491,9 @@ const handleClickOutside = (event) => {
 const exportToExcel = async () => {
   showExportImportDropdown.value = false
   try {
+    // Import SweetAlert2
+    const Swal = (await import('sweetalert2')).default
+
     // Call backend API to export Excel with RichText support
     // Use native fetch for blob responses as $fetch has issues with blob type
     const response = await fetch(`/api/v1/risk-assessment/templates/${props.parentId}/export-excel`, {
@@ -1517,10 +1520,24 @@ const exportToExcel = async () => {
     document.body.removeChild(a)
     window.URL.revokeObjectURL(url)
 
-    alert('匯出成功')
+    // Show success message with SweetAlert2
+    await Swal.fire({
+      icon: 'success',
+      title: '匯出成功',
+      text: 'Excel 檔案已成功下載',
+      confirmButtonText: '確定'
+    })
   } catch (error) {
     console.error('Export failed:', error)
-    alert('匯出失敗：' + error.message)
+
+    // Import SweetAlert2 for error message
+    const Swal = (await import('sweetalert2')).default
+    await Swal.fire({
+      icon: 'error',
+      title: '匯出失敗',
+      text: error.message,
+      confirmButtonText: '確定'
+    })
   }
 }
 
@@ -1765,10 +1782,25 @@ const downloadTemplate = async () => {
 
     XLSX.writeFile(wb, '範本內容匯入範本.xlsx')
 
-    alert('範本下載成功')
+    // Import SweetAlert2 for success message
+    const Swal = (await import('sweetalert2')).default
+    await Swal.fire({
+      icon: 'success',
+      title: '範本下載成功',
+      text: '請使用下載的範本填寫資料後匯入',
+      confirmButtonText: '確定'
+    })
   } catch (error) {
     console.error('Download template failed:', error)
-    alert('下載範本失敗：' + error.message)
+
+    // Import SweetAlert2 for error message
+    const Swal = (await import('sweetalert2')).default
+    await Swal.fire({
+      icon: 'error',
+      title: '下載範本失敗',
+      text: error.message,
+      confirmButtonText: '確定'
+    })
   }
 }
 
@@ -1781,6 +1813,9 @@ const handleFileImport = async (event) => {
   if (!file) return
 
   try {
+    // Import SweetAlert2
+    const Swal = (await import('sweetalert2')).default
+
     // Call backend API to import Excel with RichText support
     const formData = new FormData()
     formData.append('file', file)
@@ -1792,17 +1827,30 @@ const handleFileImport = async (event) => {
 
     // Show result message
     if (result.success) {
-      const message = [
-        result.message,
+      const messageLines = [
         `成功匯入: ${result.imported}筆`,
         result.skipped > 0 ? `跳過重複: ${result.skipped}筆` : null,
         result.errors.length > 0 ? `錯誤: ${result.errors.length}筆` : null
-      ].filter(Boolean).join('\n')
-
-      alert(message)
+      ].filter(Boolean)
 
       if (result.errors.length > 0) {
         console.error('Import errors:', result.errors)
+
+        // Show warning with errors
+        await Swal.fire({
+          icon: 'warning',
+          title: '匯入完成但有部分錯誤',
+          html: messageLines.join('<br>') + '<br><br>請查看控制台了解詳細錯誤訊息',
+          confirmButtonText: '確定'
+        })
+      } else {
+        // Show success message
+        await Swal.fire({
+          icon: 'success',
+          title: '匯入成功',
+          html: messageLines.join('<br>'),
+          confirmButtonText: '確定'
+        })
       }
 
       // Refresh data
@@ -1810,11 +1858,24 @@ const handleFileImport = async (event) => {
       showImportModal.value = false
       selectedFileName.value = ''
     } else {
-      alert('匯入失敗：' + result.message)
+      await Swal.fire({
+        icon: 'error',
+        title: '匯入失敗',
+        text: result.message,
+        confirmButtonText: '確定'
+      })
     }
   } catch (error) {
     console.error('Import failed:', error)
-    alert('匯入失敗：' + error.message)
+
+    // Import SweetAlert2 for error message
+    const Swal = (await import('sweetalert2')).default
+    await Swal.fire({
+      icon: 'error',
+      title: '匯入失敗',
+      text: error.message,
+      confirmButtonText: '確定'
+    })
   }
 
   // Reset file input
