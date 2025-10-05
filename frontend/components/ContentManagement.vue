@@ -2329,7 +2329,7 @@ const fetchImportHistory = async (page = 1) => {
 
   isLoadingHistory.value = true
   try {
-    const response = await $api(`/api/v1/risk-assessment/templates/${props.parentId}/import-history`, {
+    const response = await $fetch(`/api/v1/risk-assessment/templates/${props.parentId}/import-history`, {
       params: {
         page,
         limit: importHistoryPagination.value.limit
@@ -2352,7 +2352,7 @@ const fetchLatestBatchSummary = async () => {
   if (!props.parentId) return
 
   try {
-    const response = await $api(`/api/v1/risk-assessment/templates/${props.parentId}/import-history/latest`)
+    const response = await $fetch(`/api/v1/risk-assessment/templates/${props.parentId}/import-history/latest`)
 
     if (response.success && response.has_data) {
       latestBatchSummary.value = response.summary
@@ -2369,7 +2369,7 @@ const fetchLatestBatchSummary = async () => {
 const fetchBatchDetails = async (batchId) => {
   isLoadingHistory.value = true
   try {
-    const response = await $api(`/api/v1/risk-assessment/import-history/batch/${batchId}`)
+    const response = await $fetch(`/api/v1/risk-assessment/import-history/batch/${batchId}`)
 
     if (response.success) {
       selectedBatchDetails.value = response
