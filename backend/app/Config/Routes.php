@@ -196,6 +196,11 @@ $routes->group('api/v1/risk-assessment', function($routes) {
     $routes->post('templates/(:num)/export-excel', 'Api\V1\RiskAssessment\TemplateContentController::exportExcel/$1');
     $routes->post('templates/(:num)/import-excel', 'Api\V1\RiskAssessment\TemplateContentController::importExcel/$1');
 
+    // Import History routes
+    $routes->get('templates/(:num)/import-history', 'Api\V1\RiskAssessment\TemplateContentController::getImportHistory/$1');
+    $routes->get('import-history/batch/(:any)', 'Api\V1\RiskAssessment\TemplateContentController::getImportHistoryBatch/$1');
+    $routes->get('templates/(:num)/import-history/latest', 'Api\V1\RiskAssessment\TemplateContentController::getLatestImportSummary/$1');
+
     // Template Structure Export/Import routes with RichText support
     $routes->post('templates/(:num)/export-structure', 'Api\V1\RiskAssessment\TemplateController::exportStructure/$1');
     $routes->post('templates/(:num)/import-structure', 'Api\V1\RiskAssessment\TemplateController::importStructure/$1');

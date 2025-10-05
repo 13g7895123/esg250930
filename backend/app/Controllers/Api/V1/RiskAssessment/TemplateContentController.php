@@ -1509,6 +1509,45 @@ class TemplateContentController extends BaseController
                 log_message('warning', "錯誤列表: " . json_encode($errors, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE));
             }
 
+            // Save import history to database
+            $batchId = uniqid('batch_', true); // Generate unique batch ID
+            $importHistoryModel = new \App\Models\ImportHistoryModel();
+
+            if (!empty($debugLog)) {
+                $historyRecords = [];
+                foreach ($debugLog as $log) {
+                    $historyRecords[] = [
+                        'template_id' => $templateId,
+                        'question_id' => null,
+                        'import_type' => 'template_content',
+                        'batch_id' => $batchId,
+                        'row_number' => $log['row'],
+                        'status' => $log['status'],
+                        'reason' => $log['reason'] ?? null,
+                        'error_message' => $log['error'] ?? null,
+                        'inserted_id' => $log['inserted_id'] ?? null,
+                        'duplicate_id' => $log['duplicate_id'] ?? null,
+                        'category_name' => $log['data']['category'] ?? null,
+                        'topic_name' => $log['data']['topic'] ?? null,
+                        'factor_name' => $log['data']['factor'] ?? null,
+                        'factor_description' => $log['data']['factor_description'] ?? null,
+                        'data_json' => json_encode($log['data'], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE),
+                        'sql_preview' => $log['sql'] ?? null,
+                        'created_at' => date('Y-m-d H:i:s'),
+                    ];
+                }
+
+                try {
+                    $importHistoryModel->saveBatch($historyRecords);
+                    log_message('info', "匯入歷史已儲存，批次ID: {$batchId}");
+
+                    // Clean old history (keep last 50 batches)
+                    $importHistoryModel->cleanOldHistory($templateId, 50);
+                } catch (\Exception $e) {
+                    log_message('error', "儲存匯入歷史失敗: " . $e->getMessage());
+                }
+            }
+
             // Build response message
             $message = "成功匯入 {$imported} 筆資料";
             if ($skipped > 0) {
@@ -1551,6 +1590,183 @@ class TemplateContentController extends BaseController
             return $this->response->setStatusCode(500)->setJSON([
                 'success' => false,
                 'message' => '匯入失敗：' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Get import history for a template
+     *
+     * @param int $templateId
+     * @return \CodeIgniter\HTTP\ResponseInterface
+     */
+    public function getImportHistory(int $templateId)
+    {
+        try {
+            $importHistoryModel = new \App\Models\ImportHistoryModel();
+
+            // Get pagination parameters
+            $page = (int)($this->request->getGet('page') ?? 1);
+            $limit = (int)($this->request->getGet('limit') ?? 20);
+            $search = $this->request->getGet('search') ?? '';
+
+            $page = max(1, $page);
+            $limit = max(1, min(100, $limit));
+            $offset = ($page - 1) * $limit;
+
+            // Get batches with summary
+            $batches = $importHistoryModel->getTemplateBatches($templateId, $limit, $offset);
+            $total = $importHistoryModel->countTemplateBatches($templateId);
+
+            // Add search filtering if needed
+            if (!empty($search)) {
+                $batches = array_filter($batches, function($batch) use ($search, $importHistoryModel) {
+                    $records = $importHistoryModel->getByBatchId($batch['batch_id']);
+                    foreach ($records as $record) {
+                        if (
+                            stripos($record['category_name'] ?? '', $search) !== false ||
+                            stripos($record['topic_name'] ?? '', $search) !== false ||
+                            stripos($record['factor_name'] ?? '', $search) !== false ||
+                            stripos($record['factor_description'] ?? '', $search) !== false
+                        ) {
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+            }
+
+            return $this->response->setStatusCode(200)->setJSON([
+                'success' => true,
+                'data' => $batches,
+                'pagination' => [
+                    'page' => $page,
+                    'limit' => $limit,
+                    'total' => $total,
+                    'total_pages' => ceil($total / $limit)
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Get import history error: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '獲取匯入歷史失敗：' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Get import history details for a specific batch
+     *
+     * @param string $batchId
+     * @return \CodeIgniter\HTTP\ResponseInterface
+     */
+    public function getImportHistoryBatch(string $batchId)
+    {
+        try {
+            $importHistoryModel = new \App\Models\ImportHistoryModel();
+
+            // Get all records for this batch
+            $records = $importHistoryModel->getByBatchId($batchId);
+
+            if (empty($records)) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '找不到該批次的匯入記錄'
+                ]);
+            }
+
+            // Calculate summary
+            $summary = [
+                'total' => count($records),
+                'success' => 0,
+                'skipped' => 0,
+                'error' => 0
+            ];
+
+            foreach ($records as &$record) {
+                $summary[$record['status']]++;
+                // Parse JSON data
+                if (!empty($record['data_json'])) {
+                    $record['data'] = json_decode($record['data_json'], true);
+                }
+            }
+
+            return $this->response->setStatusCode(200)->setJSON([
+                'success' => true,
+                'batch_id' => $batchId,
+                'summary' => $summary,
+                'records' => $records
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Get import history batch error: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '獲取批次詳情失敗：' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Get latest import batch summary
+     *
+     * @param int $templateId
+     * @return \CodeIgniter\HTTP\ResponseInterface
+     */
+    public function getLatestImportSummary(int $templateId)
+    {
+        try {
+            $importHistoryModel = new \App\Models\ImportHistoryModel();
+
+            $latestBatch = $importHistoryModel->getLatestBatch($templateId);
+
+            if (empty($latestBatch)) {
+                return $this->response->setStatusCode(200)->setJSON([
+                    'success' => true,
+                    'has_data' => false,
+                    'summary' => null
+                ]);
+            }
+
+            // Calculate summary
+            $summary = [
+                'total_rows_in_excel' => 0,
+                'data_rows_processed' => count($latestBatch),
+                'rows_imported' => 0,
+                'rows_skipped' => 0,
+                'rows_failed' => 0,
+                'created_at' => $latestBatch[0]['created_at']
+            ];
+
+            foreach ($latestBatch as $record) {
+                switch ($record['status']) {
+                    case 'success':
+                        $summary['rows_imported']++;
+                        break;
+                    case 'skipped':
+                        $summary['rows_skipped']++;
+                        break;
+                    case 'error':
+                        $summary['rows_failed']++;
+                        break;
+                }
+            }
+
+            $summary['total_rows_in_excel'] = $summary['data_rows_processed'] + 1; // +1 for header
+
+            return $this->response->setStatusCode(200)->setJSON([
+                'success' => true,
+                'has_data' => true,
+                'summary' => $summary
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Get latest import summary error: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '獲取最新匯入摘要失敗：' . $e->getMessage()
             ]);
         }
     }
