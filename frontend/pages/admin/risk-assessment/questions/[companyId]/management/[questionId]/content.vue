@@ -128,24 +128,20 @@ const updateQuestionContent = async (contentId, contentData) => {
 }
 
 const deleteQuestionContent = async (contentId) => {
+  const { $notify } = useNuxtApp()
+
   try {
     await questionManagementStore.deleteQuestionContent(questionId, contentId)
 
-    // Show success notification
-    const toast = useToast()
-    toast.add({
-      title: '刪除成功',
-      description: '題目已成功刪除',
-      color: 'green'
-    })
+    // 關閉載入對話框並顯示成功通知
+    $notify.close()
+    $notify.success('題目已成功刪除')
   } catch (error) {
     console.error('Failed to delete question content:', error)
-    const toast = useToast()
-    toast.add({
-      title: '刪除失敗',
-      description: '無法刪除題目，請稍後再試',
-      color: 'red'
-    })
+
+    // 關閉載入對話框並顯示錯誤通知
+    $notify.close()
+    $notify.error('無法刪除題目，請稍後再試')
   }
 }
 

@@ -58,25 +58,27 @@ export const useDataMapper = () => {
       // ===== Section E: 風險評估 =====
       risk: {
         description:
-          apiData.e1_risk_description ||
           apiData.e1_placeholder_1 ||
+          apiData.e1_risk_description ||
           apiData.risk_description ||
           '',
         probability: parseInt(
+          apiData.e2_select_1 ||
           apiData.e2_risk_probability ||
           apiData.e1_select_1 ||
           apiData.risk_probability ||
           1
         ),
         impactLevel: parseInt(
+          apiData.e2_select_2 ||
           apiData.e2_risk_impact ||
           apiData.e1_select_2 ||
           apiData.risk_impact_level ||
           1
         ),
         calculation:
+          apiData.e2_placeholder ||
           apiData.e2_risk_calculation ||
-          apiData.e1_placeholder_2 ||
           apiData.risk_calculation ||
           ''
       },
@@ -84,35 +86,39 @@ export const useDataMapper = () => {
       // ===== Section F: 機會評估 =====
       opportunity: {
         description:
-          apiData.f1_opportunity_description ||
           apiData.f1_placeholder_1 ||
+          apiData.f1_opportunity_description ||
           apiData.opportunity_description ||
           '',
         probability: parseInt(
+          apiData.f2_select_1 ||
           apiData.f2_opportunity_probability ||
           apiData.f1_select_1 ||
           apiData.opportunity_probability ||
           1
         ),
         impactLevel: parseInt(
+          apiData.f2_select_2 ||
           apiData.f2_opportunity_impact ||
           apiData.f1_select_2 ||
           apiData.opportunity_impact_level ||
           3
         ),
         calculation:
+          apiData.f2_placeholder ||
           apiData.f2_opportunity_calculation ||
-          apiData.f1_placeholder_2 ||
           apiData.opportunity_calculation ||
           ''
       },
 
       // ===== Section G: 對外負面衝擊 =====
       negativeImpact: {
-        level: apiData.g1_negative_impact_level ||
+        level: apiData.g1_select ||
+          apiData.g1_negative_impact_level ||
           apiData.negative_impact_level ||
           'level-2',
         description:
+          apiData.g1_placeholder_1 ||
           apiData.g1_negative_impact_description ||
           apiData.negative_impact_description ||
           ''
@@ -120,10 +126,12 @@ export const useDataMapper = () => {
 
       // ===== Section H: 對外正面影響 =====
       positiveImpact: {
-        level: apiData.h1_positive_impact_level ||
+        level: apiData.h1_select ||
+          apiData.h1_positive_impact_level ||
           apiData.positive_impact_level ||
           'level-2',
         description:
+          apiData.h1_placeholder_1 ||
           apiData.h1_positive_impact_description ||
           apiData.positive_impact_description ||
           ''
@@ -180,42 +188,50 @@ export const useDataMapper = () => {
       counter_action_cost: formData.counterActionCost,
 
       // ===== Section E: 風險評估 (新版 + 舊版雙重對應) =====
-      e1_risk_description: formData.risk.description,
       e1_placeholder_1: formData.risk.description,
+      e1_risk_description: formData.risk.description,
       risk_description: formData.risk.description,
+      e2_select_1: formData.risk.probability.toString(),
       e2_risk_probability: formData.risk.probability,
       e1_select_1: formData.risk.probability.toString(),
       risk_probability: formData.risk.probability,
+      e2_select_2: formData.risk.impactLevel.toString(),
       e2_risk_impact: formData.risk.impactLevel,
       e1_select_2: formData.risk.impactLevel.toString(),
       risk_impact_level: formData.risk.impactLevel,
+      e2_placeholder: formData.risk.calculation,
       e2_risk_calculation: formData.risk.calculation,
-      e1_placeholder_2: formData.risk.calculation,
       risk_calculation: formData.risk.calculation,
 
       // ===== Section F: 機會評估 (新版 + 舊版雙重對應) =====
-      f1_opportunity_description: formData.opportunity.description,
       f1_placeholder_1: formData.opportunity.description,
+      f1_opportunity_description: formData.opportunity.description,
       opportunity_description: formData.opportunity.description,
+      f2_select_1: formData.opportunity.probability.toString(),
       f2_opportunity_probability: formData.opportunity.probability,
       f1_select_1: formData.opportunity.probability.toString(),
       opportunity_probability: formData.opportunity.probability,
+      f2_select_2: formData.opportunity.impactLevel.toString(),
       f2_opportunity_impact: formData.opportunity.impactLevel,
       f1_select_2: formData.opportunity.impactLevel.toString(),
       opportunity_impact_level: formData.opportunity.impactLevel,
+      f2_placeholder: formData.opportunity.calculation,
       f2_opportunity_calculation: formData.opportunity.calculation,
-      f1_placeholder_2: formData.opportunity.calculation,
       opportunity_calculation: formData.opportunity.calculation,
 
       // ===== Section G: 對外負面衝擊 (新版 + 舊版雙重對應) =====
+      g1_select: formData.negativeImpact.level,
       g1_negative_impact_level: formData.negativeImpact.level,
       negative_impact_level: formData.negativeImpact.level,
+      g1_placeholder_1: formData.negativeImpact.description,
       g1_negative_impact_description: formData.negativeImpact.description,
       negative_impact_description: formData.negativeImpact.description,
 
       // ===== Section H: 對外正面影響 (新版 + 舊版雙重對應) =====
+      h1_select: formData.positiveImpact.level,
       h1_positive_impact_level: formData.positiveImpact.level,
       positive_impact_level: formData.positiveImpact.level,
+      h1_placeholder_1: formData.positiveImpact.description,
       h1_positive_impact_description: formData.positiveImpact.description,
       positive_impact_description: formData.positiveImpact.description,
 

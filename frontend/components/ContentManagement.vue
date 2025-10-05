@@ -64,6 +64,17 @@
             </div>
           </div>
 
+          <!-- Debug Info Button (hidden per Point 42) -->
+          <button
+            v-if="false && importDebugData"
+            @click="showDebugModal = true"
+            class="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200"
+            title="查看上次匯入的除錯資訊"
+          >
+            <InformationCircleIcon class="w-4 h-4 mr-2" />
+            除錯資訊
+          </button>
+
           <!-- Refresh Button -->
           <button
             @click="emit('refresh-content')"
@@ -192,6 +203,13 @@
           <div class="truncate max-w-md cursor-pointer">
             {{ stripHtmlTags(item.factor_description || item.a_content || item.aContent || '', 100) }}
           </div>
+        </div>
+      </template>
+
+      <!-- Custom Created At Cell -->
+      <template #cell-created_at="{ item }">
+        <div class="text-base text-gray-500 dark:text-gray-400">
+          {{ formatDateTime(item.created_at) }}
         </div>
       </template>
 
@@ -444,6 +462,207 @@
               <li>• 匯入過程中若有錯誤，會顯示詳細的錯誤訊息</li>
             </ul>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import Debug Modal -->
+    <div
+      v-if="showDebugModal"
+      class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+      @click="showDebugModal = false"
+    >
+      <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+        @click.stop
+      >
+        <!-- Header -->
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+            匯入除錯資訊
+          </h3>
+          <button
+            @click="showDebugModal = false"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          >
+            <XMarkIcon class="w-6 h-6" />
+          </button>
+        </div>
+
+        <!-- Content - Scrollable -->
+        <div class="p-6 overflow-y-auto flex-1">
+          <!-- Summary Section -->
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+              <p class="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">Excel 總行數</p>
+              <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                {{ importDebugData?.total_rows_in_excel || 0 }}
+              </p>
+            </div>
+            <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+              <p class="text-xs text-purple-600 dark:text-purple-400 font-medium mb-1">實際資料行數</p>
+              <p class="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                {{ importDebugData?.data_rows_processed || 0 }}
+              </p>
+            </div>
+            <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+              <p class="text-xs text-green-600 dark:text-green-400 font-medium mb-1">成功匯入</p>
+              <p class="text-2xl font-bold text-green-900 dark:text-green-100">
+                {{ importDebugData?.rows_imported || 0 }}
+              </p>
+            </div>
+            <div class="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
+              <p class="text-xs text-orange-600 dark:text-orange-400 font-medium mb-1">重複跳過</p>
+              <p class="text-2xl font-bold text-orange-900 dark:text-orange-100">
+                {{ importDebugData?.rows_skipped || 0 }}
+              </p>
+            </div>
+            <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
+              <p class="text-xs text-red-600 dark:text-red-400 font-medium mb-1">失敗筆數</p>
+              <p class="text-2xl font-bold text-red-900 dark:text-red-100">
+                {{ importDebugData?.rows_failed || 0 }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Criteria Section -->
+          <div v-if="importDebugData?.criteria" class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-800 mb-6">
+            <h4 class="text-sm font-semibold text-yellow-900 dark:text-yellow-100 mb-3 flex items-center">
+              <InformationCircleIcon class="w-5 h-5 mr-2" />
+              {{ importDebugData.criteria.description }}
+            </h4>
+            <ul class="text-xs text-yellow-800 dark:text-yellow-200 space-y-1 mb-3">
+              <li v-for="(rule, idx) in importDebugData.criteria.rules" :key="idx">
+                {{ rule }}
+              </li>
+            </ul>
+            <p class="text-xs text-yellow-700 dark:text-yellow-300 bg-yellow-100 dark:bg-yellow-900/30 rounded p-2">
+              {{ importDebugData.criteria.example }}
+            </p>
+          </div>
+
+          <!-- Detailed Log -->
+          <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+              詳細處理記錄
+            </h4>
+            <div class="space-y-2 max-h-96 overflow-y-auto">
+              <div
+                v-for="(detail, index) in importDebugData?.details"
+                :key="index"
+                :class="[
+                  'p-3 rounded-lg text-sm border',
+                  detail.status === 'success'
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                    : detail.status === 'skipped'
+                    ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+                    : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                ]"
+              >
+                <div class="flex items-start">
+                  <span
+                    :class="[
+                      'flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mr-3 mt-0.5',
+                      detail.status === 'success'
+                        ? 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400'
+                        : detail.status === 'skipped'
+                        ? 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-400'
+                        : 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400'
+                    ]"
+                  >
+                    {{ detail.status === 'success' ? '✓' : detail.status === 'skipped' ? '⊘' : '✗' }}
+                  </span>
+                  <div class="flex-1 space-y-2">
+                    <p
+                      :class="[
+                        'font-medium',
+                        detail.status === 'success'
+                          ? 'text-green-900 dark:text-green-100'
+                          : detail.status === 'skipped'
+                          ? 'text-orange-900 dark:text-orange-100'
+                          : 'text-red-900 dark:text-red-100'
+                      ]"
+                    >
+                      第 {{ detail.row }} 行：
+                      <span v-if="detail.status === 'success'">
+                        成功（插入ID: {{ detail.inserted_id }}）
+                      </span>
+                      <span v-else-if="detail.status === 'skipped'">
+                        跳過（{{ detail.reason === 'duplicate' ? '重複資料，與ID ' + detail.duplicate_id + ' 完全相同' : detail.reason }}）
+                      </span>
+                      <span v-else>失敗</span>
+                    </p>
+
+                    <!-- Data Info -->
+                    <div
+                      v-if="detail.data"
+                      :class="[
+                        'text-xs p-2 rounded',
+                        detail.status === 'success'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
+                          : detail.status === 'skipped'
+                          ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200'
+                          : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
+                      ]"
+                    >
+                      <span class="font-medium">資料：</span>
+                      類別={{ detail.data.category || 'N/A' }} |
+                      主題={{ detail.data.topic || 'N/A' }} |
+                      因子={{ detail.data.factor || 'N/A' }}
+                    </div>
+
+                    <!-- Error Message -->
+                    <p
+                      v-if="detail.error"
+                      :class="[
+                        'text-xs',
+                        detail.status === 'success'
+                          ? 'text-green-700 dark:text-green-300'
+                          : detail.status === 'skipped'
+                          ? 'text-orange-700 dark:text-orange-300'
+                          : 'text-red-700 dark:text-red-300'
+                      ]"
+                    >
+                      <span class="font-medium">錯誤：</span>
+                      {{ typeof detail.error === 'object' ? JSON.stringify(detail.error) : detail.error }}
+                    </p>
+
+                    <!-- SQL Statement -->
+                    <div
+                      v-if="detail.sql"
+                      :class="[
+                        'text-xs p-2 rounded font-mono overflow-x-auto',
+                        detail.status === 'success'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
+                          : detail.status === 'skipped'
+                          ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200'
+                          : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
+                      ]"
+                    >
+                      <p class="font-sans font-medium mb-1">SQL：</p>
+                      <code class="whitespace-pre-wrap break-all">{{ detail.sql }}</code>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                v-if="!importDebugData?.details || importDebugData.details.length === 0"
+                class="text-center py-8 text-gray-500 dark:text-gray-400"
+              >
+                暫無處理記錄
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+          <button
+            @click="showDebugModal = false"
+            class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
+          >
+            關閉
+          </button>
         </div>
       </div>
     </div>
@@ -716,6 +935,8 @@ const showImportModal = ref(false)
 const isDraggingFile = ref(false)
 const selectedFileName = ref('')
 const dropdownRef = ref(null)
+const showDebugModal = ref(false)
+const importDebugData = ref(null)
 
 // Drag and drop state
 const draggedItem = ref(null)
@@ -796,6 +1017,12 @@ const columns = computed(() => {
       label: '風險因子描述',
       sortable: true,
       cellClass: 'text-base text-gray-500 dark:text-gray-400'
+    },
+    {
+      key: 'created_at',
+      label: '建立時間',
+      sortable: true,
+      cellClass: 'text-base text-gray-500 dark:text-gray-400'
     }
   )
 
@@ -852,6 +1079,25 @@ const stripHtmlTags = (html, maxLength = 100) => {
   }
 
   return text
+}
+
+// Helper method to format date time
+const formatDateTime = (dateTime) => {
+  if (!dateTime) return ''
+
+  try {
+    const date = new Date(dateTime)
+    return date.toLocaleString('zh-TW', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
+  } catch (error) {
+    return dateTime
+  }
 }
 
 // Helper method to convert HTML to Excel-compatible rich text
@@ -1120,6 +1366,8 @@ const deleteContent = (content) => {
 
 const confirmDelete = () => {
   if (contentToDelete.value) {
+    const { $notify } = useNuxtApp()
+    $notify.loading('刪除中...')
     emit('delete-content', contentToDelete.value.id)
   }
   showDeleteModal.value = false
@@ -1660,7 +1908,7 @@ const downloadTemplate = async () => {
   try {
     const XLSX = await import('xlsx')
 
-    // Template data with example row (removed checkbox and select fields)
+    // Template data with example row (matches export format exactly)
     const templateData = [{
       '風險類別': '財務風險',
       '風險主題': '市場風險',
@@ -1674,18 +1922,19 @@ const downloadTemplate = async () => {
       'E風險計算說明': '風險值 = 可能性 × 衝擊',
       'F機會描述': '描述機會情境',
       'F機會計算說明': '機會值 = 可能性 × 效益',
-      'G對外負面衝擊描述': '負面影響描述',
-      'H對外正面影響描述': '正面影響描述',
+      'G對外負面衝擊評分說明': '負面影響描述',
+      'H對外正面影響評分說明': '正面影響描述',
       'E1資訊提示': '風險評估說明',
       'F1資訊提示': '機會評估說明',
       'G1資訊提示': '負面影響說明',
-      'H1資訊提示': '正面影響說明'
+      'H1資訊提示': '正面影響說明',
+      '備註': '範例資料'
     }]
 
     const wb = XLSX.utils.book_new()
     const ws = XLSX.utils.json_to_sheet(templateData)
 
-    // Set column widths (removed checkbox and select fields)
+    // Set column widths (matches export format)
     ws['!cols'] = [
       { wch: 15 }, // 風險類別
       { wch: 15 }, // 風險主題
@@ -1699,17 +1948,18 @@ const downloadTemplate = async () => {
       { wch: 30 }, // E風險計算說明
       { wch: 40 }, // F機會描述
       { wch: 30 }, // F機會計算說明
-      { wch: 40 }, // G對外負面衝擊描述
-      { wch: 40 }, // H對外正面影響描述
+      { wch: 40 }, // G對外負面衝擊評分說明
+      { wch: 40 }, // H對外正面影響評分說明
       { wch: 30 }, // E1資訊提示
       { wch: 30 }, // F1資訊提示
       { wch: 30 }, // G1資訊提示
-      { wch: 30 }  // H1資訊提示
+      { wch: 30 }, // H1資訊提示
+      { wch: 15 }  // 備註
     ]
 
     XLSX.utils.book_append_sheet(wb, ws, '資料填寫區')
 
-    // Add help sheet (removed checkbox and select fields)
+    // Add help sheet (matches export format)
     const helpSheet = XLSX.utils.aoa_to_sheet([
       ['欄位名稱', '說明', '範例'],
       ['風險類別', '必填。風險所屬的分類', '財務風險'],
@@ -1724,15 +1974,16 @@ const downloadTemplate = async () => {
       ['E風險計算說明', '選填。風險計算方式說明', '風險值 = 可能性 × 衝擊'],
       ['F機會描述', '選填。機會情境描述', '描述機會情境'],
       ['F機會計算說明', '選填。機會計算方式說明', '機會值 = 可能性 × 效益'],
-      ['G對外負面衝擊描述', '選填。負面衝擊詳細描述', '負面影響描述'],
-      ['H對外正面影響描述', '選填。正面影響詳細描述', '正面影響描述'],
+      ['G對外負面衝擊評分說明', '選填。對外負面衝擊的評分說明', '負面影響描述'],
+      ['H對外正面影響評分說明', '選填。對外正面影響的評分說明', '正面影響描述'],
       ['E1資訊提示', '選填。E1區塊資訊提示文字', '風險評估說明'],
       ['F1資訊提示', '選填。F1區塊資訊提示文字', '機會評估說明'],
       ['G1資訊提示', '選填。G1區塊資訊提示文字', '負面影響說明'],
       ['H1資訊提示', '選填。H1區塊資訊提示文字', '正面影響說明'],
+      ['備註', '系統欄位。第一行範例資料標記為「範例資料」，匯入時自動跳過', '範例資料'],
       [],
       ['注意事項'],
-      ['1. 第一行為範例資料，匯入時會自動跳過'],
+      ['1. 備註欄位若為「範例資料」，該行會自動跳過不匯入'],
       ['2. 風險類別和風險因子為必填欄位'],
       ['3. A、B欄位支援富文本格式：【文字】=粗體、_文字_=斜體'],
       ['4. 如果類別、主題、因子不存在，系統會自動建立'],
@@ -1764,6 +2015,9 @@ const handleFileImport = async (event) => {
 
   const { $notify } = useNuxtApp()
 
+  // Show importing notification
+  $notify.info('正在匯入 Excel 檔案，請稍候...')
+
   try {
     // Call backend API to import Excel with RichText support
     const formData = new FormData()
@@ -1776,6 +2030,11 @@ const handleFileImport = async (event) => {
 
     // Show result message
     if (result.success) {
+      // Store debug information
+      if (result.debug) {
+        importDebugData.value = result.debug
+      }
+
       const messageLines = [
         `成功匯入 ${result.imported} 筆`,
         result.skipped > 0 ? `跳過重複 ${result.skipped} 筆` : null,
@@ -1784,12 +2043,20 @@ const handleFileImport = async (event) => {
 
       if (result.errors.length > 0) {
         console.error('Import errors:', result.errors)
-        // Show warning with errors
-        $notify.warning(`${messageLines}<br>請查看控制台了解詳細錯誤訊息`)
+        // Build detailed error message
+        const errorDetails = result.errors.slice(0, 5).join('<br>') // Show first 5 errors
+        const moreErrors = result.errors.length > 5 ? `<br>...及其他 ${result.errors.length - 5} 個錯誤` : ''
+        // Show warning with detailed errors and link to debug modal
+        $notify.warning(`${messageLines}<br><br>錯誤詳情：<br>${errorDetails}${moreErrors}<br><br>點擊查看完整除錯資訊`)
       } else {
         // Show success message
         $notify.success(messageLines)
       }
+
+      // Debug modal disabled per Point 42
+      // if (result.debug) {
+      //   showDebugModal.value = true
+      // }
 
       // Refresh data
       emit('refresh-content')

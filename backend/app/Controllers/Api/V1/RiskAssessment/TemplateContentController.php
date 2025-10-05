@@ -741,7 +741,7 @@ class TemplateContentController extends BaseController
             // Initialize converters
             $htmlToRichText = new \App\Libraries\HtmlToRichTextConverter();
 
-            // Set headers (removed F, H, L, M, P, Q, S, U - checkbox and select fields)
+            // Set headers (matches download template format)
             $headers = [
                 'A' => '風險類別',
                 'B' => '風險主題',
@@ -755,12 +755,13 @@ class TemplateContentController extends BaseController
                 'J' => 'E風險計算說明',
                 'K' => 'F機會描述',
                 'L' => 'F機會計算說明',
-                'M' => 'G對外負面衝擊描述',
-                'N' => 'H對外正面影響描述',
+                'M' => 'G對外負面衝擊評分說明',
+                'N' => 'H對外正面影響評分說明',
                 'O' => 'E1資訊提示',
                 'P' => 'F1資訊提示',
                 'Q' => 'G1資訊提示',
-                'R' => 'H1資訊提示'
+                'R' => 'H1資訊提示',
+                'S' => '備註'
             ];
 
             // Apply header styling
@@ -786,7 +787,7 @@ class TemplateContentController extends BaseController
                 ]);
             }
 
-            // Set column widths (removed checkbox and select fields)
+            // Set column widths (matches download template)
             $sheet->getColumnDimension('A')->setWidth(15); // 風險類別
             $sheet->getColumnDimension('B')->setWidth(15); // 風險主題
             $sheet->getColumnDimension('C')->setWidth(15); // 風險因子
@@ -799,12 +800,13 @@ class TemplateContentController extends BaseController
             $sheet->getColumnDimension('J')->setWidth(30); // E風險計算說明
             $sheet->getColumnDimension('K')->setWidth(40); // F機會描述
             $sheet->getColumnDimension('L')->setWidth(30); // F機會計算說明
-            $sheet->getColumnDimension('M')->setWidth(40); // G對外負面衝擊描述
-            $sheet->getColumnDimension('N')->setWidth(40); // H對外正面影響描述
+            $sheet->getColumnDimension('M')->setWidth(40); // G對外負面衝擊評分說明
+            $sheet->getColumnDimension('N')->setWidth(40); // H對外正面影響評分說明
             $sheet->getColumnDimension('O')->setWidth(30); // E1資訊提示
             $sheet->getColumnDimension('P')->setWidth(30); // F1資訊提示
             $sheet->getColumnDimension('Q')->setWidth(30); // G1資訊提示
             $sheet->getColumnDimension('R')->setWidth(30); // H1資訊提示
+            $sheet->getColumnDimension('S')->setWidth(15); // 備註
 
             // Fill data rows (removed checkbox and select fields: F, H, L, M, P, Q, S, U from original)
             $row = 2;
@@ -856,7 +858,10 @@ class TemplateContentController extends BaseController
                 $sheet->setCellValue('Q' . $row, $content['g1_info'] ?? '');
                 $sheet->setCellValue('R' . $row, $content['h1_info'] ?? '');
 
-                // Apply row styling (A-R columns)
+                // Remark column (S) - leave empty for exported data
+                $sheet->setCellValue('S' . $row, '');
+
+                // Apply row styling (A-S columns)
                 $rowStyle = [
                     'fill' => [
                         'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -874,7 +879,7 @@ class TemplateContentController extends BaseController
                     ]
                 ];
 
-                $sheet->getStyle('A' . $row . ':R' . $row)->applyFromArray($rowStyle);
+                $sheet->getStyle('A' . $row . ':S' . $row)->applyFromArray($rowStyle);
 
                 $row++;
             }
@@ -994,9 +999,19 @@ class TemplateContentController extends BaseController
 
             // Get data (skip first row which is header)
             $rows = $sheet->toArray();
-            array_shift($rows); // Remove header row
+            $totalRowsInExcel = count($rows); // Total rows including header
+
+            log_message('info', "=== Excel 匯入開始 ===");
+            log_message('info', "Excel 檔案總行數（包含標題）: {$totalRowsInExcel}");
+
+            array_shift($rows); // Remove header row only
+            // Example data will be skipped by checking remark column
+
+            $dataRowCount = count($rows);
+            log_message('info', "實際資料行數（移除標題後）: {$dataRowCount}");
 
             if (empty($rows)) {
+                log_message('warning', "Excel 檔案中沒有資料行");
                 return $this->response->setStatusCode(400)->setJSON([
                     'success' => false,
                     'message' => 'Excel 檔案中沒有資料'
@@ -1004,7 +1019,9 @@ class TemplateContentController extends BaseController
             }
 
             $imported = 0;
+            $skipped = 0; // Counter for duplicate records
             $errors = [];
+            $debugLog = [];
 
             // Models for category, topic, factor lookup/creation
             $categoryModel = new RiskCategoryModel();
@@ -1012,9 +1029,20 @@ class TemplateContentController extends BaseController
             $factorModel = new \App\Models\RiskAssessment\RiskFactorModel();
 
             foreach ($rows as $index => $row) {
-                $rowNumber = $index + 2; // +2 because: +1 for 0-index, +1 for skipped header
+                $rowNumber = $index + 2; // +2 because: +1 for 0-index, +1 for header row
 
                 try {
+                    // Log raw row data
+                    log_message('info', "--- 處理第 {$rowNumber} 行 ---");
+                    log_message('debug', "第 {$rowNumber} 行原始資料: " . json_encode($row, JSON_UNESCAPED_UNICODE));
+
+                    // Check remark column (column 18 / position 18) - skip if it contains "範例資料"
+                    $remark = trim($row[18] ?? '');
+                    if ($remark === '範例資料') {
+                        log_message('info', "第 {$rowNumber} 行：備註欄位為「範例資料」，跳過此行");
+                        continue;
+                    }
+
                     // Parse row data (updated field mapping - removed 排序 and 是否必填)
                     $categoryName = trim($row[0] ?? '');
                     $topicName = trim($row[1] ?? '');
@@ -1022,9 +1050,22 @@ class TemplateContentController extends BaseController
                     // Position 3 is now B參考文字 (will be processed later with RichText)
                     // Removed: sortOrder (position 3) and isRequired (position 4)
 
+                    log_message('info', "第 {$rowNumber} 行解析: 類別='{$categoryName}', 主題='{$topicName}', 因子='{$factorName}'");
+
+                    // Skip completely empty rows
+                    if (empty($categoryName) && empty($factorName) && empty($topicName)) {
+                        log_message('info', "第 {$rowNumber} 行為空白行，跳過");
+                        continue;
+                    }
+
                     // Validate required fields
                     if (empty($categoryName) || empty($factorName)) {
-                        $errors[] = "第 {$rowNumber} 行：缺少必填欄位（風險類別、風險因子）";
+                        $missing = [];
+                        if (empty($categoryName)) $missing[] = '風險類別';
+                        if (empty($factorName)) $missing[] = '風險因子';
+                        $errorMsg = "第 {$rowNumber} 行：缺少必填欄位（" . implode('、', $missing) . "）";
+                        $errors[] = $errorMsg;
+                        log_message('warning', $errorMsg);
                         continue;
                     }
 
@@ -1255,7 +1296,7 @@ class TemplateContentController extends BaseController
                     // Insert content (updated field mapping - removed checkbox and select fields)
                     // New Excel columns (0-17): 風險類別, 風險主題, 風險因子, A風險因子描述, B參考文字,
                     // C風險事件描述, D對應作為描述, D對應作為費用, E風險描述, E風險計算說明,
-                    // F機會描述, F機會計算說明, G對外負面衝擊描述, H對外正面影響描述,
+                    // F機會描述, F機會計算說明, G對外負面衝擊評分說明, H對外正面影響評分說明,
                     // E1資訊提示, F1資訊提示, G1資訊提示, H1資訊提示
                     $contentData = [
                         'template_id' => $templateId,
@@ -1283,19 +1324,195 @@ class TemplateContentController extends BaseController
                         'h1_info' => $row[17] ?? null
                     ];
 
-                    $this->contentModel->insert($contentData);
-                    $imported++;
+                    // Log content data to be inserted
+                    log_message('info', "第 {$rowNumber} 行準備寫入資料: " . json_encode([
+                        'template_id' => $templateId,
+                        'category_id' => $categoryId,
+                        'category_name' => $categoryName,
+                        'topic_id' => $topicId,
+                        'topic_name' => $topicName,
+                        'risk_factor_id' => $factorId,
+                        'factor_name' => $factorName,
+                        'sort_order' => $sortOrder,
+                        'has_b_content' => !empty($bContentHtml),
+                        'has_c_placeholder' => !empty($row[5]),
+                        'has_d_placeholder_1' => !empty($row[6]),
+                        'has_d_placeholder_2' => !empty($row[7]),
+                        'has_e1_placeholder_1' => !empty($row[8]),
+                        'has_e2_placeholder' => !empty($row[9]),
+                        'has_f1_placeholder_1' => !empty($row[10]),
+                        'has_f2_placeholder' => !empty($row[11]),
+                        'has_g1_placeholder_1' => !empty($row[12]),
+                        'has_h1_placeholder_1' => !empty($row[13]),
+                        'has_e1_info' => !empty($row[14]),
+                        'has_f1_info' => !empty($row[15]),
+                        'has_g1_info' => !empty($row[16]),
+                        'has_h1_info' => !empty($row[17])
+                    ], JSON_UNESCAPED_UNICODE));
+
+                    // Check for duplicate content - compare all important fields
+                    $existingContent = $this->contentModel
+                        ->where('template_id', $templateId)
+                        ->where('risk_factor_id', $factorId)
+                        ->findAll();
+
+                    $isDuplicate = false;
+                    foreach ($existingContent as $existing) {
+                        // Normalize data for comparison (trim and handle nulls)
+                        $normalizeValue = function($val) {
+                            if ($val === null || $val === '') return '';
+                            return trim((string)$val);
+                        };
+
+                        // Compare all content fields
+                        $fieldsMatch = true;
+                        $compareFields = [
+                            'b_content', 'c_placeholder', 'd_placeholder_1', 'd_placeholder_2',
+                            'e1_placeholder_1', 'e2_placeholder', 'f1_placeholder_1', 'f2_placeholder',
+                            'g1_placeholder_1', 'h1_placeholder_1', 'e1_info', 'f1_info', 'g1_info', 'h1_info'
+                        ];
+
+                        foreach ($compareFields as $field) {
+                            $existingVal = $normalizeValue($existing[$field] ?? null);
+                            $newVal = $normalizeValue($contentData[$field] ?? null);
+
+                            if ($existingVal !== $newVal) {
+                                $fieldsMatch = false;
+                                break;
+                            }
+                        }
+
+                        if ($fieldsMatch) {
+                            $isDuplicate = true;
+                            $skipped++;
+                            log_message('info', "第 {$rowNumber} 行：發現重複資料（與ID {$existing['id']} 完全相同），跳過匯入");
+                            $debugLog[] = [
+                                'row' => $rowNumber,
+                                'status' => 'skipped',
+                                'reason' => 'duplicate',
+                                'duplicate_id' => $existing['id'],
+                                'data' => [
+                                    'category' => $categoryName,
+                                    'topic' => $topicName,
+                                    'factor' => $factorName
+                                ]
+                            ];
+                            break;
+                        }
+                    }
+
+                    // Skip if duplicate found
+                    if ($isDuplicate) {
+                        continue;
+                    }
+
+                    // Generate INSERT SQL for logging and debug
+                    $fields = array_keys($contentData);
+                    $values = array_map(function($val) {
+                        if ($val === null) return 'NULL';
+                        if (is_numeric($val)) return $val;
+                        return "'" . str_replace("'", "''", substr((string)$val, 0, 50)) . (strlen((string)$val) > 50 ? '...' : '') . "'";
+                    }, array_values($contentData));
+                    $sqlPreview = "INSERT INTO template_contents (" . implode(', ', $fields) . ") VALUES (" . implode(', ', $values) . ")";
+                    log_message('debug', "第 {$rowNumber} 行 SQL（簡化）: {$sqlPreview}");
+
+                    $insertResult = $this->contentModel->insert($contentData);
+
+                    if ($insertResult === false) {
+                        // Insert failed - get validation errors
+                        $validationErrors = $this->contentModel->errors();
+                        if (!empty($validationErrors)) {
+                            $errorMsg = is_array($validationErrors) ? implode(', ', $validationErrors) : $validationErrors;
+                            $errors[] = "第 {$rowNumber} 行：驗證失敗 - {$errorMsg}";
+                            log_message('error', "第 {$rowNumber} 行：驗證失敗 - {$errorMsg}");
+                        } else {
+                            $errors[] = "第 {$rowNumber} 行：資料插入失敗";
+                            log_message('error', "第 {$rowNumber} 行：資料插入失敗");
+                        }
+                        $debugLog[] = [
+                            'row' => $rowNumber,
+                            'status' => 'failed',
+                            'error' => $validationErrors,
+                            'sql' => $sqlPreview,
+                            'data' => [
+                                'category' => $categoryName,
+                                'topic' => $topicName,
+                                'factor' => $factorName
+                            ]
+                        ];
+                    } else {
+                        $imported++;
+                        log_message('info', "第 {$rowNumber} 行：成功寫入，插入ID: {$insertResult}");
+                        $debugLog[] = [
+                            'row' => $rowNumber,
+                            'status' => 'success',
+                            'inserted_id' => $insertResult,
+                            'sql' => $sqlPreview,
+                            'data' => [
+                                'category' => $categoryName,
+                                'topic' => $topicName,
+                                'factor' => $factorName
+                            ]
+                        ];
+                    }
 
                 } catch (\Exception $e) {
-                    $errors[] = "第 {$rowNumber} 行：" . $e->getMessage();
+                    $errorMsg = "第 {$rowNumber} 行：" . $e->getMessage();
+                    $errors[] = $errorMsg;
+                    log_message('error', $errorMsg);
+                    $debugLog[] = [
+                        'row' => $rowNumber,
+                        'status' => 'exception',
+                        'error' => $e->getMessage()
+                    ];
                 }
+            }
+
+            // Final summary log
+            log_message('info', "=== Excel 匯入完成 ===");
+            log_message('info', "總共處理: {$dataRowCount} 行");
+            log_message('info', "成功匯入: {$imported} 行");
+            log_message('info', "重複跳過: {$skipped} 行");
+            log_message('info', "失敗筆數: " . count($errors) . " 行");
+            if (!empty($errors)) {
+                log_message('warning', "錯誤列表: " . json_encode($errors, JSON_UNESCAPED_UNICODE));
+            }
+
+            // Build response message
+            $message = "成功匯入 {$imported} 筆資料";
+            if ($skipped > 0) {
+                $message .= "，跳過 {$skipped} 筆重複資料";
+            }
+            if (count($errors) > 0) {
+                $message .= "，{" . count($errors) . "} 筆失敗";
             }
 
             return $this->response->setStatusCode(200)->setJSON([
                 'success' => true,
-                'message' => "成功匯入 {$imported} 筆資料",
+                'message' => $message,
                 'imported' => $imported,
-                'errors' => $errors
+                'skipped' => $skipped,
+                'errors' => $errors,
+                'debug' => [
+                    'total_rows_in_excel' => $totalRowsInExcel,
+                    'data_rows_processed' => $dataRowCount,
+                    'rows_imported' => $imported,
+                    'rows_skipped' => $skipped,
+                    'rows_failed' => count($errors),
+                    'criteria' => [
+                        'description' => '實際資料行數判斷準則',
+                        'rules' => [
+                            '1. Excel 檔案總行數減去標題行（第1行）',
+                            '2. 檢查備註欄位，若為「範例資料」則跳過該行',
+                            '3. 跳過完全空白的行（類別、主題、因子皆為空）',
+                            '4. 驗證必填欄位（風險類別和風險因子不可為空）',
+                            '5. 檢查是否與系統現有資料完全重複，重複則跳過',
+                            '6. 符合以上條件的行才會被匯入'
+                        ],
+                        'example' => "例如：Excel有10行 → 減去標題1行 → 檢查備註欄位跳過範例1行 → 跳過重複資料2行 → 剩餘6行待處理 → 實際匯入的資料行數"
+                    ],
+                    'details' => $debugLog
+                ]
             ]);
 
         } catch (\Exception $e) {

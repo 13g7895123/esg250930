@@ -120,26 +120,22 @@ const updateTemplateContent = async (contentId, contentData) => {
 }
 
 const deleteTemplateContent = async (contentId) => {
+  const { $notify } = useNuxtApp()
+
   try {
     await templatesStore.deleteTemplateContent(templateId, contentId)
     // 刪除成功後重新載入列表（靜默重新載入）
     await refreshContent(false)
 
-    // 顯示成功通知
-    const toast = useToast()
-    toast.add({
-      title: '刪除成功',
-      description: '題目已成功刪除',
-      color: 'green'
-    })
+    // 關閉載入對話框並顯示成功通知
+    $notify.close()
+    $notify.success('題目已成功刪除')
   } catch (error) {
     console.error('Failed to delete template content:', error)
-    const toast = useToast()
-    toast.add({
-      title: '刪除失敗',
-      description: '無法刪除題目，請稍後再試',
-      color: 'red'
-    })
+
+    // 關閉載入對話框並顯示錯誤通知
+    $notify.close()
+    $notify.error('無法刪除題目，請稍後再試')
   }
 }
 
