@@ -103,9 +103,9 @@ class ImportHistoryModel extends Model
     public function getTemplateBatches(int $templateId, int $limit = 20, int $offset = 0): array
     {
         return $this->select('batch_id, MIN(created_at) as created_at, COUNT(*) as total_rows')
-            ->selectSum('CASE WHEN status = "success" THEN 1 ELSE 0 END', 'success_count')
-            ->selectSum('CASE WHEN status = "skipped" THEN 1 ELSE 0 END', 'skipped_count')
-            ->selectSum('CASE WHEN status = "error" THEN 1 ELSE 0 END', 'error_count')
+            ->select('SUM(CASE WHEN status = "success" THEN 1 ELSE 0 END) as success_count', false)
+            ->select('SUM(CASE WHEN status = "skipped" THEN 1 ELSE 0 END) as skipped_count', false)
+            ->select('SUM(CASE WHEN status = "error" THEN 1 ELSE 0 END) as error_count', false)
             ->where('template_id', $templateId)
             ->where('import_type', 'template_content')
             ->groupBy('batch_id')
