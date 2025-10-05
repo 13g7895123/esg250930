@@ -9,6 +9,7 @@
 
     <!-- Data Table with Pagination -->
     <DataTable
+      ref="dataTableRef"
       :data="contentData"
       :columns="columns"
       search-placeholder="搜尋題目..."
@@ -30,6 +31,39 @@
             新增題目
           </button>
 
+          <!-- Export/Import Dropdown Button -->
+          <div class="relative" ref="dropdownRef">
+            <button
+              @click="toggleExportImportDropdown"
+              class="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
+            >
+              <ArrowDownTrayIcon class="w-4 h-4 mr-2" />
+              匯出/匯入
+              <ChevronDownIcon class="w-4 h-4 ml-2" />
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div
+              v-if="showExportImportDropdown"
+              class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10"
+            >
+              <button
+                @click="exportToExcel"
+                class="w-full flex items-center px-4 py-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 rounded-t-lg"
+              >
+                <DocumentArrowDownIcon class="w-5 h-5 mr-3 text-green-600 dark:text-green-400" />
+                <span>匯出 Excel</span>
+              </button>
+              <button
+                @click="openImportModal"
+                class="w-full flex items-center px-4 py-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 rounded-b-lg"
+              >
+                <DocumentArrowUpIcon class="w-5 h-5 mr-3 text-blue-600 dark:text-blue-400" />
+                <span>匯入 Excel</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Refresh Button -->
           <button
             @click="emit('refresh-content')"
@@ -48,13 +82,21 @@
       <!-- Custom Actions Cell -->
       <template #cell-actions="{ item }">
         <div class="flex items-center space-x-2">
-          <!-- Drag Handle (Note: Drag & drop functionality will be limited in DataTable) -->
-          <div class="relative group cursor-move drag-handle">
+          <!-- Drag Handle with functional drag-and-drop -->
+          <div
+            class="relative group cursor-move drag-handle"
+            draggable="true"
+            @dragstart="handleDragStart($event, item)"
+            @dragend="handleDragEnd"
+            @dragover.prevent="handleDragOver($event, item)"
+            @dragleave="handleDragLeave"
+            @drop="handleDrop($event, item)"
+          >
             <div class="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded-lg transition-colors duration-200">
               <Bars3Icon class="w-4 h-4" />
             </div>
             <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-              排序
+              拖曳以排序
               <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
             </div>
           </div>
@@ -139,6 +181,20 @@
         </div>
       </template>
 
+      <!-- Custom A Content Cell (Risk Factor Description with HTML rendering) -->
+      <template #cell-a_content="{ item }">
+        <div
+          class="text-base text-gray-500 dark:text-gray-400 relative"
+          @mouseenter="showTooltip($event, item)"
+          @mouseleave="hideTooltip"
+        >
+          <!-- Truncated text preview (plain text only) -->
+          <div class="truncate max-w-md cursor-pointer">
+            {{ stripHtmlTags(item.factor_description || item.a_content || item.aContent || '', 100) }}
+          </div>
+        </div>
+      </template>
+
       <!-- Empty Action Slot -->
       <template #emptyAction>
         <button
@@ -151,17 +207,48 @@
       </template>
     </DataTable>
 
+    <!-- Hidden File Input for Import -->
+    <input
+      ref="fileInput"
+      type="file"
+      accept=".xlsx,.xls"
+      @change="handleFileImport"
+      class="hidden"
+    />
+
+    <!-- Tooltip for A Content (rendered at body level to avoid overflow issues) -->
+    <Teleport to="body">
+      <div
+        v-if="tooltipData.visible && tooltipData.content"
+        :style="{
+          position: 'fixed',
+          left: tooltipData.x + 'px',
+          top: tooltipData.y + 'px',
+          zIndex: 9999
+        }"
+        class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl p-4 max-w-2xl w-96 max-h-96 overflow-y-auto"
+        @mouseenter="keepTooltipOpen"
+        @mouseleave="hideTooltip"
+      >
+        <div
+          class="text-sm text-gray-700 dark:text-gray-300 prose prose-sm dark:prose-invert max-w-none"
+          v-html="tooltipData.content"
+        ></div>
+        <div class="absolute -top-2 left-4 w-4 h-4 bg-white dark:bg-gray-800 border-l border-t border-gray-200 dark:border-gray-700 transform rotate-45"></div>
+      </div>
+    </Teleport>
+
     <!-- Add/Edit Modal -->
     <div
       v-if="showAddModal || showEditModal"
-      class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+      class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto"
       @click="closeModals"
     >
       <div
-        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md"
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl my-8"
         @click.stop
       >
-        <div class="p-6">
+        <div class="p-6 max-h-[calc(100vh-4rem)] overflow-y-auto">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
             {{ showAddModal ? '新增題目' : '編輯題目' }}
           </h3>
@@ -239,17 +326,17 @@
               </select>
             </div>
 
-            <div class="mb-4">
+            <!-- Risk Factor Description Editor -->
+            <div v-if="formData.riskFactorId" class="mb-4">
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                風險因子描述
+                風險因子描述 <span class="text-red-500">*</span>
               </label>
-              <textarea
-                v-model="formData.description"
-                rows="4"
-                required
-                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              <RichTextEditor
+                :key="`factor-desc-${formData.riskFactorId}`"
+                v-model="formData.factorDescription"
                 placeholder="請輸入風險因子描述"
-              ></textarea>
+                :show-html-info="false"
+              />
             </div>
 
             <div class="flex justify-end space-x-3">
@@ -268,6 +355,95 @@
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import Modal with Drag and Drop -->
+    <div
+      v-if="showImportModal"
+      class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+      @click="closeImportModal"
+    >
+      <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl"
+        @click.stop
+      >
+        <div class="p-6">
+          <!-- Header -->
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+              匯入 Excel
+            </h3>
+            <button
+              @click="closeImportModal"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              <XMarkIcon class="w-6 h-6" />
+            </button>
+          </div>
+
+          <!-- Drag and Drop Area -->
+          <div
+            @drop.prevent="handleFileDrop"
+            @dragover.prevent="isDraggingFile = true"
+            @dragleave.prevent="isDraggingFile = false"
+            @click="triggerImport"
+            :class="[
+              'border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-all duration-200',
+              isDraggingFile
+                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                : 'border-gray-300 dark:border-gray-600 hover:border-primary-400 dark:hover:border-primary-500 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+            ]"
+          >
+            <DocumentArrowUpIcon class="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
+            <p class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
+              點擊上傳或拖曳檔案至此
+            </p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              支援 .xlsx、.xls 格式
+            </p>
+            <p v-if="selectedFileName" class="text-sm font-medium text-primary-600 dark:text-primary-400 mt-4">
+              已選擇：{{ selectedFileName }}
+            </p>
+          </div>
+
+          <!-- Download Template Button -->
+          <div class="mt-6 flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div class="flex items-center">
+              <InformationCircleIcon class="w-5 h-5 text-blue-600 dark:text-blue-400 mr-3" />
+              <div>
+                <p class="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  第一次使用匯入功能？
+                </p>
+                <p class="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                  下載範本了解正確的格式
+                </p>
+              </div>
+            </div>
+            <button
+              @click="downloadTemplate"
+              class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
+            >
+              <DocumentTextIcon class="w-4 h-4 mr-2" />
+              下載範本
+            </button>
+          </div>
+
+          <!-- Instructions -->
+          <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              注意事項：
+            </h4>
+            <ul class="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+              <li>• 第一行為範例資料，匯入時會自動跳過</li>
+              <li>• 風險類別和風險因子為必填欄位</li>
+              <li>• 系統將自動使用所選風險因子的描述作為內容</li>
+              <li>• 如果類別、主題、因子不存在，系統會自動建立</li>
+              <li>• 文字格式支援：使用【文字】表示粗體，_文字_表示斜體</li>
+              <li>• 匯入過程中若有錯誤，會顯示詳細的錯誤訊息</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
@@ -444,7 +620,12 @@ import {
   XMarkIcon,
   ExclamationTriangleIcon,
   ChatBubbleLeftRightIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  DocumentArrowDownIcon,
+  DocumentArrowUpIcon,
+  ArrowDownTrayIcon,
+  ChevronDownIcon,
+  InformationCircleIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -528,13 +709,33 @@ const contentToDelete = ref(null)
 const editingContent = ref(null)
 const editingCategory = ref(null)
 const categoryNameInput = ref(null)
+const dataTableRef = ref(null)
+const fileInput = ref(null)
+const showExportImportDropdown = ref(false)
+const showImportModal = ref(false)
+const isDraggingFile = ref(false)
+const selectedFileName = ref('')
+const dropdownRef = ref(null)
+
+// Drag and drop state
+const draggedItem = ref(null)
+const dragOverItem = ref(null)
+
+// Tooltip state for a_content
+const tooltipData = ref({
+  visible: false,
+  content: '',
+  x: 0,
+  y: 0
+})
+let tooltipTimeout = null
 
 const formData = ref({
   categoryId: '',
   topicId: '',
   riskFactorId: '',
   topic: '',
-  description: ''
+  factorDescription: ''
 })
 
 const categoryFormData = ref({
@@ -547,6 +748,13 @@ const showDebugInfo = ref(false)
 // Development mode check (SSR safe) - currently disabled
 const isDevelopment = computed(() => {
   return showDebugInfo.value
+})
+
+// Get selected factor's description for read-only display
+const selectedFactorDescription = computed(() => {
+  if (!formData.value.riskFactorId) return null
+  const factor = props.riskFactors.find(f => f.id === parseInt(formData.value.riskFactorId))
+  return factor?.description || null
 })
 
 // DataTable columns configuration
@@ -584,7 +792,7 @@ const columns = computed(() => {
       cellClass: 'text-base text-gray-900 dark:text-white'
     },
     {
-      key: 'description',
+      key: 'a_content',
       label: '風險因子描述',
       sortable: true,
       cellClass: 'text-base text-gray-500 dark:text-gray-400'
@@ -627,6 +835,106 @@ const getRiskFactorName = (riskFactorId) => {
   return factor ? factor.factor_name : '未設定'
 }
 
+// Helper method to strip HTML tags and truncate text
+const stripHtmlTags = (html, maxLength = 100) => {
+  if (!html) return ''
+
+  // Create a temporary div to parse HTML
+  const tmp = document.createElement('div')
+  tmp.innerHTML = html
+
+  // Get text content (strips all HTML tags)
+  const text = tmp.textContent || tmp.innerText || ''
+
+  // Truncate if needed
+  if (text.length > maxLength) {
+    return text.substring(0, maxLength) + '...'
+  }
+
+  return text
+}
+
+// Helper method to convert HTML to Excel-compatible rich text
+const htmlToExcelRichText = (html) => {
+  if (!html) return ''
+
+  // For now, we'll export as plain text with formatting hints
+  // Excel's rich text support in SheetJS is limited
+  const tmp = document.createElement('div')
+  tmp.innerHTML = html
+
+  // Extract text while preserving some structure
+  let text = tmp.innerHTML
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<p[^>]*>/gi, '')
+    .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '【$1】') // Bold markers
+    .replace(/<b[^>]*>(.*?)<\/b>/gi, '【$1】')
+    .replace(/<em[^>]*>(.*?)<\/em>/gi, '_$1_') // Italic markers
+    .replace(/<i[^>]*>(.*?)<\/i>/gi, '_$1_')
+    .replace(/<u[^>]*>(.*?)<\/u>/gi, '$1') // Underline (removed)
+    .replace(/<li[^>]*>/gi, '• ')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<[^>]+>/g, '') // Remove remaining tags
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .trim()
+
+  return text
+}
+
+// Helper method to convert text with formatting markers back to HTML
+const textToHtml = (text) => {
+  if (!text) return ''
+
+  // Convert formatting markers back to HTML
+  let html = text
+    .replace(/【(.*?)】/g, '<strong>$1</strong>') // Bold
+    .replace(/_(.*?)_/g, '<em>$1</em>') // Italic
+    .replace(/\n/g, '<br>') // Line breaks
+
+  return `<p>${html}</p>`
+}
+
+// Tooltip methods for a_content display
+const showTooltip = (event, item) => {
+  const content = item.factor_description || item.a_content || item.aContent
+  if (!content) return
+
+  // Clear any existing timeout
+  if (tooltipTimeout) {
+    clearTimeout(tooltipTimeout)
+  }
+
+  // Get the element's position
+  const rect = event.target.getBoundingClientRect()
+
+  // Position tooltip below the element
+  tooltipData.value = {
+    visible: true,
+    content: content,
+    x: rect.left,
+    y: rect.bottom + 8 // 8px gap below the element
+  }
+}
+
+const hideTooltip = () => {
+  // Add a small delay to allow mouse to move to tooltip
+  tooltipTimeout = setTimeout(() => {
+    tooltipData.value.visible = false
+  }, 100)
+}
+
+const keepTooltipOpen = () => {
+  // Cancel hide timeout when mouse enters tooltip
+  if (tooltipTimeout) {
+    clearTimeout(tooltipTimeout)
+  }
+}
+
 // Helper method for factor option text
 const getFactorOptionText = () => {
   if (!formData.value.categoryId) {
@@ -658,9 +966,11 @@ const filteredRiskFactors = computed(() => {
   console.log('Selected category:', formData.value.categoryId)
   console.log('Selected topic:', formData.value.topicId)
   console.log('Topics enabled:', props.riskTopicsEnabled)
-  
+
   if (factors.length > 0) {
-    console.log('Sample factor:', JSON.stringify(factors[0], null, 2))
+    console.log('Sample factor (full data):', factors[0])
+    console.log('Sample factor has description?', !!factors[0].description)
+    console.log('Sample factor description length:', factors[0].description?.length || 0)
   }
 
   // 如果沒有選擇類別，顯示所有因子
@@ -700,9 +1010,17 @@ const filteredRiskFactors = computed(() => {
   console.log('=== Final filtered factors ===')
   console.log('Count:', factors.length)
   if (factors.length > 0) {
-    console.log('Factors:', factors.map(f => ({ id: f.id, name: f.factor_name, topic_id: f.topic_id, category_id: f.category_id })))
+    console.log('Factors:', factors.map(f => ({
+      id: f.id,
+      name: f.factor_name,
+      topic_id: f.topic_id,
+      category_id: f.category_id,
+      hasDescription: !!f.description,
+      descriptionLength: f.description?.length || 0
+    })))
+    console.log('First factor full data:', factors[0])
   }
-  
+
   return factors
 })
 
@@ -719,7 +1037,6 @@ const editContent = async (content) => {
 
   // 先設置基本欄位
   formData.value.topic = content.topic || ''
-  formData.value.description = content.description
 
   // 編輯時需要手動載入對應的 topics 和 factors 到下拉選單
   if (content.category_id) {
@@ -740,17 +1057,47 @@ const editContent = async (content) => {
         formData.value.topicId = originalTopicId
         // 載入該 topic 的 factors
         await fetchFactorsForTopic(originalTopicId, content.category_id)
+        // 等待 API 完成並更新 props
+        await new Promise(resolve => setTimeout(resolve, 500))
       } else {
         // 載入該 category 的 factors
         await fetchFactorsForCategory(content.category_id)
+        // 等待 API 完成並更新 props
+        await new Promise(resolve => setTimeout(resolve, 500))
       }
 
-      // 等待一個 tick 確保 factors 資料已載入
+      // 等待多個 tick 確保 factors 資料已載入到 props
       await nextTick()
+      await nextTick()
+
+      console.log('[EditContent] Available factors after fetch:', props.riskFactors?.length || 0)
 
       // 最後設置 riskFactorId
       if (originalRiskFactorId) {
         formData.value.riskFactorId = originalRiskFactorId
+
+        // Wait for the watcher to populate the description
+        await nextTick()
+        await nextTick()
+
+        // Find the factor and populate description (convert both IDs to numbers)
+        const searchId = parseInt(originalRiskFactorId)
+        const factor = props.riskFactors.find(f => parseInt(f.id) === searchId)
+        console.log('[EditContent] Looking for factor ID:', searchId)
+        console.log('[EditContent] Factor ID type in search:', typeof searchId)
+        console.log('[EditContent] Found factor:', factor ? `Yes (${factor.factor_name})` : 'No')
+
+        if (factor) {
+          console.log('[EditContent] Factor description:', factor.description ? 'Has description' : 'No description')
+          if (factor.description) {
+            formData.value.factorDescription = factor.description
+            await nextTick()
+          }
+        } else {
+          console.warn('[EditContent] Factor ID', searchId, 'not found in', props.riskFactors?.length || 0, 'factors')
+          console.log('[EditContent] Available factor IDs:', props.riskFactors?.map(f => f.id) || [])
+          console.log('[EditContent] Available factor IDs (as numbers):', props.riskFactors?.map(f => parseInt(f.id)) || [])
+        }
       }
     } catch (error) {
       console.error('Failed to load dropdown data for edit:', error)
@@ -760,6 +1107,7 @@ const editContent = async (content) => {
     formData.value.categoryId = ''
     formData.value.topicId = ''
     formData.value.riskFactorId = ''
+    formData.value.factorDescription = ''
   }
 
   showEditModal.value = true
@@ -779,11 +1127,23 @@ const confirmDelete = () => {
 }
 
 const submitForm = () => {
+  // Validate required fields - risk factor is now required
+  if (!formData.value.riskFactorId) {
+    alert('請選擇風險因子')
+    return
+  }
+
+  // Validate factor description is required
+  if (!formData.value.factorDescription || formData.value.factorDescription.trim() === '') {
+    alert('請輸入風險因子描述')
+    return
+  }
+
   // 只傳送表單實際填寫的欄位，其他由後端處理預設值
   const submitData = {
     categoryId: formData.value.categoryId,
-    description: formData.value.description,
-    riskFactorId: formData.value.riskFactorId || null
+    riskFactorId: formData.value.riskFactorId || null,
+    factorDescription: formData.value.factorDescription
   }
 
   // Handle topic data based on whether risk topics are enabled
@@ -812,7 +1172,7 @@ const closeModals = () => {
   formData.value.topicId = ''
   formData.value.riskFactorId = ''
   formData.value.topic = ''
-  formData.value.description = ''
+  formData.value.factorDescription = ''
 }
 
 // Question management methods
@@ -899,6 +1259,7 @@ watch(() => formData.value.categoryId, async (newCategoryId, oldCategoryId) => {
   if (newCategoryId !== oldCategoryId) {
     formData.value.topicId = ''
     formData.value.riskFactorId = ''
+    formData.value.factorDescription = ''
 
     // Fetch topics for the selected category if risk topics are enabled
     if (newCategoryId && props.riskTopicsEnabled) {
@@ -929,6 +1290,7 @@ watch(() => formData.value.topicId, async (newTopicId, oldTopicId) => {
   // Clear risk factor when topic changes
   if (newTopicId !== oldTopicId) {
     formData.value.riskFactorId = ''
+    formData.value.factorDescription = ''
 
     // Fetch factors for the selected topic if risk topics are enabled and topic is selected
     if (newTopicId && props.riskTopicsEnabled && formData.value.categoryId) {
@@ -940,6 +1302,634 @@ watch(() => formData.value.topicId, async (newTopicId, oldTopicId) => {
       }
     }
   }
+})
+
+// Watch for risk factor changes to auto-populate description
+watch(() => formData.value.riskFactorId, async (newFactorId, oldFactorId) => {
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('[Watcher] Risk factor ID changed')
+  console.log('[Watcher] From:', oldFactorId, '→ To:', newFactorId)
+  console.log('[Watcher] Total available factors:', props.riskFactors?.length || 0)
+  console.log('[Watcher] Factor IDs in props:', props.riskFactors?.map(f => f.id) || [])
+
+  if (newFactorId) {
+    // Wait for the next tick to ensure DOM and props are updated
+    await nextTick()
+
+    // Convert both IDs to numbers for comparison to handle type mismatch
+    const searchId = parseInt(newFactorId)
+    const factor = props.riskFactors.find(f => parseInt(f.id) === searchId)
+    console.log('[Watcher] Searching for factor ID:', searchId)
+    console.log('[Watcher] Type of search ID:', typeof searchId)
+    console.log('[Watcher] Sample factor ID type:', props.riskFactors[0] ? typeof props.riskFactors[0].id : 'N/A')
+    console.log('[Watcher] Found:', factor ? '✅ Yes' : '❌ No')
+
+    if (factor) {
+      console.log('[Watcher] Factor details:', {
+        id: factor.id,
+        name: factor.factor_name,
+        hasDescription: !!factor.description,
+        descriptionLength: factor.description?.length || 0
+      })
+
+      // Always set description from factor, even if empty
+      const description = factor.description || factor.factor_description || ''
+
+      // Use nextTick again to ensure the value is properly set
+      await nextTick()
+      formData.value.factorDescription = description
+
+      // Force another update cycle to ensure RichTextEditor receives the value
+      await nextTick()
+      console.log('[Watcher] ✅ Description set successfully')
+    } else {
+      console.warn('[Watcher] ❌ Factor not found - clearing description')
+      formData.value.factorDescription = ''
+    }
+  } else {
+    // Clear description when no factor is selected
+    formData.value.factorDescription = ''
+    console.log('[Watcher] Cleared (no factor selected)')
+  }
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+})
+
+// Watch props.riskFactors to debug data structure
+watch(() => props.riskFactors, (newFactors) => {
+  if (newFactors && newFactors.length > 0) {
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('[Props] riskFactors updated')
+    console.log('[Props] Total factors:', newFactors.length)
+    console.log('[Props] First factor sample:', newFactors[0])
+    console.log('[Props] First factor has description?', !!newFactors[0]?.description)
+    console.log('[Props] Description content:', newFactors[0]?.description?.substring(0, 100) || 'No description')
+    console.log('[Props] All factor IDs:', newFactors.map(f => f.id))
+    console.log('[Props] Factors with description:', newFactors.filter(f => f.description).length)
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  }
+}, { deep: true })
+
+// Drag and drop handlers
+const handleDragStart = (event, item) => {
+  draggedItem.value = item
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('text/html', event.target)
+
+  // Add visual feedback
+  event.target.closest('tr')?.classList.add('opacity-50')
+}
+
+const handleDragEnd = (event) => {
+  // Remove visual feedback
+  event.target.closest('tr')?.classList.remove('opacity-50')
+  draggedItem.value = null
+  dragOverItem.value = null
+}
+
+const handleDragOver = (event, item) => {
+  event.preventDefault()
+  dragOverItem.value = item
+
+  // Add visual feedback for drop target
+  const row = event.target.closest('tr')
+  if (row && draggedItem.value && draggedItem.value.id !== item.id) {
+    row.classList.add('border-t-2', 'border-primary-500')
+  }
+}
+
+const handleDragLeave = (event) => {
+  // Remove visual feedback when leaving the drop target
+  const row = event.target.closest('tr')
+  if (row) {
+    row.classList.remove('border-t-2', 'border-primary-500')
+  }
+}
+
+const handleDrop = async (event, targetItem) => {
+  event.preventDefault()
+
+  // Remove visual feedback
+  const allRows = document.querySelectorAll('tr')
+  allRows.forEach(row => {
+    row.classList.remove('border-t-2', 'border-primary-500', 'opacity-50')
+  })
+
+  if (!draggedItem.value || draggedItem.value.id === targetItem.id) {
+    draggedItem.value = null
+    dragOverItem.value = null
+    return
+  }
+
+  // Create a new order array based on the drop
+  const items = [...props.contentData]
+  const draggedIndex = items.findIndex(item => item.id === draggedItem.value.id)
+  const targetIndex = items.findIndex(item => item.id === targetItem.id)
+
+  if (draggedIndex === -1 || targetIndex === -1) {
+    return
+  }
+
+  // Remove dragged item from its original position
+  const [removed] = items.splice(draggedIndex, 1)
+
+  // Insert it at the target position
+  items.splice(targetIndex, 0, removed)
+
+  // Emit the reorder event with the new order
+  emit('reorder-content', items)
+
+  draggedItem.value = null
+  dragOverItem.value = null
+}
+
+// Dropdown and Modal Methods
+const toggleExportImportDropdown = () => {
+  showExportImportDropdown.value = !showExportImportDropdown.value
+}
+
+const openImportModal = () => {
+  showExportImportDropdown.value = false
+  showImportModal.value = true
+  selectedFileName.value = ''
+}
+
+const closeImportModal = () => {
+  showImportModal.value = false
+  isDraggingFile.value = false
+  selectedFileName.value = ''
+}
+
+const handleFileDrop = (event) => {
+  isDraggingFile.value = false
+  const files = event.dataTransfer.files
+  if (files.length > 0) {
+    const file = files[0]
+    if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+      selectedFileName.value = file.name
+      // Create a fake event to trigger file import
+      const fakeEvent = {
+        target: {
+          files: [file],
+          value: ''
+        }
+      }
+      handleFileImport(fakeEvent)
+    } else {
+      alert('請上傳 .xlsx 或 .xls 格式的檔案')
+    }
+  }
+}
+
+// Click outside to close dropdown
+const handleClickOutside = (event) => {
+  if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
+    showExportImportDropdown.value = false
+  }
+}
+
+// Excel Import/Export Methods
+const exportToExcel = async () => {
+  showExportImportDropdown.value = false
+  try {
+    // Call backend API to export Excel with RichText support
+    // Use native fetch for blob responses as $fetch has issues with blob type
+    const response = await fetch(`/api/v1/risk-assessment/templates/${props.parentId}/export-excel`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    // Get blob from response
+    const blob = await response.blob()
+
+    // Create download link
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `範本內容_${props.parentId}_${Date.now()}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+
+    alert('匯出成功')
+  } catch (error) {
+    console.error('Export failed:', error)
+    alert('匯出失敗：' + error.message)
+  }
+}
+
+// Legacy frontend export method (kept for reference, can be removed later)
+const exportToExcelLegacy = async () => {
+  showExportImportDropdown.value = false
+  try {
+    const XLSX = await import('xlsx')
+
+    // Prepare data for export
+    const exportData = props.contentData.map(item => ({
+      '風險類別': getCategoryName(item.category_id) || '',
+      '風險主題': getTopicName(item.topic_id) || '',
+      '風險因子': getRiskFactorName(item.risk_factor_id) || '',
+      '排序': item.sort_order || '',
+      '是否必填': item.is_required ? '是' : '否',
+      // Note: a_content removed, now using factor description directly
+      '參考文字': htmlToExcelRichText(item.b_content || '') || '',
+      '風險事件描述範例': item.c_placeholder || '',
+      '因應措施描述範例': item.d_placeholder_1 || '',
+      '因應措施費用範例': item.d_placeholder_2 || '',
+      'E1風險描述範例': item.e1_placeholder_1 || '',
+      'E2風險可能性預設值': item.e2_select_1 || '',
+      'E2風險衝擊程度預設值': item.e2_select_2 || '',
+      'E2風險計算說明': item.e2_placeholder || '',
+      'F2機會可能性預設值': item.f2_select_1 || '',
+      'F2機會衝擊程度預設值': item.f2_select_2 || '',
+      'F2機會計算說明': item.f2_placeholder || '',
+      'E1資訊提示': item.e1_info || '',
+      'F1資訊提示': item.f1_info || '',
+      'G1資訊提示': item.g1_info || '',
+      'H1資訊提示': item.h1_info || ''
+    }))
+
+    // Create workbook
+    const wb = XLSX.utils.book_new()
+
+    // Create data worksheet
+    const ws = XLSX.utils.json_to_sheet(exportData)
+
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 15 }, // 風險類別
+      { wch: 15 }, // 風險主題
+      { wch: 15 }, // 風險因子
+      { wch: 10 }, // 排序
+      { wch: 10 }, // 是否必填
+      { wch: 50 }, // 參考文字
+      { wch: 30 }, // 風險事件描述範例
+      { wch: 30 }, // 因應措施描述範例
+      { wch: 20 }, // 因應措施費用範例
+      { wch: 30 }, // E1風險描述範例
+      { wch: 20 }, // E2風險可能性預設值
+      { wch: 20 }, // E2風險衝擊程度預設值
+      { wch: 30 }, // E2風險計算說明
+      { wch: 20 }, // F2機會可能性預設值
+      { wch: 20 }, // F2機會衝擊程度預設值
+      { wch: 30 }, // F2機會計算說明
+      { wch: 20 }, // E1資訊提示
+      { wch: 20 }, // F1資訊提示
+      { wch: 20 }, // G1資訊提示
+      { wch: 20 }  // H1資訊提示
+    ]
+
+    // Apply header styling
+    const range = XLSX.utils.decode_range(ws['!ref'])
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const address = XLSX.utils.encode_col(C) + "1"
+      if (!ws[address]) continue
+      ws[address].s = {
+        fill: { fgColor: { rgb: "4472C4" } },
+        font: { bold: true, color: { rgb: "FFFFFF" }, sz: 12 },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true }
+      }
+    }
+
+    // Apply alternating row colors for data rows
+    for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const address = XLSX.utils.encode_cell({ r: R, c: C })
+        if (!ws[address]) continue
+        ws[address].s = {
+          fill: { fgColor: { rgb: R % 2 === 0 ? "FFFFFF" : "F2F2F2" } },
+          alignment: { vertical: "top", wrapText: true },
+          border: {
+            top: { style: "thin", color: { rgb: "D0D0D0" } },
+            bottom: { style: "thin", color: { rgb: "D0D0D0" } },
+            left: { style: "thin", color: { rgb: "D0D0D0" } },
+            right: { style: "thin", color: { rgb: "D0D0D0" } }
+          }
+        }
+      }
+    }
+
+    XLSX.utils.book_append_sheet(wb, ws, '範本內容')
+
+    // Create help worksheet
+    const helpData = [
+      { 欄位: '風險類別', 說明: '必填。風險所屬的分類', 範例: '財務風險' },
+      { 欄位: '風險主題', 說明: '選填。更細緻的風險分類', 範例: '市場風險' },
+      { 欄位: '風險因子', 說明: '必填。具體的風險因子（系統將使用該因子的描述）', 範例: '匯率波動' },
+      { 欄位: '排序', 說明: '選填。顯示順序', 範例: '1' },
+      { 欄位: '是否必填', 說明: '選填。填寫「是」或「否」', 範例: '是' },
+      { 欄位: '參考文字', 說明: '選填。參考資訊。支援格式：【文字】=粗體、_文字_=斜體', 範例: '請參考【最近一年】的財報...' },
+      { 欄位: '風險事件描述範例', 說明: '選填。風險事件範例說明', 範例: '請描述可能發生的風險事件' },
+      { 欄位: '因應措施描述範例', 說明: '選填。因應措施範例', 範例: '請說明對應的處理措施' },
+      { 欄位: '因應措施費用範例', 說明: '選填。費用範例', 範例: '預估所需費用' },
+      { 欄位: 'E1風險描述範例', 說明: '選填。E1風險描述', 範例: '描述風險情境' },
+      { 欄位: 'E2風險可能性預設值', 說明: '選填。可能性等級', 範例: 'high' },
+      { 欄位: 'E2風險衝擊程度預設值', 說明: '選填。衝擊等級', 範例: 'medium' },
+      { 欄位: 'E2風險計算說明', 說明: '選填。計算方式說明', 範例: '風險值 = 可能性 × 衝擊' },
+      { 欄位: 'F2機會可能性預設值', 說明: '選填。機會可能性', 範例: 'medium' },
+      { 欄位: 'F2機會衝擊程度預設值', 說明: '選填。機會效益', 範例: 'high' },
+      { 欄位: 'F2機會計算說明', 說明: '選填。計算方式', 範例: '機會值 = 可能性 × 效益' },
+      { 欄位: 'E1資訊提示', 說明: '選填。E1資訊提示文字', 範例: '風險評估說明' },
+      { 欄位: 'F1資訊提示', 說明: '選填。F1資訊提示文字', 範例: '機會評估說明' },
+      { 欄位: 'G1資訊提示', 說明: '選填。G1資訊提示文字', 範例: '負面影響說明' },
+      { 欄位: 'H1資訊提示', 說明: '選填。H1資訊提示文字', 範例: '正面影響說明' }
+    ]
+    const wsHelp = XLSX.utils.json_to_sheet(helpData)
+    XLSX.utils.book_append_sheet(wb, wsHelp, '填寫說明')
+
+    // Download file
+    XLSX.writeFile(wb, `範本內容_${props.parentId}_${new Date().getTime()}.xlsx`)
+
+    alert('匯出成功')
+  } catch (error) {
+    console.error('Export failed:', error)
+    alert('匯出失敗：' + error.message)
+  }
+}
+
+const downloadTemplate = async () => {
+  try {
+    const XLSX = await import('xlsx')
+
+    // Template data with example row (updated based on editor page fields)
+    const templateData = [{
+      '風險類別': '財務風險',
+      '風險主題': '市場風險',
+      '風險因子': '匯率波動',
+      'A風險因子描述': '企業營運高度依賴【自然資源】的_風險評估_...',
+      'B參考文字': '請參考【最近一年】的_財報資料_...',
+      'C是否有風險事件': '否',
+      'C風險事件描述': '請描述可能發生的風險事件',
+      'D是否有對應作為': '是',
+      'D對應作為描述': '請說明對應的處理措施',
+      'D對應作為費用': '預估所需費用',
+      'E風險描述': '描述風險情境',
+      'E風險可能性': '',
+      'E風險衝擊程度': '',
+      'E風險計算說明': '風險值 = 可能性 × 衝擊',
+      'F機會描述': '描述機會情境',
+      'F機會可能性': '',
+      'F機會衝擊程度': '',
+      'F機會計算說明': '機會值 = 可能性 × 效益',
+      'G對外負面衝擊程度': '',
+      'G對外負面衝擊描述': '負面影響描述',
+      'H對外正面影響程度': '',
+      'H對外正面影響描述': '正面影響描述',
+      'E1資訊提示': '風險評估說明',
+      'F1資訊提示': '機會評估說明',
+      'G1資訊提示': '負面影響說明',
+      'H1資訊提示': '正面影響說明'
+    }]
+
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.json_to_sheet(templateData)
+
+    // Set column widths (updated to match new field structure with A column)
+    ws['!cols'] = [
+      { wch: 15 }, // 風險類別
+      { wch: 15 }, // 風險主題
+      { wch: 15 }, // 風險因子
+      { wch: 50 }, // A風險因子描述
+      { wch: 50 }, // B參考文字
+      { wch: 12 }, // C是否有風險事件
+      { wch: 40 }, // C風險事件描述
+      { wch: 12 }, // D是否有對應作為
+      { wch: 40 }, // D對應作為描述
+      { wch: 20 }, // D對應作為費用
+      { wch: 40 }, // E風險描述
+      { wch: 12 }, // E風險可能性
+      { wch: 12 }, // E風險衝擊程度
+      { wch: 30 }, // E風險計算說明
+      { wch: 40 }, // F機會描述
+      { wch: 12 }, // F機會可能性
+      { wch: 12 }, // F機會衝擊程度
+      { wch: 30 }, // F機會計算說明
+      { wch: 15 }, // G對外負面衝擊程度
+      { wch: 40 }, // G對外負面衝擊描述
+      { wch: 15 }, // H對外正面影響程度
+      { wch: 40 }, // H對外正面影響描述
+      { wch: 30 }, // E1資訊提示
+      { wch: 30 }, // F1資訊提示
+      { wch: 30 }, // G1資訊提示
+      { wch: 30 }  // H1資訊提示
+    ]
+
+    XLSX.utils.book_append_sheet(wb, ws, '資料填寫區')
+
+    // Add help sheet (updated to match new field structure with A column)
+    const helpSheet = XLSX.utils.aoa_to_sheet([
+      ['欄位名稱', '說明', '範例'],
+      ['風險類別', '必填。風險所屬的分類', '財務風險'],
+      ['風險主題', '選填。更細緻的風險分類（依據範本設定）', '市場風險'],
+      ['風險因子', '必填。具體的風險因子', '匯率波動'],
+      ['A風險因子描述', '選填。風險因子議題描述（支援富文本格式）', '企業營運高度依賴【自然資源】的_風險評估_...'],
+      ['B參考文字', '選填。參考資訊（支援富文本格式）', '請參考【最近一年】的_財報資料_...'],
+      ['C是否有風險事件', '選填。是否發生風險事件，填寫「是」或「否」', '否'],
+      ['C風險事件描述', '選填。風險事件的詳細描述', '請描述可能發生的風險事件'],
+      ['D是否有對應作為', '選填。是否有對應措施，填寫「是」或「否」', '是'],
+      ['D對應作為描述', '選填。對應措施的詳細說明', '請說明對應的處理措施'],
+      ['D對應作為費用', '選填。對應措施所需費用', '預估所需費用'],
+      ['E風險描述', '選填。風險情境描述', '描述風險情境'],
+      ['E風險可能性', '選填。風險發生可能性（填寫數字1-5）', ''],
+      ['E風險衝擊程度', '選填。風險衝擊程度（填寫數字1-5）', ''],
+      ['E風險計算說明', '選填。風險計算方式說明', '風險值 = 可能性 × 衝擊'],
+      ['F機會描述', '選填。機會情境描述', '描述機會情境'],
+      ['F機會可能性', '選填。機會發生可能性（填寫數字1-5）', ''],
+      ['F機會衝擊程度', '選填。機會效益程度（填寫數字1-5）', ''],
+      ['F機會計算說明', '選填。機會計算方式說明', '機會值 = 可能性 × 效益'],
+      ['G對外負面衝擊程度', '選填。對外負面衝擊程度（填寫level-1至level-5）', ''],
+      ['G對外負面衝擊描述', '選填。負面衝擊詳細描述', '負面影響描述'],
+      ['H對外正面影響程度', '選填。對外正面影響程度（填寫level-1至level-5）', ''],
+      ['H對外正面影響描述', '選填。正面影響詳細描述', '正面影響描述'],
+      ['E1資訊提示', '選填。E1區塊資訊提示文字', '風險評估說明'],
+      ['F1資訊提示', '選填。F1區塊資訊提示文字', '機會評估說明'],
+      ['G1資訊提示', '選填。G1區塊資訊提示文字', '負面影響說明'],
+      ['H1資訊提示', '選填。H1區塊資訊提示文字', '正面影響說明'],
+      [],
+      ['注意事項'],
+      ['1. 第一行為範例資料，匯入時會自動跳過'],
+      ['2. 風險類別和風險因子為必填欄位'],
+      ['3. A、B欄位支援富文本格式：【文字】=粗體、_文字_=斜體'],
+      ['4. 如果類別、主題、因子不存在，系統會自動建立'],
+      ['5. 匯出時HTML格式會轉換為Excel富文本格式，匯入時自動還原為HTML'],
+      ['6. 可能性與衝擊程度欄位請填寫數字1-5'],
+      ['7. 程度等級欄位請填寫level-1至level-5格式']
+    ])
+    XLSX.utils.book_append_sheet(wb, helpSheet, '填寫說明')
+
+    XLSX.writeFile(wb, '範本內容匯入範本.xlsx')
+
+    alert('範本下載成功')
+  } catch (error) {
+    console.error('Download template failed:', error)
+    alert('下載範本失敗：' + error.message)
+  }
+}
+
+const triggerImport = () => {
+  fileInput.value?.click()
+}
+
+const handleFileImport = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  try {
+    // Call backend API to import Excel with RichText support
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const result = await $fetch(`/api/v1/risk-assessment/templates/${props.parentId}/import-excel`, {
+      method: 'POST',
+      body: formData
+    })
+
+    // Show result message
+    if (result.success) {
+      const message = [
+        result.message,
+        `成功匯入: ${result.imported}筆`,
+        result.skipped > 0 ? `跳過重複: ${result.skipped}筆` : null,
+        result.errors.length > 0 ? `錯誤: ${result.errors.length}筆` : null
+      ].filter(Boolean).join('\n')
+
+      alert(message)
+
+      if (result.errors.length > 0) {
+        console.error('Import errors:', result.errors)
+      }
+
+      // Refresh data
+      emit('refresh-content')
+      showImportModal.value = false
+      selectedFileName.value = ''
+    } else {
+      alert('匯入失敗：' + result.message)
+    }
+  } catch (error) {
+    console.error('Import failed:', error)
+    alert('匯入失敗：' + error.message)
+  }
+
+  // Reset file input
+  event.target.value = ''
+}
+
+// Legacy frontend import method (kept for reference, can be removed later)
+const handleFileImportLegacy = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  try {
+    const XLSX = await import('xlsx')
+    const reader = new FileReader()
+
+    reader.onload = async (e) => {
+      try {
+        // Read Excel
+        const data = new Uint8Array(e.target.result)
+        const workbook = XLSX.read(data, { type: 'array' })
+
+        // Get first sheet
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet)
+
+        // Skip first row (example data)
+        const actualData = jsonData.slice(1)
+
+        if (actualData.length === 0) {
+          alert('Excel 檔案中沒有資料（第一行為範例會自動跳過）')
+          return
+        }
+
+        // Validate and transform data
+        const importItems = actualData.map(row => ({
+          categoryName: row['風險類別'],
+          topicName: row['風險主題'] || null,
+          factorName: row['風險因子'] || null,
+          sort_order: row['排序'] || null,
+          is_required: row['是否必填'] === '是' ? 1 : 0,
+          // Note: a_content removed, now using factor description
+          // Convert formatted text back to HTML
+          b_content: textToHtml(row['參考文字'] || '') || null,
+          c_placeholder: row['風險事件描述範例'] || null,
+          d_placeholder_1: row['因應措施描述範例'] || null,
+          d_placeholder_2: row['因應措施費用範例'] || null,
+          e1_placeholder_1: row['E1風險描述範例'] || null,
+          e2_select_1: row['E2風險可能性預設值'] || null,
+          e2_select_2: row['E2風險衝擊程度預設值'] || null,
+          e2_placeholder: row['E2風險計算說明'] || null,
+          f2_select_1: row['F2機會可能性預設值'] || null,
+          f2_select_2: row['F2機會衝擊程度預設值'] || null,
+          f2_placeholder: row['F2機會計算說明'] || null,
+          e1_info: row['E1資訊提示'] || null,
+          f1_info: row['F1資訊提示'] || null,
+          g1_info: row['G1資訊提示'] || null,
+          h1_info: row['H1資訊提示'] || null
+        }))
+
+        // Validate required fields
+        const invalidRows = []
+        importItems.forEach((item, index) => {
+          if (!item.categoryName || !item.factorName) {
+            invalidRows.push(index + 2) // +2 because: +1 for 0-index, +1 for skipped example row
+          }
+        })
+
+        if (invalidRows.length > 0) {
+          alert(`以下行缺少必填欄位（風險類別、風險因子）：第 ${invalidRows.join(', ')} 行`)
+          return
+        }
+
+        // Call backend API
+        const templatesStore = useTemplatesStore()
+        await templatesStore.batchImportTemplateContent(props.parentId, importItems)
+
+        // Close modal
+        closeImportModal()
+
+        // Refresh content
+        emit('refresh-content')
+
+        alert(`成功匯入 ${importItems.length} 筆資料`)
+      } catch (error) {
+        console.error('Import processing failed:', error)
+        alert('匯入處理失敗：' + error.message)
+      }
+    }
+
+    reader.readAsArrayBuffer(file)
+  } catch (error) {
+    console.error('Import failed:', error)
+    alert('匯入失敗：' + error.message)
+  }
+
+  // Clear input to allow re-selecting the same file
+  event.target.value = ''
+}
+
+// Setup click outside listener for dropdown
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+// Debug: Watch contentData prop changes
+watch(() => props.contentData, (newValue) => {
+  console.log(`[ContentManagement] Received contentData: ${newValue?.length || 0} items`)
+}, { immediate: true })
+
+// Cleanup on unmount
+onUnmounted(() => {
+  if (tooltipTimeout) {
+    clearTimeout(tooltipTimeout)
+  }
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 

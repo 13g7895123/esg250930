@@ -55,7 +55,6 @@ class QuestionTopicModel extends Model
         'assessment_id',
         'category_id',
         'topic_name',
-        'topic_code',
         'description',
         'sort_order',
         'copied_from_template_topic'
@@ -83,7 +82,6 @@ class QuestionTopicModel extends Model
         'assessment_id' => 'required|integer|is_not_unique[company_assessments.id]',
         'category_id' => 'permit_empty|integer|is_not_unique[question_categories.id]',
         'topic_name' => 'required|max_length[255]',
-        'topic_code' => 'permit_empty|max_length[50]|is_unique_with[question_topics.assessment_id.{assessment_id}]',
         'description' => 'permit_empty',
         'sort_order' => 'permit_empty|integer',
         'copied_from_template_topic' => 'permit_empty|integer'
@@ -105,10 +103,6 @@ class QuestionTopicModel extends Model
         'topic_name' => [
             'required' => '風險主題名稱為必填項目',
             'max_length' => '風險主題名稱不能超過255個字符'
-        ],
-        'topic_code' => [
-            'max_length' => '風險主題代碼不能超過50個字符',
-            'is_unique_with' => '此評估記錄中已存在相同的主題代碼'
         ],
         'sort_order' => [
             'integer' => '排序必須為整數'
@@ -146,7 +140,6 @@ class QuestionTopicModel extends Model
         $builder = $this->select('
                 question_topics.*,
                 question_categories.category_name,
-                question_categories.category_code,
                 (SELECT COUNT(*) FROM question_contents WHERE topic_id = question_topics.id) as content_count,
                 (SELECT COUNT(*) FROM question_factors WHERE topic_id = question_topics.id) as factor_count
             ')
@@ -190,7 +183,6 @@ class QuestionTopicModel extends Model
         $result = $this->select('
                 question_topics.*,
                 question_categories.category_name,
-                question_categories.category_code,
                 (SELECT COUNT(*) FROM question_contents WHERE topic_id = question_topics.id) as content_count,
                 (SELECT COUNT(*) FROM question_factors WHERE topic_id = question_topics.id) as factor_count
             ')
@@ -262,25 +254,6 @@ class QuestionTopicModel extends Model
         return $results;
     }
 
-    /**
-     * 檢查主題代碼在指定評估記錄中是否唯一
-     *
-     * @param int $assessmentId 評估記錄ID
-     * @param string $topicCode 主題代碼
-     * @param int|null $excludeId 排除的主題ID（編輯時使用）
-     * @return bool 是否唯一
-     */
-    public function isTopicCodeUniqueInAssessment(int $assessmentId, string $topicCode, ?int $excludeId = null): bool
-    {
-        $builder = $this->where('assessment_id', $assessmentId)
-            ->where('topic_code', $topicCode);
-
-        if ($excludeId) {
-            $builder->where('id !=', $excludeId);
-        }
-
-        return $builder->first() === null;
-    }
 
     /**
      * 取得指定評估記錄或分類的下一個排序號
@@ -329,7 +302,6 @@ class QuestionTopicModel extends Model
                 'assessment_id' => $assessmentId,
                 'category_id' => $newCategoryId,
                 'topic_name' => $templateTopic['topic_name'],
-                'topic_code' => $templateTopic['topic_code'],
                 'description' => $templateTopic['description'],
                 'sort_order' => $templateTopic['sort_order'],
                 'copied_from_template_topic' => $templateTopic['id']

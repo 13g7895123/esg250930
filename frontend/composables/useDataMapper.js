@@ -22,10 +22,9 @@ export const useDataMapper = () => {
     }
 
     return {
-      // ===== Section A: 風險因子議題描述 =====
+      // ===== Section A: 風險因子議題描述 (Read-only from factor) =====
       riskFactorDescription:
-        apiData.a_content ||
-        apiData.risk_factor_description ||
+        apiData.factor_description ||
         '',
 
       // ===== Section B: 參考文字 =====
@@ -159,9 +158,10 @@ export const useDataMapper = () => {
       // 保留原始資料中的所有欄位（排除結構欄位）
       ...originalDataWithoutStructure,
 
-      // ===== Section A: 風險因子議題描述 (雙重對應) =====
-      a_content: formData.riskFactorDescription,
-      risk_factor_description: formData.riskFactorDescription,
+      // ===== Section A: 風險因子議題描述 (editable, saves to risk_factors.description) =====
+      // Pass risk factor ID and description to backend for update
+      riskFactorId: originalData.risk_factor_id,
+      factorDescription: formData.riskFactorDescription,
 
       // ===== Section B: 參考文字 (雙重對應) =====
       b_content: formData.referenceText,

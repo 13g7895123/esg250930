@@ -54,7 +54,6 @@ class QuestionCategoryModel extends Model
     protected $allowedFields = [
         'assessment_id',
         'category_name',
-        'category_code',
         'description',
         'sort_order',
         'copied_from_template_category'
@@ -81,7 +80,6 @@ class QuestionCategoryModel extends Model
     protected $validationRules = [
         'assessment_id' => 'required|integer|is_not_unique[company_assessments.id]',
         'category_name' => 'required|max_length[255]',
-        'category_code' => 'permit_empty|max_length[50]',
         'description' => 'permit_empty',
         'sort_order' => 'permit_empty|integer',
         'copied_from_template_category' => 'permit_empty|integer'
@@ -99,9 +97,6 @@ class QuestionCategoryModel extends Model
         'category_name' => [
             'required' => '風險分類名稱為必填項目',
             'max_length' => '風險分類名稱不能超過255個字符'
-        ],
-        'category_code' => [
-            'max_length' => '風險分類代碼不能超過50個字符'
         ],
         'sort_order' => [
             'integer' => '排序必須為整數'
@@ -187,25 +182,6 @@ class QuestionCategoryModel extends Model
         return $result;
     }
 
-    /**
-     * 檢查分類代碼在指定評估記錄中是否唯一
-     *
-     * @param int $assessmentId 評估記錄ID
-     * @param string $categoryCode 分類代碼
-     * @param int|null $excludeId 排除的分類ID（編輯時使用）
-     * @return bool 是否唯一
-     */
-    public function isCategoryCodeUniqueInAssessment(int $assessmentId, string $categoryCode, ?int $excludeId = null): bool
-    {
-        $builder = $this->where('assessment_id', $assessmentId)
-            ->where('category_code', $categoryCode);
-
-        if ($excludeId) {
-            $builder->where('id !=', $excludeId);
-        }
-
-        return $builder->first() === null;
-    }
 
     /**
      * 取得指定評估記錄的下一個排序號
@@ -243,7 +219,6 @@ class QuestionCategoryModel extends Model
             $newCategoryData = [
                 'assessment_id' => $assessmentId,
                 'category_name' => $templateCategory['category_name'],
-                'category_code' => $templateCategory['category_code'],
                 'description' => $templateCategory['description'],
                 'sort_order' => $templateCategory['sort_order'],
                 'copied_from_template_category' => $templateCategory['id']

@@ -63,7 +63,7 @@ class QuestionContentModel extends Model
         'weight',
         'is_required',
         'sort_order',
-        'a_content',
+        // 'a_content', // REMOVED: Now using question_factors.description instead
         'b_content',
         'c_placeholder',
         'd_placeholder_1',
@@ -214,11 +214,8 @@ class QuestionContentModel extends Model
             $builder = $this->select('
                     question_contents.*,
                     question_categories.category_name,
-                    question_categories.category_code,
                     question_topics.topic_name,
-                    question_topics.topic_code,
                     question_factors.factor_name,
-                    question_factors.factor_code,
                     personnel_assignments.personnel_id,
                     personnel_assignments.assignment_status,
                     (SELECT COUNT(*) FROM question_responses WHERE question_content_id = question_contents.id) as response_count
@@ -231,11 +228,8 @@ class QuestionContentModel extends Model
             $builder = $this->select('
                     question_contents.*,
                     question_categories.category_name,
-                    question_categories.category_code,
                     question_topics.topic_name,
-                    question_topics.topic_code,
                     question_factors.factor_name,
-                    question_factors.factor_code,
                     (SELECT COUNT(*) FROM question_responses WHERE question_content_id = question_contents.id) as response_count
                 ')
                 ->join('question_categories', 'question_categories.id = question_contents.category_id', 'left')
@@ -261,7 +255,7 @@ class QuestionContentModel extends Model
         if (!empty($search)) {
             $builder->groupStart()
                 ->like('question_contents.description', $search)
-                ->orLike('question_contents.a_content', $search)
+                // ->orLike('question_contents.a_content', $search) // REMOVED: Field no longer exists
                 ->orLike('question_contents.b_content', $search)
                 ->groupEnd();
         }
@@ -426,11 +420,8 @@ class QuestionContentModel extends Model
                 SELECT DISTINCT
                     qc.*,
                     cat.category_name,
-                    cat.category_code,
                     top.topic_name,
-                    top.topic_code,
                     fac.factor_name,
-                    fac.factor_code,
                     (SELECT COUNT(*) FROM question_responses WHERE question_content_id = qc.id) as response_count
                 FROM question_contents qc
                 INNER JOIN personnel_assignments pa ON pa.question_content_id = qc.id
@@ -462,7 +453,7 @@ class QuestionContentModel extends Model
     }
 
     /**
-     * 取得內容詳細資訊，包含分類、主題、因子資訊
+     * 取得內容詳細資訊，包含分類、主題、因子資訊及其描述
      *
      * @param int $contentId 內容ID
      * @return array|null 內容詳細資訊
@@ -472,11 +463,11 @@ class QuestionContentModel extends Model
         $result = $this->select('
                 question_contents.*,
                 question_categories.category_name,
-                question_categories.category_code,
+                question_categories.description as category_description,
                 question_topics.topic_name,
-                question_topics.topic_code,
+                question_topics.description as topic_description,
                 question_factors.factor_name,
-                question_factors.factor_code,
+                question_factors.description as factor_description,
                 (SELECT COUNT(*) FROM question_responses WHERE question_content_id = question_contents.id) as response_count
             ')
             ->join('question_categories', 'question_categories.id = question_contents.category_id', 'left')
@@ -672,13 +663,12 @@ class QuestionContentModel extends Model
                 'topic_id' => $newTopicId,
                 'factor_id' => $newFactorId,
 
-                // 核心內容欄位（title, assessment_criteria, scoring_method, weight 已移除）
-                'description' => $templateContent['description'] ?? '',
+                // 核心內容欄位（title, assessment_criteria, scoring_method, weight, description 已移除/遷移至 a_content）
                 'is_required' => $templateContent['is_required'] ?? 1,
                 'sort_order' => $templateContent['sort_order'] ?? 1,
 
                 // 複製表單欄位
-                'a_content' => $templateContent['a_content'] ?? null,
+                // 'a_content' => $templateContent['a_content'] ?? null, // REMOVED: Now using factor description
                 'b_content' => $templateContent['b_content'] ?? null,
                 'c_placeholder' => $templateContent['c_placeholder'] ?? null,
                 'd_placeholder_1' => $templateContent['d_placeholder_1'] ?? null,

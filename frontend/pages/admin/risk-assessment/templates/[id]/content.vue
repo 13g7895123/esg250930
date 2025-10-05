@@ -53,9 +53,18 @@ const riskCategories = templatesStore.getRiskCategories(templateId)
 const riskTopics = templatesStore.getRiskTopics(templateId)
 const riskFactors = templatesStore.getRiskFactors(templateId)
 
+// Debug: Watch templateContent changes
+watch(templateContent, (newValue) => {
+  console.log(`[Page] Template content updated: ${newValue.length} items`)
+}, { immediate: true })
+
 // Get risk topics enabled state from template settings
 const riskTopicsEnabled = computed(() => {
-  return templateInfo.value?.risk_topics_enabled ?? true
+  const value = templateInfo.value?.risk_topics_enabled
+  // Convert string "1"/"0" or number 1/0 to boolean
+  if (value === '1' || value === 1 || value === true) return true
+  if (value === '0' || value === 0 || value === false) return false
+  return true // default to true
 })
 
 // Refresh state
@@ -202,7 +211,8 @@ const refreshContent = async (showNotification = true) => {
 
     // Now fetch fresh data from API
     console.log('Fetching fresh template content...')
-    await templatesStore.fetchTemplateContent(templateId)
+    // Pass limit: 0 to get all contents without pagination (default backend limit is 20)
+    await templatesStore.fetchTemplateContent(templateId, { limit: 0 })
 
     console.log('Fetching fresh risk categories...')
     await templatesStore.fetchRiskCategories(templateId)
@@ -249,7 +259,8 @@ onMounted(async () => {
   // Always fetch fresh data from API to ensure data consistency with database
   try {
     console.log('Fetching fresh template content from API...')
-    await templatesStore.fetchTemplateContent(templateId)
+    // Pass limit: 0 to get all contents without pagination (default backend limit is 20)
+    await templatesStore.fetchTemplateContent(templateId, { limit: 0 })
   } catch (error) {
     console.error('Failed to fetch template content:', error)
   }

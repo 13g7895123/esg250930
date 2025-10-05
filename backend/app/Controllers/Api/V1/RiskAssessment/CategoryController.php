@@ -82,14 +82,13 @@ class CategoryController extends BaseController
 
             $rules = [
                 'category_name' => 'required|max_length[255]',
-                'category_code' => 'permit_empty|max_length[50]',
                 'description' => 'permit_empty|string',
                 'sort_order' => 'permit_empty|integer'
             ];
 
             // Get input data (handles both POST form data and JSON)
             $input = $this->request->getJSON(true) ?? $this->request->getPost();
-            
+
             if (!$this->validate($rules, $input)) {
                 return $this->response->setStatusCode(400)->setJSON([
                     'success' => false,
@@ -97,20 +96,10 @@ class CategoryController extends BaseController
                     'errors' => $this->validator->getErrors()
                 ]);
             }
-            
-            // Check category code uniqueness within template
-            $categoryCode = $input['category_code'] ?? null;
-            if (!empty($categoryCode) && !$this->categoryModel->isCategoryCodeUniqueInTemplate($templateId, $categoryCode)) {
-                return $this->response->setStatusCode(400)->setJSON([
-                    'success' => false,
-                    'message' => '分類代碼在此範本中已存在'
-                ]);
-            }
 
             $data = [
                 'template_id' => $templateId,
                 'category_name' => $input['category_name'] ?? null,
-                'category_code' => $categoryCode,
                 'description' => $input['description'] ?? null,
                 'sort_order' => $input['sort_order'] ?? 0
             ];
@@ -173,7 +162,6 @@ class CategoryController extends BaseController
 
             $rules = [
                 'category_name' => 'required|max_length[255]',
-                'category_code' => 'permit_empty|max_length[50]',
                 'description' => 'permit_empty|string',
                 'sort_order' => 'permit_empty|integer'
             ];
@@ -189,18 +177,8 @@ class CategoryController extends BaseController
                 ]);
             }
 
-            // Check category code uniqueness within template
-            $categoryCode = $input['category_code'] ?? '';
-            if (!empty($categoryCode) && !$this->categoryModel->isCategoryCodeUniqueInTemplate($templateId, $categoryCode, $categoryId)) {
-                return $this->response->setStatusCode(400)->setJSON([
-                    'success' => false,
-                    'message' => '分類代碼在此範本中已存在'
-                ]);
-            }
-
             $data = [
                 'category_name' => $input['category_name'],
-                'category_code' => $categoryCode,
                 'description' => $input['description'] ?? $category['description'],
                 'sort_order' => $input['sort_order'] ?? $category['sort_order']
             ];

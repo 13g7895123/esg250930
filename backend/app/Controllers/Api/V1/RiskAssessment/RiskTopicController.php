@@ -87,7 +87,6 @@ class RiskTopicController extends BaseController
             $rules = [
                 'topic_name' => 'required|max_length[255]',
                 'category_id' => 'required|integer',
-                'topic_code' => 'permit_empty|max_length[50]',
                 'description' => 'permit_empty|string',
                 'sort_order' => 'permit_empty|integer',
                 'status' => 'permit_empty|in_list[active,inactive]'
@@ -113,20 +112,10 @@ class RiskTopicController extends BaseController
                 ]);
             }
 
-            // Check topic code uniqueness within template
-            $topicCode = $input['topic_code'] ?? null;
-            if (!empty($topicCode) && !$this->topicModel->isTopicCodeUniqueInTemplate($templateId, $topicCode)) {
-                return $this->response->setStatusCode(400)->setJSON([
-                    'success' => false,
-                    'message' => '主題代碼在此範本中已存在'
-                ]);
-            }
-
             $data = [
                 'template_id' => $templateId,
                 'category_id' => $input['category_id'],
                 'topic_name' => $input['topic_name'],
-                'topic_code' => $topicCode,
                 'description' => $input['description'] ?? '',
                 'sort_order' => $input['sort_order'] ?? $this->topicModel->getNextSortOrder($templateId),
                 'status' => $input['status'] ?? 'active'
@@ -195,7 +184,6 @@ class RiskTopicController extends BaseController
             $rules = [
                 'topic_name' => 'required|max_length[255]',
                 'category_id' => 'required|integer',
-                'topic_code' => 'permit_empty|max_length[50]',
                 'description' => 'permit_empty|string',
                 'sort_order' => 'permit_empty|integer',
                 'status' => 'permit_empty|in_list[active,inactive]'
@@ -221,19 +209,9 @@ class RiskTopicController extends BaseController
                 ]);
             }
 
-            // Check topic code uniqueness within template
-            $topicCode = $input['topic_code'] ?? '';
-            if (!empty($topicCode) && !$this->topicModel->isTopicCodeUniqueInTemplate($templateId, $topicCode, $topicId)) {
-                return $this->response->setStatusCode(400)->setJSON([
-                    'success' => false,
-                    'message' => '主題代碼在此範本中已存在'
-                ]);
-            }
-
             $data = [
                 'category_id' => $input['category_id'],
                 'topic_name' => $input['topic_name'],
-                'topic_code' => $topicCode,
                 'description' => $input['description'] ?? $topic['description'],
                 'sort_order' => $input['sort_order'] ?? $topic['sort_order'],
                 'status' => $input['status'] ?? $topic['status']

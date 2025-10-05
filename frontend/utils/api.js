@@ -236,6 +236,14 @@ class ApiClient {
         method: 'PUT',
         body: data
       })
+    },
+
+    // Batch import contents
+    batchImport: (templateId, data) => {
+      return this.request(`/templates/${templateId}/contents/batch-import`, {
+        method: 'POST',
+        body: data
+      })
     }
   }
 
@@ -368,6 +376,624 @@ class ApiClient {
         throw enhancedError
       })
     }
+  }
+
+  // Question Management API - 題項管理相關 API
+  questionManagement = {
+    // Get assessment structure
+    getStructure: (assessmentId) => {
+      const url = `/api/v1/question-management/assessment/${assessmentId}/structure`
+      const requestId = this.generateRequestId()
+      const startTime = Date.now()
+
+      const config = {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId,
+        },
+      }
+
+      return $fetch(url, config).then(response => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+
+        console.log(`[API ${requestId}] ✅ Success (${duration}ms)`, {
+          endpoint: url,
+          method: 'GET',
+          duration
+        })
+
+        return {
+          success: true,
+          data: response.data || response,
+          meta: response.meta || {
+            api_version: '1.0',
+            execution_time: duration,
+            timestamp: new Date().toISOString(),
+            request_id: requestId
+          },
+          message: response.message || 'Request successful'
+        }
+      }).catch(error => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+        const enhancedError = this.handleEnhancedError(error, requestId, duration, url)
+        console.error(`[API ${requestId}] ❌ Error (${duration}ms)`, enhancedError)
+        throw enhancedError
+      })
+    },
+
+    // Sync from template
+    syncFromTemplate: (assessmentId) => {
+      const url = `/api/v1/question-management/assessment/${assessmentId}/sync-from-template`
+      const requestId = this.generateRequestId()
+      const startTime = Date.now()
+
+      const config = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId,
+        },
+      }
+
+      return $fetch(url, config).then(response => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+
+        console.log(`[API ${requestId}] ✅ Success (${duration}ms)`, {
+          endpoint: url,
+          method: 'POST',
+          duration
+        })
+
+        return {
+          success: true,
+          data: response.data || response,
+          meta: response.meta || {
+            api_version: '1.0',
+            execution_time: duration,
+            timestamp: new Date().toISOString(),
+            request_id: requestId
+          },
+          message: response.message || 'Request successful'
+        }
+      }).catch(error => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+        const enhancedError = this.handleEnhancedError(error, requestId, duration, url)
+        console.error(`[API ${requestId}] ❌ Error (${duration}ms)`, enhancedError)
+        throw enhancedError
+      })
+    },
+
+    // Categories
+    getCategories: (assessmentId) => {
+      const url = `/api/v1/question-management/assessment/${assessmentId}/categories`
+      const requestId = this.generateRequestId()
+      const startTime = Date.now()
+
+      const config = {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId,
+        },
+      }
+
+      return $fetch(url, config).then(response => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+
+        console.log(`[API ${requestId}] ✅ Success (${duration}ms)`, {
+          endpoint: url,
+          method: 'GET',
+          duration
+        })
+
+        return {
+          success: true,
+          data: response.data || response,
+          meta: response.meta || {
+            api_version: '1.0',
+            execution_time: duration,
+            timestamp: new Date().toISOString(),
+            request_id: requestId
+          },
+          message: response.message || 'Request successful'
+        }
+      }).catch(error => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+        const enhancedError = this.handleEnhancedError(error, requestId, duration, url)
+        console.error(`[API ${requestId}] ❌ Error (${duration}ms)`, enhancedError)
+        throw enhancedError
+      })
+    },
+
+    createCategory: (assessmentId, data) => {
+      const url = `/api/v1/question-management/assessment/${assessmentId}/categories`
+      const requestId = this.generateRequestId()
+      const startTime = Date.now()
+
+      const config = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId,
+        },
+        body: data
+      }
+
+      return $fetch(url, config).then(response => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+
+        console.log(`[API ${requestId}] ✅ Success (${duration}ms)`, {
+          endpoint: url,
+          method: 'POST',
+          duration
+        })
+
+        return {
+          success: true,
+          data: response.data || response,
+          meta: response.meta || {
+            api_version: '1.0',
+            execution_time: duration,
+            timestamp: new Date().toISOString(),
+            request_id: requestId
+          },
+          message: response.message || 'Request successful'
+        }
+      }).catch(error => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+        const enhancedError = this.handleEnhancedError(error, requestId, duration, url)
+        console.error(`[API ${requestId}] ❌ Error (${duration}ms)`, enhancedError)
+        throw enhancedError
+      })
+    },
+
+    updateCategory: (categoryId, data) => {
+      const url = `/api/v1/question-management/categories/${categoryId}`
+      const requestId = this.generateRequestId()
+      const startTime = Date.now()
+
+      const config = {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId,
+        },
+        body: data
+      }
+
+      return $fetch(url, config).then(response => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+
+        console.log(`[API ${requestId}] ✅ Success (${duration}ms)`, {
+          endpoint: url,
+          method: 'PUT',
+          duration
+        })
+
+        return {
+          success: true,
+          data: response.data || response,
+          meta: response.meta || {
+            api_version: '1.0',
+            execution_time: duration,
+            timestamp: new Date().toISOString(),
+            request_id: requestId
+          },
+          message: response.message || 'Request successful'
+        }
+      }).catch(error => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+        const enhancedError = this.handleEnhancedError(error, requestId, duration, url)
+        console.error(`[API ${requestId}] ❌ Error (${duration}ms)`, enhancedError)
+        throw enhancedError
+      })
+    },
+
+    deleteCategory: (categoryId) => {
+      const url = `/api/v1/question-management/categories/${categoryId}`
+      const requestId = this.generateRequestId()
+      const startTime = Date.now()
+
+      const config = {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId,
+        },
+      }
+
+      return $fetch(url, config).then(response => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+
+        console.log(`[API ${requestId}] ✅ Success (${duration}ms)`, {
+          endpoint: url,
+          method: 'DELETE',
+          duration
+        })
+
+        return {
+          success: true,
+          data: response.data || response,
+          meta: response.meta || {
+            api_version: '1.0',
+            execution_time: duration,
+            timestamp: new Date().toISOString(),
+            request_id: requestId
+          },
+          message: response.message || 'Request successful'
+        }
+      }).catch(error => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+        const enhancedError = this.handleEnhancedError(error, requestId, duration, url)
+        console.error(`[API ${requestId}] ❌ Error (${duration}ms)`, enhancedError)
+        throw enhancedError
+      })
+    },
+
+    // Topics
+    getTopics: (assessmentId, params = {}) => {
+      const queryString = new URLSearchParams(params).toString()
+      const url = `/api/v1/question-management/assessment/${assessmentId}/topics${queryString ? `?${queryString}` : ''}`
+      const requestId = this.generateRequestId()
+      const startTime = Date.now()
+
+      const config = {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId,
+        },
+      }
+
+      return $fetch(url, config).then(response => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+
+        console.log(`[API ${requestId}] ✅ Success (${duration}ms)`, {
+          endpoint: url,
+          method: 'GET',
+          duration
+        })
+
+        return {
+          success: true,
+          data: response.data || response,
+          meta: response.meta || {
+            api_version: '1.0',
+            execution_time: duration,
+            timestamp: new Date().toISOString(),
+            request_id: requestId
+          },
+          message: response.message || 'Request successful'
+        }
+      }).catch(error => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+        const enhancedError = this.handleEnhancedError(error, requestId, duration, url)
+        console.error(`[API ${requestId}] ❌ Error (${duration}ms)`, enhancedError)
+        throw enhancedError
+      })
+    },
+
+    createTopic: (assessmentId, data) => {
+      const url = `/api/v1/question-management/assessment/${assessmentId}/topics`
+      const requestId = this.generateRequestId()
+      const startTime = Date.now()
+
+      const config = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId,
+        },
+        body: data
+      }
+
+      return $fetch(url, config).then(response => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+
+        console.log(`[API ${requestId}] ✅ Success (${duration}ms)`, {
+          endpoint: url,
+          method: 'POST',
+          duration
+        })
+
+        return {
+          success: true,
+          data: response.data || response,
+          meta: response.meta || {
+            api_version: '1.0',
+            execution_time: duration,
+            timestamp: new Date().toISOString(),
+            request_id: requestId
+          },
+          message: response.message || 'Request successful'
+        }
+      }).catch(error => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+        const enhancedError = this.handleEnhancedError(error, requestId, duration, url)
+        console.error(`[API ${requestId}] ❌ Error (${duration}ms)`, enhancedError)
+        throw enhancedError
+      })
+    },
+
+    updateTopic: (topicId, data) => {
+      const url = `/api/v1/question-management/topics/${topicId}`
+      const requestId = this.generateRequestId()
+      const startTime = Date.now()
+
+      const config = {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId,
+        },
+        body: data
+      }
+
+      return $fetch(url, config).then(response => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+
+        console.log(`[API ${requestId}] ✅ Success (${duration}ms)`, {
+          endpoint: url,
+          method: 'PUT',
+          duration
+        })
+
+        return {
+          success: true,
+          data: response.data || response,
+          meta: response.meta || {
+            api_version: '1.0',
+            execution_time: duration,
+            timestamp: new Date().toISOString(),
+            request_id: requestId
+          },
+          message: response.message || 'Request successful'
+        }
+      }).catch(error => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+        const enhancedError = this.handleEnhancedError(error, requestId, duration, url)
+        console.error(`[API ${requestId}] ❌ Error (${duration}ms)`, enhancedError)
+        throw enhancedError
+      })
+    },
+
+    deleteTopic: (topicId) => {
+      const url = `/api/v1/question-management/topics/${topicId}`
+      const requestId = this.generateRequestId()
+      const startTime = Date.now()
+
+      const config = {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId,
+        },
+      }
+
+      return $fetch(url, config).then(response => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+
+        console.log(`[API ${requestId}] ✅ Success (${duration}ms)`, {
+          endpoint: url,
+          method: 'DELETE',
+          duration
+        })
+
+        return {
+          success: true,
+          data: response.data || response,
+          meta: response.meta || {
+            api_version: '1.0',
+            execution_time: duration,
+            timestamp: new Date().toISOString(),
+            request_id: requestId
+          },
+          message: response.message || 'Request successful'
+        }
+      }).catch(error => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+        const enhancedError = this.handleEnhancedError(error, requestId, duration, url)
+        console.error(`[API ${requestId}] ❌ Error (${duration}ms)`, enhancedError)
+        throw enhancedError
+      })
+    },
+
+    // Factors
+    getFactors: (assessmentId, params = {}) => {
+      const queryString = new URLSearchParams(params).toString()
+      const url = `/api/v1/question-management/assessment/${assessmentId}/factors${queryString ? `?${queryString}` : ''}`
+      const requestId = this.generateRequestId()
+      const startTime = Date.now()
+
+      const config = {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId,
+        },
+      }
+
+      return $fetch(url, config).then(response => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+
+        console.log(`[API ${requestId}] ✅ Success (${duration}ms)`, {
+          endpoint: url,
+          method: 'GET',
+          duration
+        })
+
+        return {
+          success: true,
+          data: response.data || response,
+          meta: response.meta || {
+            api_version: '1.0',
+            execution_time: duration,
+            timestamp: new Date().toISOString(),
+            request_id: requestId
+          },
+          message: response.message || 'Request successful'
+        }
+      }).catch(error => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+        const enhancedError = this.handleEnhancedError(error, requestId, duration, url)
+        console.error(`[API ${requestId}] ❌ Error (${duration}ms)`, enhancedError)
+        throw enhancedError
+      })
+    },
+
+    createFactor: (assessmentId, data) => {
+      const url = `/api/v1/question-management/assessment/${assessmentId}/factors`
+      const requestId = this.generateRequestId()
+      const startTime = Date.now()
+
+      const config = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId,
+        },
+        body: data
+      }
+
+      return $fetch(url, config).then(response => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+
+        console.log(`[API ${requestId}] ✅ Success (${duration}ms)`, {
+          endpoint: url,
+          method: 'POST',
+          duration
+        })
+
+        return {
+          success: true,
+          data: response.data || response,
+          meta: response.meta || {
+            api_version: '1.0',
+            execution_time: duration,
+            timestamp: new Date().toISOString(),
+            request_id: requestId
+          },
+          message: response.message || 'Request successful'
+        }
+      }).catch(error => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+        const enhancedError = this.handleEnhancedError(error, requestId, duration, url)
+        console.error(`[API ${requestId}] ❌ Error (${duration}ms)`, enhancedError)
+        throw enhancedError
+      })
+    },
+
+    updateFactor: (factorId, data) => {
+      const url = `/api/v1/question-management/factors/${factorId}`
+      const requestId = this.generateRequestId()
+      const startTime = Date.now()
+
+      const config = {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId,
+        },
+        body: data
+      }
+
+      return $fetch(url, config).then(response => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+
+        console.log(`[API ${requestId}] ✅ Success (${duration}ms)`, {
+          endpoint: url,
+          method: 'PUT',
+          duration
+        })
+
+        return {
+          success: true,
+          data: response.data || response,
+          meta: response.meta || {
+            api_version: '1.0',
+            execution_time: duration,
+            timestamp: new Date().toISOString(),
+            request_id: requestId
+          },
+          message: response.message || 'Request successful'
+        }
+      }).catch(error => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+        const enhancedError = this.handleEnhancedError(error, requestId, duration, url)
+        console.error(`[API ${requestId}] ❌ Error (${duration}ms)`, enhancedError)
+        throw enhancedError
+      })
+    },
+
+    deleteFactor: (factorId) => {
+      const url = `/api/v1/question-management/factors/${factorId}`
+      const requestId = this.generateRequestId()
+      const startTime = Date.now()
+
+      const config = {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId,
+        },
+      }
+
+      return $fetch(url, config).then(response => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+
+        console.log(`[API ${requestId}] ✅ Success (${duration}ms)`, {
+          endpoint: url,
+          method: 'DELETE',
+          duration
+        })
+
+        return {
+          success: true,
+          data: response.data || response,
+          meta: response.meta || {
+            api_version: '1.0',
+            execution_time: duration,
+            timestamp: new Date().toISOString(),
+            request_id: requestId
+          },
+          message: response.message || 'Request successful'
+        }
+      }).catch(error => {
+        const endTime = Date.now()
+        const duration = endTime - startTime
+        const enhancedError = this.handleEnhancedError(error, requestId, duration, url)
+        console.error(`[API ${requestId}] ❌ Error (${duration}ms)`, enhancedError)
+        throw enhancedError
+      })
+    },
   }
 }
 

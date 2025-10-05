@@ -32,7 +32,7 @@ class RiskFactorModel extends Model
         'category_id' => 'required|integer',
         'topic_id' => 'permit_empty|integer',
         'factor_name' => 'required|max_length[255]',
-        'description' => 'permit_empty',
+        'description' => 'required',
         'status' => 'permit_empty|in_list[active,inactive]'
     ];
 
@@ -51,6 +51,9 @@ class RiskFactorModel extends Model
         'factor_name' => [
             'required' => 'Factor name is required',
             'max_length' => 'Factor name cannot exceed 255 characters'
+        ],
+        'description' => [
+            'required' => 'Description is required'
         ],
         'status' => [
             'in_list' => 'Status must be active or inactive'

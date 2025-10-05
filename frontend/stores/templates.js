@@ -290,7 +290,10 @@ export const useTemplatesStore = defineStore('templates', () => {
       const response = await apiClient.contents.getByTemplate(templateId, params)
 
       if (response.success && response.data) {
-        templateContent.value[templateId] = response.data.contents || response.data.factors || []
+        const contents = response.data.contents || response.data.factors || []
+        console.log(`[Store] Fetched ${contents.length} contents for template ${templateId}`)
+        console.log('[Store] API pagination info:', response.data.pagination)
+        templateContent.value[templateId] = contents
         return response.data
       }
     } catch (err) {
@@ -352,8 +355,14 @@ export const useTemplatesStore = defineStore('templates', () => {
 
   const reorderTemplateContent = async (templateId, orders) => {
     try {
-      const response = await apiClient.contents.reorder(templateId, { orders })
-      
+      // Format the orders array with sort_order for each item
+      const formattedOrders = orders.map((item, index) => ({
+        id: item.id,
+        sort_order: index + 1
+      }))
+
+      const response = await apiClient.contents.reorder(templateId, { orders: formattedOrders })
+
       if (response.success) {
         // Update local order based on the orders array
         if (templateContent.value[templateId]) {
@@ -366,6 +375,21 @@ export const useTemplatesStore = defineStore('templates', () => {
       }
     } catch (err) {
       handleError(err, 'Failed to reorder template content')
+      throw err
+    }
+  }
+
+  const batchImportTemplateContent = async (templateId, items) => {
+    try {
+      const response = await apiClient.contents.batchImport(templateId, { items })
+
+      if (response.success) {
+        // Refresh the template content after successful import
+        await fetchTemplateContent(templateId)
+        return response
+      }
+    } catch (err) {
+      handleError(err, 'Failed to batch import template content')
       throw err
     }
   }
@@ -523,12 +547,14 @@ export const useTemplatesStore = defineStore('templates', () => {
   }
 
   // Risk Factors CRUD operations
-  const fetchRiskFactors = async (templateId) => {
+  const fetchRiskFactors = async (templateId, params = {}) => {
     try {
-      const response = await apiClient.factors.getByTemplate(templateId)
+      console.log('[Store] Fetching risk factors with params:', params)
+      const response = await apiClient.factors.getByTemplate(templateId, params)
 
       if (response.success && response.data) {
         riskFactors.value[templateId] = response.data.factors || []
+        console.log('[Store] Risk factors loaded:', riskFactors.value[templateId].length, 'factors')
         return response.data
       }
     } catch (err) {
@@ -702,6 +728,7 @@ export const useTemplatesStore = defineStore('templates', () => {
     updateTemplateContent,
     deleteTemplateContent,
     reorderTemplateContent,
+    batchImportTemplateContent,
 
     // Category operations
     fetchRiskCategories,

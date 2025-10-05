@@ -46,7 +46,7 @@
 
       <!-- Custom Actions Cell -->
       <template #cell-actions="{ item }">
-        <div class="flex items-center space-x-2">
+        <div class="flex flex-wrap items-center gap-2">
           <!-- Edit Button -->
           <div class="relative group">
             <button
@@ -225,111 +225,153 @@
     </Modal>
 
     <!-- Template Structure Management Modal -->
-    <Modal
-      :model-value="showTemplateManagementModal"
+    <StructureManagementModal
+      v-model="showTemplateManagementModal"
       :title="`架構管理 - ${managingTemplate?.version_name}`"
-      size="lg"
-      @update:model-value="(value) => showTemplateManagementModal = value"
+      :item-name="managingTemplate?.version_name"
+      :risk-topics-enabled="managingTemplate?.risk_topics_enabled ?? true"
+      :show-export-import="true"
+      management-type="template"
       @close="showTemplateManagementModal = false"
+      @toggle-risk-topics="toggleTemplateRiskTopics(managingTemplate?.id)"
+      @open-category-management="openManagementModal('categories')"
+      @open-topic-management="openManagementModal('topics')"
+      @open-factor-management="openManagementModal('factors')"
+      @go-to-content="goToTemplateContent(managingTemplate?.id)"
+      @export-structure="exportStructure"
+      @import-structure="showStructureImportModal = true"
+    />
+
+    <!-- Structure Import Modal -->
+    <Modal
+      :model-value="showStructureImportModal"
+      title="匯入架構資料"
+      size="lg"
+      @update:model-value="(value) => showStructureImportModal = value"
+      @close="closeStructureImportModal"
     >
-      <div class="space-y-6">
-        <!-- Risk Topic Toggle -->
-        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+      <div class="space-y-4">
+        <!-- Download Template Button -->
+        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
           <div class="flex items-center justify-between">
             <div>
-              <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-1">風險主題層級</h4>
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                控制此範本是否使用風險主題層級結構
-              </p>
+              <h4 class="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">下載匯入範本</h4>
+              <p class="text-xs text-blue-700 dark:text-blue-300">下載空白範本以填寫資料</p>
             </div>
             <button
-              @click="toggleTemplateRiskTopics(managingTemplate?.id)"
-              :class="[
-                'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-                (managingTemplate?.risk_topics_enabled ?? true)
-                  ? 'bg-primary-600'
-                  : 'bg-gray-200 dark:bg-gray-600'
-              ]"
+              type="button"
+              @click="downloadTemplate"
+              class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <span
-                :class="[
-                  'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
-                  (managingTemplate?.risk_topics_enabled ?? true) ? 'translate-x-6' : 'translate-x-1'
-                ]"
-              />
+              <ArrowDownTrayIcon class="w-4 h-4 mr-2" />
+              下載範本
             </button>
           </div>
         </div>
 
-        <!-- Structure Preview -->
-        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 p-4 rounded-lg">
-          <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-3">目前架構</h4>
-          <div class="space-y-2 text-sm">
-            <div class="flex items-center text-blue-600 dark:text-blue-400">
-              <TagIcon class="w-4 h-4 mr-2" />
-              風險類別 (Risk Categories)
+        <!-- File Upload Area -->
+        <div
+          @drop.prevent="handleDrop"
+          @dragover.prevent="isDragging = true"
+          @dragleave.prevent="isDragging = false"
+          :class="[
+            'border-2 border-dashed rounded-lg p-8 text-center transition-colors',
+            isDragging
+              ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+              : 'border-gray-300 dark:border-gray-600'
+          ]"
+        >
+          <ArrowUpTrayIcon class="w-12 h-12 mx-auto text-gray-400 mb-4" />
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+            拖曳 Excel 檔案到此處，或
+          </p>
+          <input
+            ref="fileInput"
+            type="file"
+            accept=".xlsx,.xls"
+            @change="handleFileSelect"
+            class="hidden"
+          />
+          <button
+            type="button"
+            @click="$refs.fileInput.click()"
+            class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            選擇檔案
+          </button>
+        </div>
+
+        <!-- Selected File Info -->
+        <div v-if="selectedFile" class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <DocumentTextIcon class="w-5 h-5 text-blue-600 dark:text-blue-400 mr-2" />
+              <span class="text-sm font-medium text-blue-900 dark:text-blue-100">{{ selectedFile.name }}</span>
             </div>
-            <div v-if="managingTemplate?.risk_topics_enabled ?? true" class="flex items-center text-purple-600 dark:text-purple-400 ml-4">
-              <ArrowDownIcon class="w-4 h-4 mr-2" />
-              風險主題 (Risk Topics)
-            </div>
-            <div class="flex items-center text-orange-600 dark:text-orange-400" :class="{ 'ml-8': (managingTemplate?.risk_topics_enabled ?? true), 'ml-4': !(managingTemplate?.risk_topics_enabled ?? true) }">
-              <ArrowDownIcon class="w-4 h-4 mr-2" />
-              風險因子 (Risk Factors)
+            <button
+              @click="selectedFile = null"
+              class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              <XMarkIcon class="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Validation Errors/Warnings -->
+        <div v-if="importErrors.length > 0" :class="[
+          'rounded-lg p-4 border',
+          importErrors[0]?.startsWith('發現') && importErrors[0]?.includes('重複')
+            ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+        ]">
+          <div class="flex items-start">
+            <ExclamationTriangleIcon :class="[
+              'w-5 h-5 mr-2 flex-shrink-0 mt-0.5',
+              importErrors[0]?.startsWith('發現') && importErrors[0]?.includes('重複')
+                ? 'text-yellow-600 dark:text-yellow-400'
+                : 'text-red-600 dark:text-red-400'
+            ]" />
+            <div class="flex-1">
+              <h4 :class="[
+                'text-sm font-medium mb-2',
+                importErrors[0]?.startsWith('發現') && importErrors[0]?.includes('重複')
+                  ? 'text-yellow-900 dark:text-yellow-100'
+                  : 'text-red-900 dark:text-red-100'
+              ]">
+                {{ importErrors[0]?.startsWith('發現') && importErrors[0]?.includes('重複') ? '警告' : `發現 ${importErrors.length} 個錯誤` }}
+              </h4>
+              <ul :class="[
+                'text-sm space-y-1 list-disc list-inside',
+                importErrors[0]?.startsWith('發現') && importErrors[0]?.includes('重複')
+                  ? 'text-yellow-800 dark:text-yellow-200'
+                  : 'text-red-800 dark:text-red-200'
+              ]">
+                <li v-for="(error, index) in importErrors" :key="index">
+                  {{ error }}
+                </li>
+              </ul>
             </div>
           </div>
         </div>
 
-        <!-- Management Actions -->
-        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 p-4 rounded-lg">
-          <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-3">管理功能</h4>
-          <div class="grid grid-cols-1 gap-3">
-            <button
-              @click="openManagementModal('categories')"
-              class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-            >
-              <TagIcon class="w-5 h-5 mr-3" />
-              <div class="text-left">
-                <div class="font-medium">管理風險類別</div>
-                <div class="text-sm opacity-75">新增、編輯、刪除風險分類</div>
-              </div>
-            </button>
-
-            <button
-              v-if="managingTemplate?.risk_topics_enabled ?? true"
-              @click="openManagementModal('topics')"
-              class="flex items-center p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
-            >
-              <ChatBubbleLeftRightIcon class="w-5 h-5 mr-3" />
-              <div class="text-left">
-                <div class="font-medium">管理風險主題</div>
-                <div class="text-sm opacity-75">新增、編輯、刪除風險主題</div>
-              </div>
-            </button>
-
-            <button
-              @click="openManagementModal('factors')"
-              class="flex items-center p-3 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
-            >
-              <ExclamationTriangleIcon class="w-5 h-5 mr-3" />
-              <div class="text-left">
-                <div class="font-medium">管理風險因子</div>
-                <div class="text-sm opacity-75">新增、編輯、刪除風險因子</div>
-              </div>
-            </button>
-
-            <!-- Go to Template Content -->
-            <button
-              @click="goToTemplateContent(managingTemplate?.id)"
-              class="flex items-center p-3 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-            >
-              <DocumentTextIcon class="w-5 h-5 mr-3" />
-              <div class="text-left">
-                <div class="font-medium">前往範本內容</div>
-                <div class="text-sm opacity-75">管理題目內容</div>
-              </div>
-            </button>
-          </div>
+        <!-- Import Button -->
+        <div class="flex justify-end space-x-3 pt-4">
+          <button
+            type="button"
+            @click="closeStructureImportModal"
+            class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            @click="processImport"
+            :disabled="!selectedFile || isImporting"
+            class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <span v-if="isImporting">處理中...</span>
+            <span v-else>匯入</span>
+          </button>
         </div>
       </div>
     </Modal>
@@ -554,7 +596,7 @@
     <Modal
       :model-value="showAddRiskFactorModal || showEditRiskFactorModal"
       :title="showAddRiskFactorModal ? '新增風險因子' : '編輯風險因子'"
-      size="md"
+      size="2xl"
       @update:model-value="(value) => !value && closeRiskFactorModals()"
       @close="closeRiskFactorModals"
     >
@@ -620,14 +662,13 @@
 
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            描述
+            描述 <span class="text-red-500">*</span>
           </label>
-          <textarea
+          <RichTextEditor
             v-model="riskFactorFormData.description"
-            rows="3"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-            placeholder="請輸入因子描述（可選）"
-          ></textarea>
+            placeholder="請輸入因子描述"
+            :show-html-info="false"
+          />
         </div>
 
         <div class="flex justify-end space-x-3 mt-6">
@@ -843,8 +884,12 @@ import {
   ArrowDownIcon,
   TagIcon,
   ChatBubbleLeftRightIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
+  XMarkIcon
 } from '@heroicons/vue/24/outline'
+import * as XLSX from 'xlsx'
 
 usePageTitle('範本管理')
 
@@ -911,6 +956,14 @@ const riskTopicFormData = ref({
   category_id: '',
   description: ''
 })
+
+// Structure import/export
+const showStructureImportModal = ref(false)
+const selectedFile = ref(null)
+const isDragging = ref(false)
+const isImporting = ref(false)
+const importErrors = ref([])
+const fileInput = ref(null)
 
 const formData = ref({
   versionName: ''
@@ -1345,6 +1398,12 @@ const deleteRiskFactor = (factor) => {
 const submitRiskFactorForm = async () => {
   if (!managingTemplate.value?.id) return
 
+  // Validation: Description is required
+  if (!riskFactorFormData.value.description || riskFactorFormData.value.description.trim() === '') {
+    await showError('驗證失敗', '描述為必填欄位')
+    return
+  }
+
   // Validation: If risk topics are enabled, topic_id is required
   if (managingTemplate.value?.risk_topics_enabled && !riskFactorFormData.value.topic_id) {
     await showError('驗證失敗', '風險主題為必填欄位')
@@ -1592,6 +1651,276 @@ watch(() => riskFactorFormData.value.category_id, async (newCategoryId, oldCateg
     }
   }
 })
+
+// Structure Import/Export Functions
+const exportStructure = async () => {
+  if (!managingTemplate.value) return
+
+  try {
+    showLoading('正在匯出架構資料...')
+
+    const templateId = managingTemplate.value.id
+
+    // Call backend API to export structure with RichText support
+    const response = await fetch(`/api/v1/risk-assessment/templates/${templateId}/export-structure`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    // Get blob from response
+    const blob = await response.blob()
+
+    // Create download link
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${managingTemplate.value.version_name}_架構_${new Date().toISOString().slice(0, 10)}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+
+    closeAll()
+    await showSuccess('匯出成功', `架構資料已匯出`)
+  } catch (error) {
+    console.error('Export structure error:', error)
+    closeAll()
+    await showError('匯出失敗', '匯出架構資料時發生錯誤')
+  }
+}
+
+// Legacy frontend export method (kept for reference)
+const exportStructureLegacy = async () => {
+  if (!managingTemplate.value) return
+
+  try {
+    showLoading('正在匯出架構資料...')
+
+    const templateId = managingTemplate.value.id
+    const hasTopicLayer = managingTemplate.value.risk_topics_enabled ?? true
+
+    // Fetch all structure data
+    await templatesStore.fetchRiskCategories(templateId)
+    if (hasTopicLayer) {
+      await templatesStore.fetchRiskTopics(templateId)
+    }
+    await templatesStore.fetchRiskFactors(templateId)
+
+    const categories = currentTemplateRiskCategories.value || []
+    const topics = hasTopicLayer ? (currentTemplateRiskTopics.value || []) : []
+    const factors = currentTemplateRiskFactors.value || []
+
+    // Prepare data for Excel
+    const data = []
+
+    factors.forEach(factor => {
+      const category = categories.find(c => c.id === factor.category_id)
+      const row = {
+        '風險類別名稱': category?.category_name || '',
+        '風險類別描述': category?.description || ''
+      }
+
+      if (hasTopicLayer) {
+        const topic = topics.find(t => t.id === factor.topic_id)
+        row['風險主題名稱'] = topic?.topic_name || ''
+        row['風險主題描述'] = topic?.description || ''
+      }
+
+      row['風險因子名稱'] = factor.factor_name || ''
+      row['風險因子描述'] = factor.description || ''
+
+      data.push(row)
+    })
+
+    // Create workbook
+    const ws = XLSX.utils.json_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '架構資料')
+
+    // Style the header row
+    const range = XLSX.utils.decode_range(ws['!ref'])
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const address = XLSX.utils.encode_col(C) + '1'
+      if (!ws[address]) continue
+      ws[address].s = {
+        fill: { fgColor: { rgb: '4F46E5' } },
+        font: { bold: true, color: { rgb: 'FFFFFF' } }
+      }
+    }
+
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 20 },  // 風險類別名稱
+      { wch: 40 },  // 風險類別描述
+      ...(hasTopicLayer ? [
+        { wch: 20 },  // 風險主題名稱
+        { wch: 40 }   // 風險主題描述
+      ] : []),
+      { wch: 20 },  // 風險因子名稱
+      { wch: 40 }   // 風險因子描述
+    ]
+
+    // Generate filename
+    const timestamp = new Date().toISOString().slice(0, 10)
+    const filename = `${managingTemplate.value.version_name}_架構_${timestamp}.xlsx`
+
+    // Download
+    XLSX.writeFile(wb, filename)
+
+    closeAll()
+    await showSuccess('匯出成功', `架構資料已匯出為 ${filename}`)
+  } catch (error) {
+    console.error('Export structure error:', error)
+    closeAll()
+    await showError('匯出失敗', '匯出架構資料時發生錯誤')
+  }
+}
+
+const downloadTemplate = () => {
+  if (!managingTemplate.value) return
+
+  const hasTopicLayer = managingTemplate.value.risk_topics_enabled ?? true
+
+  // Create template data with headers only
+  const headers = {
+    '風險類別名稱': '',
+    '風險類別描述': ''
+  }
+
+  if (hasTopicLayer) {
+    headers['風險主題名稱'] = ''
+    headers['風險主題描述'] = ''
+  }
+
+  headers['風險因子名稱'] = ''
+  headers['風險因子描述'] = ''
+
+  // Create workbook with empty template
+  const ws = XLSX.utils.json_to_sheet([headers])
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, '架構資料')
+
+  // Style the header row
+  const range = XLSX.utils.decode_range(ws['!ref'])
+  for (let C = range.s.c; C <= range.e.c; ++C) {
+    const address = XLSX.utils.encode_col(C) + '1'
+    if (!ws[address]) continue
+    ws[address].s = {
+      fill: { fgColor: { rgb: '4F46E5' } },
+      font: { bold: true, color: { rgb: 'FFFFFF' } }
+    }
+  }
+
+  // Set column widths
+  ws['!cols'] = [
+    { wch: 20 },  // 風險類別名稱
+    { wch: 40 },  // 風險類別描述
+    ...(hasTopicLayer ? [
+      { wch: 20 },  // 風險主題名稱
+      { wch: 40 }   // 風險主題描述
+    ] : []),
+    { wch: 20 },  // 風險因子名稱
+    { wch: 40 }   // 風險因子描述
+  ]
+
+  // Generate filename
+  const timestamp = new Date().toISOString().slice(0, 10)
+  const filename = `${managingTemplate.value.version_name}_匯入範本_${timestamp}.xlsx`
+
+  // Download
+  XLSX.writeFile(wb, filename)
+}
+
+const handleFileSelect = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    selectedFile.value = file
+    importErrors.value = []
+  }
+}
+
+const handleDrop = (event) => {
+  isDragging.value = false
+  const file = event.dataTransfer.files[0]
+  if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+    selectedFile.value = file
+    importErrors.value = []
+  } else {
+    importErrors.value = ['請上傳 Excel 檔案 (.xlsx 或 .xls)']
+  }
+}
+
+const closeStructureImportModal = () => {
+  showStructureImportModal.value = false
+  selectedFile.value = null
+  importErrors.value = []
+  isDragging.value = false
+}
+
+const processImport = async () => {
+  if (!selectedFile.value || !managingTemplate.value) return
+
+  isImporting.value = true
+  importErrors.value = []
+
+  try {
+    showLoading('正在匯入架構資料...')
+
+    // Create FormData for file upload
+    const formData = new FormData()
+    formData.append('file', selectedFile.value)
+
+    // Upload file to backend for processing with RichText support
+    const templateId = managingTemplate.value.id
+    const response = await $fetch(`/api/v1/risk-assessment/templates/${templateId}/import-structure`, {
+      method: 'POST',
+      body: formData
+    })
+
+    if (response.success) {
+      // Refresh data
+      await templatesStore.fetchRiskCategories(templateId)
+      if (managingTemplate.value.risk_topics_enabled ?? true) {
+        await templatesStore.fetchRiskTopics(templateId)
+      }
+      await templatesStore.fetchRiskFactors(templateId)
+
+      closeAll()
+      closeStructureImportModal()
+
+      // Show success message with import details
+      let message = response.message || '架構匯入成功'
+      if (response.data?.errors && response.data.errors.length > 0) {
+        message += `\n\n部分資料匯入失敗：\n${response.data.errors.join('\n')}`
+      }
+
+      await showSuccess('匯入完成', message)
+    } else {
+      throw new Error(response.message || '匯入失敗')
+    }
+
+  } catch (error) {
+    console.error('Import error:', error)
+    closeAll()
+
+    let errorMessage = '匯入架構資料時發生錯誤'
+    if (error.message) {
+      errorMessage += '：' + error.message
+    }
+
+    await showError('匯入失敗', errorMessage)
+    importErrors.value = [errorMessage]
+  } finally {
+    isImporting.value = false
+  }
+}
+
 
 // Initialize store on mount
 onMounted(async () => {

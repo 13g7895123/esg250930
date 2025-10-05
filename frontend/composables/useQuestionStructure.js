@@ -42,18 +42,19 @@ export const useQuestionStructure = () => {
 
     try {
       const result = await api.questionManagement.getStructure(assessmentId)
-      const response = result.data
 
-      if (response.success) {
-        // 更新本地狀態
-        categories.value = response.data.structure.categories || []
-        topics.value = response.data.structure.topics || []
-        factors.value = response.data.structure.factors || []
-
-        return response.data
-      } else {
-        throw new Error(response.message || '取得架構資訊失敗')
+      // Handle the API response structure
+      if (!result.success) {
+        throw new Error(result.error?.message || '取得架構資訊失敗')
       }
+
+      // Update local state
+      const structureData = result.data
+      categories.value = structureData.structure?.categories || []
+      topics.value = structureData.structure?.topics || []
+      factors.value = structureData.structure?.factors || []
+
+      return structureData
     } catch (error) {
       console.error('Error fetching assessment structure:', error)
       lastError.value = error.message || '取得架構資訊時發生錯誤'
@@ -78,15 +79,15 @@ export const useQuestionStructure = () => {
 
     try {
       const result = await api.questionManagement.syncFromTemplate(assessmentId)
-      const response = result.data
 
-      if (response.success) {
-        // 重新載入架構資料
-        await getAssessmentStructure(assessmentId)
-        return response.data
-      } else {
-        throw new Error(response.message || '同步範本失敗')
+      // Handle the API response structure
+      if (!result.success) {
+        throw new Error(result.error?.message || '同步範本失敗')
       }
+
+      // Reload structure data
+      await getAssessmentStructure(assessmentId)
+      return result.data
     } catch (error) {
       console.error('Error syncing from template:', error)
       lastError.value = error.message || '同步範本時發生錯誤'
@@ -112,27 +113,27 @@ export const useQuestionStructure = () => {
     }
 
     try {
-      // Use the existing structure endpoint instead of non-existent categories endpoint
-      const result = await api.questionManagement.getStructure(assessmentId)
-      const response = result.data
+      // Use the dedicated categories endpoint
+      const result = await api.questionManagement.getCategories(assessmentId)
 
-      if (response.success) {
-        // Extract categories from the structure response
-        const categoriesData = response.data.structure.categories || []
-
-        // Apply search filter if provided
-        const filteredCategories = search
-          ? categoriesData.filter(cat =>
-              cat.category_name?.toLowerCase().includes(search.toLowerCase()) ||
-              cat.description?.toLowerCase().includes(search.toLowerCase())
-            )
-          : categoriesData
-
-        categories.value = filteredCategories
-        return filteredCategories
-      } else {
-        throw new Error(response.message || '取得風險分類失敗')
+      // Handle the API response structure
+      if (!result.success) {
+        throw new Error(result.error?.message || '取得風險分類失敗')
       }
+
+      // Extract categories from the response
+      const categoriesData = result.data || []
+
+      // Apply search filter if provided
+      const filteredCategories = search
+        ? categoriesData.filter(cat =>
+            cat.category_name?.toLowerCase().includes(search.toLowerCase()) ||
+            cat.description?.toLowerCase().includes(search.toLowerCase())
+          )
+        : categoriesData
+
+      categories.value = filteredCategories
+      return filteredCategories
     } catch (error) {
       console.error('Error fetching categories:', error)
       lastError.value = error.message || '取得風險分類時發生錯誤'
@@ -153,15 +154,19 @@ export const useQuestionStructure = () => {
 
     try {
       const result = await api.questionManagement.createCategory(assessmentId, categoryData)
-      const response = result.data
 
-      if (response.success) {
-        // 重新載入分類列表
-        await getCategories(assessmentId)
-        return response.data
-      } else {
-        throw new Error(response.message || '新增風險分類失敗')
+      // Handle the API response structure
+      // useApi returns: { success: true/false, data: <response>, error: null/object }
+      if (!result.success) {
+        throw new Error(result.error?.message || '新增風險分類失敗')
       }
+
+      // The actual data is in result.data
+      // Reload categories list
+      await getCategories(assessmentId)
+
+      // Return the created category data
+      return result.data
     } catch (error) {
       console.error('Error creating category:', error)
       lastError.value = error.message || '新增風險分類時發生錯誤'
@@ -182,13 +187,13 @@ export const useQuestionStructure = () => {
 
     try {
       const result = await api.questionManagement.updateCategory(categoryId, categoryData)
-      const response = result.data
 
-      if (response.success) {
-        return response.data
-      } else {
-        throw new Error(response.message || '更新風險分類失敗')
+      // Handle the API response structure
+      if (!result.success) {
+        throw new Error(result.error?.message || '更新風險分類失敗')
       }
+
+      return result.data
     } catch (error) {
       console.error('Error updating category:', error)
       lastError.value = error.message || '更新風險分類時發生錯誤'
@@ -208,15 +213,15 @@ export const useQuestionStructure = () => {
 
     try {
       const result = await api.questionManagement.deleteCategory(categoryId)
-      const response = result.data
 
-      if (response.success) {
-        return true
-      } else {
-        // API返回success: false時，拋出包含具體錯誤訊息的錯誤
-        const errorMessage = response.message || '刪除風險分類失敗'
+      // Handle the API response structure
+      if (!result.success) {
+        // API returned error, throw with specific error message
+        const errorMessage = result.error?.message || '刪除風險分類失敗'
         throw new Error(errorMessage)
       }
+
+      return true
     } catch (error) {
       console.error('Error deleting category:', error)
       lastError.value = error.message || '刪除風險分類時發生錯誤'
@@ -241,34 +246,23 @@ export const useQuestionStructure = () => {
     }
 
     try {
-      // Use the existing structure endpoint instead of non-existent topics endpoint
-      const result = await api.questionManagement.getStructure(assessmentId)
-      const response = result.data
+      // Use the dedicated topics endpoint with query parameters
+      const params = {}
+      if (categoryId) params.category_id = categoryId
+      if (search) params.search = search
 
-      if (response.success) {
-        // Extract topics from the structure response
-        let topicsData = response.data.structure.topics || []
+      const result = await api.questionManagement.getTopics(assessmentId, params)
 
-        // Apply category filter if provided
-        if (categoryId) {
-          topicsData = topicsData.filter(topic => topic.category_id === categoryId)
-        }
-
-        // Apply search filter if provided
-        if (search) {
-          const searchLower = search.toLowerCase()
-          topicsData = topicsData.filter(topic =>
-            topic.topic_name?.toLowerCase().includes(searchLower) ||
-            topic.description?.toLowerCase().includes(searchLower) ||
-            topic.category_name?.toLowerCase().includes(searchLower)
-          )
-        }
-
-        topics.value = topicsData
-        return topicsData
-      } else {
-        throw new Error(response.message || '取得風險主題失敗')
+      // Handle the API response structure
+      if (!result.success) {
+        throw new Error(result.error?.message || '取得風險主題失敗')
       }
+
+      // Extract topics from the response
+      const topicsData = result.data || []
+
+      topics.value = topicsData
+      return topicsData
     } catch (error) {
       console.error('Error fetching topics:', error)
       lastError.value = error.message || '取得風險主題時發生錯誤'
@@ -289,15 +283,19 @@ export const useQuestionStructure = () => {
 
     try {
       const result = await api.questionManagement.createTopic(assessmentId, topicData)
-      const response = result.data
 
-      if (response.success) {
-        // 重新載入主題列表
-        await getTopics(assessmentId)
-        return response.data
-      } else {
-        throw new Error(response.message || '新增風險主題失敗')
+      // Handle the API response structure
+      // useApi returns: { success: true/false, data: <response>, error: null/object }
+      if (!result.success) {
+        throw new Error(result.error?.message || '新增風險主題失敗')
       }
+
+      // The actual data is in result.data
+      // Reload topics list
+      await getTopics(assessmentId)
+
+      // Return the created topic data
+      return result.data
     } catch (error) {
       console.error('Error creating topic:', error)
       lastError.value = error.message || '新增風險主題時發生錯誤'
@@ -318,13 +316,13 @@ export const useQuestionStructure = () => {
 
     try {
       const result = await api.questionManagement.updateTopic(topicId, topicData)
-      const response = result.data
 
-      if (response.success) {
-        return response.data
-      } else {
-        throw new Error(response.message || '更新風險主題失敗')
+      // Handle the API response structure
+      if (!result.success) {
+        throw new Error(result.error?.message || '更新風險主題失敗')
       }
+
+      return result.data
     } catch (error) {
       console.error('Error updating topic:', error)
       lastError.value = error.message || '更新風險主題時發生錯誤'
@@ -344,15 +342,15 @@ export const useQuestionStructure = () => {
 
     try {
       const result = await api.questionManagement.deleteTopic(topicId)
-      const response = result.data
 
-      if (response.success) {
-        return true
-      } else {
-        // API返回success: false時，拋出包含具體錯誤訊息的錯誤
-        const errorMessage = response.message || '刪除風險主題失敗'
+      // Handle the API response structure
+      if (!result.success) {
+        // API returned error, throw with specific error message
+        const errorMessage = result.error?.message || '刪除風險主題失敗'
         throw new Error(errorMessage)
       }
+
+      return true
     } catch (error) {
       console.error('Error deleting topic:', error)
       lastError.value = error.message || '刪除風險主題時發生錯誤'
@@ -378,40 +376,24 @@ export const useQuestionStructure = () => {
     }
 
     try {
-      // Use the existing structure endpoint instead of non-existent factors endpoint
-      const result = await api.questionManagement.getStructure(assessmentId)
-      const response = result.data
+      // Use the dedicated factors endpoint with query parameters
+      const params = {}
+      if (topicId) params.topic_id = topicId
+      if (categoryId) params.category_id = categoryId
+      if (search) params.search = search
 
-      if (response.success) {
-        // Extract factors from the structure response
-        let factorsData = response.data.structure.factors || []
+      const result = await api.questionManagement.getFactors(assessmentId, params)
 
-        // Apply topic filter if provided
-        if (topicId) {
-          factorsData = factorsData.filter(factor => factor.topic_id === topicId)
-        }
-
-        // Apply category filter if provided
-        if (categoryId) {
-          factorsData = factorsData.filter(factor => factor.category_id === categoryId)
-        }
-
-        // Apply search filter if provided
-        if (search) {
-          const searchLower = search.toLowerCase()
-          factorsData = factorsData.filter(factor =>
-            factor.factor_name?.toLowerCase().includes(searchLower) ||
-            factor.description?.toLowerCase().includes(searchLower) ||
-            factor.topic_name?.toLowerCase().includes(searchLower) ||
-            factor.category_name?.toLowerCase().includes(searchLower)
-          )
-        }
-
-        factors.value = factorsData
-        return factorsData
-      } else {
-        throw new Error(response.message || '取得風險因子失敗')
+      // Handle the API response structure
+      if (!result.success) {
+        throw new Error(result.error?.message || '取得風險因子失敗')
       }
+
+      // Extract factors from the response
+      const factorsData = result.data || []
+
+      factors.value = factorsData
+      return factorsData
     } catch (error) {
       console.error('Error fetching factors:', error)
       lastError.value = error.message || '取得風險因子時發生錯誤'
@@ -432,15 +414,19 @@ export const useQuestionStructure = () => {
 
     try {
       const result = await api.questionManagement.createFactor(assessmentId, factorData)
-      const response = result.data
 
-      if (response.success) {
-        // 重新載入因子列表
-        await getFactors(assessmentId)
-        return response.data
-      } else {
-        throw new Error(response.message || '新增風險因子失敗')
+      // Handle the API response structure
+      // useApi returns: { success: true/false, data: <response>, error: null/object }
+      if (!result.success) {
+        throw new Error(result.error?.message || '新增風險因子失敗')
       }
+
+      // The actual data is in result.data
+      // Reload factors list
+      await getFactors(assessmentId)
+
+      // Return the created factor data
+      return result.data
     } catch (error) {
       console.error('Error creating factor:', error)
       lastError.value = error.message || '新增風險因子時發生錯誤'
@@ -461,13 +447,13 @@ export const useQuestionStructure = () => {
 
     try {
       const result = await api.questionManagement.updateFactor(factorId, factorData)
-      const response = result.data
 
-      if (response.success) {
-        return response.data
-      } else {
-        throw new Error(response.message || '更新風險因子失敗')
+      // Handle the API response structure
+      if (!result.success) {
+        throw new Error(result.error?.message || '更新風險因子失敗')
       }
+
+      return result.data
     } catch (error) {
       console.error('Error updating factor:', error)
       lastError.value = error.message || '更新風險因子時發生錯誤'
@@ -487,15 +473,15 @@ export const useQuestionStructure = () => {
 
     try {
       const result = await api.questionManagement.deleteFactor(factorId)
-      const response = result.data
 
-      if (response.success) {
-        return true
-      } else {
-        // API返回success: false時，拋出包含具體錯誤訊息的錯誤
-        const errorMessage = response.message || '刪除風險因子失敗'
+      // Handle the API response structure
+      if (!result.success) {
+        // API returned error, throw with specific error message
+        const errorMessage = result.error?.message || '刪除風險因子失敗'
         throw new Error(errorMessage)
       }
+
+      return true
     } catch (error) {
       console.error('Error deleting factor:', error)
       lastError.value = error.message || '刪除風險因子時發生錯誤'
@@ -515,13 +501,13 @@ export const useQuestionStructure = () => {
 
     try {
       const result = await api.questionManagement.getStats(assessmentId)
-      const response = result.data
 
-      if (response.success) {
-        return response.data
-      } else {
-        throw new Error(response.message || '取得統計資料失敗')
+      // Handle the API response structure
+      if (!result.success) {
+        throw new Error(result.error?.message || '取得統計資料失敗')
       }
+
+      return result.data
     } catch (error) {
       console.error('Error fetching stats:', error)
       lastError.value = error.message || '取得統計資料時發生錯誤'
@@ -541,18 +527,18 @@ export const useQuestionStructure = () => {
 
     try {
       const result = await api.questionManagement.clearStructure(assessmentId)
-      const response = result.data
 
-      if (response.success) {
-        // 清空本地狀態
-        categories.value = []
-        topics.value = []
-        factors.value = []
-        contents.value = []
-        return true
-      } else {
-        throw new Error(response.message || '清除評估資料失敗')
+      // Handle the API response structure
+      if (!result.success) {
+        throw new Error(result.error?.message || '清除評估資料失敗')
       }
+
+      // Clear local state
+      categories.value = []
+      topics.value = []
+      factors.value = []
+      contents.value = []
+      return true
     } catch (error) {
       console.error('Error clearing assessment data:', error)
       lastError.value = error.message || '清除評估資料時發生錯誤'

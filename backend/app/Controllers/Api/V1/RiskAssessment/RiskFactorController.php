@@ -149,7 +149,6 @@ class RiskFactorController extends BaseController
             $rules = [
                 'category_id' => 'required|integer',
                 'topic_id' => 'permit_empty|integer',
-                'factor_code' => 'permit_empty|max_length[50]',
                 'description' => 'permit_empty',
                 'scoring_method' => 'permit_empty|in_list[binary,scale_1_5,scale_1_10,percentage]',
                 'weight' => 'permit_empty|decimal',
@@ -267,7 +266,6 @@ class RiskFactorController extends BaseController
                 'topic' => 'permit_empty|max_length[255]',
                 'category_id' => 'required|integer',
                 'topic_id' => 'permit_empty|integer',
-                'factor_code' => 'permit_empty|max_length[50]',
                 'description' => 'permit_empty',
                 'scoring_method' => 'permit_empty|in_list[binary,scale_1_5,scale_1_10,percentage]',
                 'weight' => 'permit_empty|decimal',

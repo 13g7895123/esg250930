@@ -77,7 +77,7 @@
 
       <!-- Custom Actions Cell -->
       <template #cell-actions="{ item }">
-        <div class="flex items-center space-x-2">
+        <div class="flex flex-wrap items-center gap-2">
           <!-- Personnel Assignment -->
           <div class="relative group">
             <button
@@ -368,162 +368,154 @@
 
 
     <!-- Question Structure Management Modal -->
-    <Modal
-      :model-value="showQuestionStructureModal"
+    <StructureManagementModal
+      v-model="showQuestionStructureModal"
       :title="`架構管理 - ${managingQuestion?.templateVersion} (${managingQuestion?.year}年)`"
-      size="lg"
-      @update:model-value="(value) => showQuestionStructureModal = value"
+      :item-name="`${managingQuestion?.templateVersion} (${managingQuestion?.year}年)`"
+      :risk-topics-enabled="enableTopicLayer"
+      :show-export-import="true"
+      management-type="question"
       @close="showQuestionStructureModal = false"
+      @toggle-risk-topics="onTopicLayerToggleChange"
+      @open-category-management="openQuestionManagementModal('categories')"
+      @open-topic-management="openQuestionManagementModal('topics')"
+      @open-factor-management="openQuestionManagementModal('factors')"
+      @sync-from-template="syncFromTemplate"
+      @go-to-content="goToQuestionContent(managingQuestion?.id)"
+      @export-structure="exportStructure"
+      @import-structure="showStructureImportModal = true"
+    />
+
+    <!-- Structure Import Modal -->
+    <Modal
+      :model-value="showStructureImportModal"
+      title="匯入架構資料"
+      size="lg"
+      @update:model-value="(value) => showStructureImportModal = value"
+      @close="closeStructureImportModal"
     >
-      <div class="space-y-6 max-h-[80vh] overflow-y-auto">
-        <!-- Template Information -->
-        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+      <div class="space-y-4">
+        <!-- Download Template Button -->
+        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
           <div class="flex items-center justify-between">
             <div>
-              <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-1">範本資訊</h4>
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                來源範本：{{ getTemplateVersionName(managingQuestion?.templateId) }}
-              </p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                評估年份：{{ managingQuestion?.year }}年
-              </p>
+              <h4 class="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1 break-words">下載匯入範本</h4>
+              <p class="text-xs text-blue-700 dark:text-blue-300 break-words">下載空白範本以填寫資料</p>
+            </div>
+            <button
+              type="button"
+              @click="downloadTemplate"
+              class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex-shrink-0"
+            >
+              <ArrowDownTrayIcon class="w-4 h-4 mr-2" />
+              下載範本
+            </button>
+          </div>
+        </div>
+
+        <!-- File Upload Area -->
+        <div
+          @drop.prevent="handleDrop"
+          @dragover.prevent="isDragging = true"
+          @dragleave.prevent="isDragging = false"
+          :class="[
+            'border-2 border-dashed rounded-lg p-8 text-center transition-colors',
+            isDragging
+              ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+              : 'border-gray-300 dark:border-gray-600'
+          ]"
+        >
+          <ArrowUpTrayIcon class="w-12 h-12 mx-auto text-gray-400 mb-4" />
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-2 break-words">
+            拖曳 Excel 檔案到此處，或
+          </p>
+          <input
+            ref="fileInput"
+            type="file"
+            accept=".xlsx,.xls"
+            @change="handleFileSelect"
+            class="hidden"
+          />
+          <button
+            type="button"
+            @click="$refs.fileInput.click()"
+            class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            選擇檔案
+          </button>
+        </div>
+
+        <!-- Selected File Info -->
+        <div v-if="selectedFile" class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <DocumentTextIcon class="w-5 h-5 text-blue-600 dark:text-blue-400 mr-2 flex-shrink-0" />
+              <span class="text-sm font-medium text-blue-900 dark:text-blue-100 break-words">{{ selectedFile.name }}</span>
+            </div>
+            <button
+              @click="selectedFile = null"
+              class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              <XMarkIcon class="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Validation Errors/Warnings -->
+        <div v-if="importErrors.length > 0" :class="[
+          'rounded-lg p-4 border',
+          importErrors[0]?.startsWith('發現') && importErrors[0]?.includes('重複')
+            ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+        ]">
+          <div class="flex items-start">
+            <ExclamationTriangleIcon :class="[
+              'w-5 h-5 mr-2 flex-shrink-0 mt-0.5',
+              importErrors[0]?.startsWith('發現') && importErrors[0]?.includes('重複')
+                ? 'text-yellow-600 dark:text-yellow-400'
+                : 'text-red-600 dark:text-red-400'
+            ]" />
+            <div class="flex-1">
+              <h4 :class="[
+                'text-sm font-medium mb-2',
+                importErrors[0]?.startsWith('發現') && importErrors[0]?.includes('重複')
+                  ? 'text-yellow-900 dark:text-yellow-100'
+                  : 'text-red-900 dark:text-red-100'
+              ]">
+                {{ importErrors[0]?.startsWith('發現') && importErrors[0]?.includes('重複') ? '警告' : `發現 ${importErrors.length} 個錯誤` }}
+              </h4>
+              <ul :class="[
+                'text-sm space-y-1 list-disc list-inside',
+                importErrors[0]?.startsWith('發現') && importErrors[0]?.includes('重複')
+                  ? 'text-yellow-800 dark:text-yellow-200'
+                  : 'text-red-800 dark:text-red-200'
+              ]">
+                <li v-for="(error, index) in importErrors" :key="index" class="break-words">
+                  {{ error }}
+                </li>
+              </ul>
             </div>
           </div>
         </div>
 
-        <!-- Structure Preview -->
-        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 p-4 rounded-lg">
-          <div class="flex items-center justify-between mb-3">
-            <h4 class="text-lg font-medium text-gray-900 dark:text-white">目前架構</h4>
-
-            <!-- Topic Layer Toggle -->
-            <div class="flex items-center space-x-2">
-              <span class="text-sm text-gray-600 dark:text-gray-400">風險主題層級</span>
-              <UToggle
-                v-model="enableTopicLayer"
-                :ui="{
-                  active: 'bg-purple-600 dark:bg-purple-500',
-                  inactive: 'bg-gray-200 dark:bg-gray-700'
-                }"
-                @change="onTopicLayerToggleChange"
-              />
-            </div>
-          </div>
-
-          <div class="space-y-2 text-sm">
-            <div class="flex items-center text-blue-600 dark:text-blue-400">
-              <TagIcon class="w-4 h-4 mr-2" />
-              風險類別 (Risk Categories)
-            </div>
-
-            <div
-              v-if="enableTopicLayer"
-              class="flex items-center text-purple-600 dark:text-purple-400 ml-4 transition-all duration-200"
-            >
-              <ArrowDownIcon class="w-4 h-4 mr-2" />
-              風險主題 (Risk Topics)
-              <span class="ml-2 px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full">
-                已啟用
-              </span>
-            </div>
-
-            <div
-              class="flex items-center text-orange-600 dark:text-orange-400 transition-all duration-200"
-              :class="enableTopicLayer ? 'ml-8' : 'ml-4'"
-            >
-              <ArrowDownIcon class="w-4 h-4 mr-2" />
-              風險因子 (Risk Factors)
-            </div>
-
-            <!-- Layer Description -->
-            <div class="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <p class="text-xs text-gray-600 dark:text-gray-400">
-                <strong>架構說明：</strong>
-                <span v-if="enableTopicLayer">
-                  三層架構 - 風險類別可包含多個風險主題，風險主題可包含多個風險因子
-                </span>
-                <span v-else>
-                  二層架構 - 風險類別直接包含風險因子，跳過主題層級
-                </span>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Management Actions -->
-        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 p-4 rounded-lg">
-          <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-3">管理功能</h4>
-          <div class="grid grid-cols-1 gap-3">
-            <button
-              @click="openQuestionManagementModal('categories')"
-              class="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
-            >
-              <TagIcon class="w-5 h-5 mr-3" />
-              <div class="text-left">
-                <div class="font-medium">管理風險類別</div>
-                <div class="text-sm opacity-75">新增、編輯、刪除風險分類</div>
-              </div>
-            </button>
-
-            <button
-              v-if="enableTopicLayer"
-              @click="openQuestionManagementModal('topics')"
-              class="flex items-center p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
-            >
-              <ChatBubbleLeftRightIcon class="w-5 h-5 mr-3" />
-              <div class="text-left">
-                <div class="font-medium">管理風險主題</div>
-                <div class="text-sm opacity-75">新增、編輯、刪除風險主題</div>
-              </div>
-            </button>
-
-            <!-- Disabled Topics Management (when toggle is off) -->
-            <div
-              v-if="!enableTopicLayer"
-              class="flex items-center p-3 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 rounded-lg cursor-not-allowed opacity-60"
-            >
-              <ChatBubbleLeftRightIcon class="w-5 h-5 mr-3" />
-              <div class="text-left">
-                <div class="font-medium">管理風險主題</div>
-                <div class="text-sm opacity-75">已停用（請啟用風險主題層級）</div>
-              </div>
-            </div>
-
-            <button
-              @click="openQuestionManagementModal('factors')"
-              class="flex items-center p-3 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
-            >
-              <ExclamationTriangleIcon class="w-5 h-5 mr-3" />
-              <div class="text-left">
-                <div class="font-medium">管理風險因子</div>
-                <div class="text-sm opacity-75">新增、編輯、刪除風險因子</div>
-              </div>
-            </button>
-
-            <!-- Sync from Template -->
-            <button
-              @click="syncFromTemplate"
-              class="flex items-center p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
-            >
-              <ArrowDownIcon class="w-5 h-5 mr-3" />
-              <div class="text-left">
-                <div class="font-medium">從範本同步</div>
-                <div class="text-sm opacity-75">重新從原始範本載入架構</div>
-              </div>
-            </button>
-
-            <!-- Go to Question Content -->
-            <button
-              @click="goToQuestionContent(managingQuestion?.id)"
-              class="flex items-center p-3 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-            >
-              <DocumentTextIcon class="w-5 h-5 mr-3" />
-              <div class="text-left">
-                <div class="font-medium">前往題項內容</div>
-                <div class="text-sm opacity-75">管理題目內容</div>
-              </div>
-            </button>
-          </div>
+        <!-- Import Button -->
+        <div class="flex justify-end space-x-3 pt-4">
+          <button
+            type="button"
+            @click="closeStructureImportModal"
+            class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            @click="processImport"
+            :disabled="!selectedFile || isImporting"
+            class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <span v-if="isImporting">處理中...</span>
+            <span v-else>匯入</span>
+          </button>
         </div>
       </div>
     </Modal>
@@ -550,6 +542,20 @@
         <!-- Actions Slot -->
         <template #actions>
           <div class="flex items-center space-x-3">
+            <!-- Refresh Button -->
+            <button
+              @click="loadQuestionStructureData(managingQuestion?.id)"
+              :disabled="structureLoading"
+              class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              title="重新整理"
+            >
+              <ArrowPathIcon
+                class="w-4 h-4 mr-2"
+                :class="{ 'animate-spin': structureLoading }"
+              />
+              重新整理
+            </button>
+
             <!-- Sync from Template Button -->
             <button
               @click="syncFromTemplate"
@@ -619,6 +625,20 @@
         <!-- Actions Slot -->
         <template #actions>
           <div class="flex items-center space-x-3">
+            <!-- Refresh Button -->
+            <button
+              @click="loadQuestionStructureData(managingQuestion?.id)"
+              :disabled="structureLoading"
+              class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              title="重新整理"
+            >
+              <ArrowPathIcon
+                class="w-4 h-4 mr-2"
+                :class="{ 'animate-spin': structureLoading }"
+              />
+              重新整理
+            </button>
+
             <!-- Sync from Template Button -->
             <button
               @click="syncFromTemplate"
@@ -689,6 +709,20 @@
         <!-- Actions Slot -->
         <template #actions>
           <div class="flex items-center space-x-3">
+            <!-- Refresh Button -->
+            <button
+              @click="loadQuestionStructureData(managingQuestion?.id)"
+              :disabled="structureLoading"
+              class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              title="重新整理"
+            >
+              <ArrowPathIcon
+                class="w-4 h-4 mr-2"
+                :class="{ 'animate-spin': structureLoading }"
+              />
+              重新整理
+            </button>
+
             <!-- Sync from Template Button -->
             <button
               @click="syncFromTemplate"
@@ -987,12 +1021,12 @@ import {
   CogIcon,
   UsersIcon,
   Cog6ToothIcon,
-  ArrowDownIcon,
-  ArrowPathIcon,
-  TagIcon,
-  ChatBubbleLeftRightIcon,
-  ExclamationTriangleIcon
+  ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
+  XMarkIcon
 } from '@heroicons/vue/24/outline'
+
+import * as XLSX from 'xlsx'
 
 const route = useRoute()
 const companyId = computed(() => route.params.id)
@@ -1043,8 +1077,7 @@ const showCompanyWarning = computed(() => {
 // Use personnel assignment API for loading personnel
 const {
   loadPersonnel,
-  personnel: availablePersonnel,
-  isLoading: isLoadingPersonnel
+  personnel: availablePersonnel
 } = usePersonnelAssignmentApi()
 
 // Load personnel when company changes
@@ -1056,7 +1089,6 @@ const {
   categories: questionCategories,
   topics: questionTopics,
   factors: questionFactors,
-  getAssessmentStructure,
   syncFromTemplate: syncStructureFromTemplate,
   getCategories,
   getTopics,
@@ -1224,6 +1256,14 @@ const showDeleteConfirmModal = ref(false)
 const editingStructureItem = ref(null)
 const deletingStructureItem = ref(null)
 const structureEditType = ref('') // 'category', 'topic', 'factor'
+
+// Import/Export state
+const showStructureImportModal = ref(false)
+const selectedFile = ref(null)
+const importErrors = ref([])
+const isDragging = ref(false)
+const isImporting = ref(false)
+const fileInput = ref(null)
 
 // Structure item management methods
 const addQuestionCategory = () => {
@@ -1692,15 +1732,17 @@ const columns = ref([
   }
 ])
 
-// Copy template content to question management
+// Note: This function is commented out as it's not currently in use
+// Keep for potential future use
+/*
 const copyTemplateContentToQuestionManagement = (templateId, questionId) => {
   // Get template content from templates store
   const templateContent = templatesStore?.getTemplateContent?.(templateId)
   const riskCategories = templatesStore?.getRiskCategories?.(templateId)
-  
+
   // Create a unique key for this question management item's content
   const contentKey = `question_${companyId.value}_${questionId}`
-  
+
   // Copy template content to question management context
   if (templateContent.value && templateContent.value.length > 0) {
     // First copy the categories to create mapping
@@ -1709,7 +1751,7 @@ const copyTemplateContentToQuestionManagement = (templateId, questionId) => {
       id: `${contentKey}_cat_${index + 1}`,
       originalTemplateId: templateId
     })) : []
-    
+
     // Create a mapping from old category IDs to new category IDs
     const categoryIdMap = {}
     if (riskCategories.value) {
@@ -1718,7 +1760,7 @@ const copyTemplateContentToQuestionManagement = (templateId, questionId) => {
         categoryIdMap[originalCat.id] = newCategoryId
       })
     }
-    
+
     // Copy content and map categoryId references
     const copiedContent = templateContent.value.map((item, index) => ({
       ...item,
@@ -1727,12 +1769,12 @@ const copyTemplateContentToQuestionManagement = (templateId, questionId) => {
       order: index + 1,
       originalTemplateId: templateId
     }))
-    
+
     // Save to localStorage for persistence (only on client side)
     if (process.client) {
       const questionContentKey = `esg-question-content-${contentKey}`
       const questionCategoriesKey = `esg-question-categories-${contentKey}`
-      
+
       try {
         localStorage.setItem(questionContentKey, JSON.stringify(copiedContent))
         localStorage.setItem(questionCategoriesKey, JSON.stringify(copiedCategories))
@@ -1743,6 +1785,7 @@ const copyTemplateContentToQuestionManagement = (templateId, questionId) => {
     }
   }
 }
+*/
 
 const editItem = (item) => {
   editingItem.value = item
@@ -2009,11 +2052,14 @@ const manageQuestionStructure = (item) => {
   showQuestionStructureModal.value = true
 }
 
+// Note: This function is commented out as it's not currently in use
+/*
 const getTemplateVersionName = (templateId) => {
   if (!templateId) return '未知範本'
   const template = availableTemplates.value.find(t => t.id === templateId)
   return template ? template.version_name : `範本 #${templateId}`
 }
+*/
 
 const openQuestionManagementModal = async (type) => {
   if (!managingQuestion.value) {
@@ -2106,5 +2152,235 @@ const goToQuestionContent = (questionId) => {
     navigateTo(`/admin/risk-assessment/questions/${companyId.value}/management/${questionId}/content`)
   }
 }
+
+// Import/Export Functions
+
+const showLoading = (message) => {
+  // Simple loading implementation - you can enhance this with a proper loading component
+  console.log('Loading:', message)
+}
+
+const closeAll = () => {
+  // Close all modals - used during export
+  console.log('Closing all modals')
+}
+
+const exportStructure = async () => {
+  if (!managingQuestion.value) return
+
+  try {
+    showLoading('正在匯出架構資料...')
+
+    const assessmentId = managingQuestion.value.id
+    const hasTopicLayer = enableTopicLayer.value
+
+    // Fetch all structure data
+    await loadQuestionStructureData(assessmentId)
+
+    const categories = questionCategories.value || []
+    const topics = hasTopicLayer ? (questionTopics.value || []) : []
+    const factors = questionFactors.value || []
+
+    // Prepare data for Excel
+    const data = []
+
+    factors.forEach(factor => {
+      const category = categories.find(c => c.id === factor.category_id)
+      const row = {
+        '風險類別名稱': category?.category_name || '',
+        '風險類別描述': category?.description || ''
+      }
+
+      if (hasTopicLayer) {
+        const topic = topics.find(t => t.id === factor.topic_id)
+        row['風險主題名稱'] = topic?.topic_name || ''
+        row['風險主題描述'] = topic?.description || ''
+      }
+
+      row['風險因子名稱'] = factor.factor_name || ''
+      row['風險因子描述'] = factor.description || ''
+
+      data.push(row)
+    })
+
+    // Create workbook
+    const ws = XLSX.utils.json_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, '架構資料')
+
+    // Style the header row
+    const range = XLSX.utils.decode_range(ws['!ref'])
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const address = XLSX.utils.encode_col(C) + '1'
+      if (!ws[address]) continue
+      ws[address].s = {
+        fill: { fgColor: { rgb: '4F46E5' } },
+        font: { bold: true, color: { rgb: 'FFFFFF' } }
+      }
+    }
+
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 20 },  // 風險類別名稱
+      { wch: 40 },  // 風險類別描述
+      ...(hasTopicLayer ? [
+        { wch: 20 },  // 風險主題名稱
+        { wch: 40 }   // 風險主題描述
+      ] : []),
+      { wch: 20 },  // 風險因子名稱
+      { wch: 40 }   // 風險因子描述
+    ]
+
+    // Generate filename
+    const timestamp = new Date().toISOString().slice(0, 10)
+    const filename = `${managingQuestion.value.templateVersion}_${managingQuestion.value.year}年_架構_${timestamp}.xlsx`
+
+    // Download
+    XLSX.writeFile(wb, filename)
+
+    closeAll()
+    await showSuccess('匯出成功', `架構資料已匯出為 ${filename}`)
+  } catch (error) {
+    console.error('Export structure error:', error)
+    closeAll()
+    await showError('匯出失敗', '匯出架構資料時發生錯誤')
+  }
+}
+
+const downloadTemplate = () => {
+  if (!managingQuestion.value) return
+
+  const hasTopicLayer = enableTopicLayer.value
+
+  // Create template data with headers only
+  const headers = {
+    '風險類別名稱': '',
+    '風險類別描述': ''
+  }
+
+  if (hasTopicLayer) {
+    headers['風險主題名稱'] = ''
+    headers['風險主題描述'] = ''
+  }
+
+  headers['風險因子名稱'] = ''
+  headers['風險因子描述'] = ''
+
+  // Create workbook with empty template
+  const ws = XLSX.utils.json_to_sheet([headers])
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, '架構資料')
+
+  // Style the header row
+  const range = XLSX.utils.decode_range(ws['!ref'])
+  for (let C = range.s.c; C <= range.e.c; ++C) {
+    const address = XLSX.utils.encode_col(C) + '1'
+    if (!ws[address]) continue
+    ws[address].s = {
+      fill: { fgColor: { rgb: '4F46E5' } },
+      font: { bold: true, color: { rgb: 'FFFFFF' } }
+    }
+  }
+
+  // Set column widths
+  ws['!cols'] = [
+    { wch: 20 },  // 風險類別名稱
+    { wch: 40 },  // 風險類別描述
+    ...(hasTopicLayer ? [
+      { wch: 20 },  // 風險主題名稱
+      { wch: 40 }   // 風險主題描述
+    ] : []),
+    { wch: 20 },  // 風險因子名稱
+    { wch: 40 }   // 風險因子描述
+  ]
+
+  // Generate filename
+  const timestamp = new Date().toISOString().slice(0, 10)
+  const filename = `${managingQuestion.value.templateVersion}_${managingQuestion.value.year}年_匯入範本_${timestamp}.xlsx`
+
+  // Download
+  XLSX.writeFile(wb, filename)
+}
+
+const handleFileSelect = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    selectedFile.value = file
+    importErrors.value = []
+  }
+}
+
+const handleDrop = (event) => {
+  isDragging.value = false
+  const file = event.dataTransfer.files[0]
+  if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+    selectedFile.value = file
+    importErrors.value = []
+  } else {
+    importErrors.value = ['請上傳 Excel 檔案 (.xlsx 或 .xls)']
+  }
+}
+
+const closeStructureImportModal = () => {
+  showStructureImportModal.value = false
+  selectedFile.value = null
+  importErrors.value = []
+  isDragging.value = false
+}
+
+const processImport = async () => {
+  if (!selectedFile.value || !managingQuestion.value) return
+
+  isImporting.value = true
+  importErrors.value = []
+
+  try {
+    showLoading('正在匯入架構資料...')
+
+    // Create FormData for file upload
+    const formData = new FormData()
+    formData.append('file', selectedFile.value)
+
+    // Upload file to backend for processing with RichText support
+    const assessmentId = managingQuestion.value.id
+    const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/import-structure`, {
+      method: 'POST',
+      body: formData
+    })
+
+    if (response.success) {
+      // Refresh data
+      await refreshStructureData()
+
+      closeAll()
+      closeStructureImportModal()
+
+      // Show success message with import details
+      let message = response.message || '架構匯入成功'
+      if (response.data?.errors && response.data.errors.length > 0) {
+        message += `\n\n部分資料匯入失敗：\n${response.data.errors.join('\n')}`
+      }
+
+      await showSuccess('匯入完成', message)
+    } else {
+      throw new Error(response.message || '匯入失敗')
+    }
+
+  } catch (error) {
+    console.error('Import error:', error)
+    closeAll()
+
+    let errorMessage = '匯入架構資料時發生錯誤'
+    if (error.message) {
+      errorMessage += '：' + error.message
+    }
+
+    await showError('匯入失敗', errorMessage)
+    importErrors.value = [errorMessage]
+  } finally {
+    isImporting.value = false
+  }
+}
+
 
 </script>

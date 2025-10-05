@@ -140,13 +140,13 @@ const titleId = computed(() => `modal-title-${Math.random().toString(36).substri
 // Size classes mapping
 const sizeClasses = computed(() => {
   const sizeMap = {
-    xs: 'w-full max-w-xs',
-    sm: 'w-full max-w-sm',
-    md: 'w-full max-w-md',
-    lg: 'w-full max-w-lg',
-    xl: 'w-full max-w-xl',
-    '2xl': 'w-full max-w-2xl',
-    '3xl': 'w-full max-w-3xl',
+    xs: 'w-full max-w-xs max-h-[90vh] flex flex-col',
+    sm: 'w-full max-w-sm max-h-[90vh] flex flex-col',
+    md: 'w-full max-w-md max-h-[90vh] flex flex-col',
+    lg: 'w-full max-w-lg max-h-[90vh] flex flex-col',
+    xl: 'w-full max-w-xl max-h-[90vh] flex flex-col',
+    '2xl': 'w-full max-w-2xl max-h-[90vh] flex flex-col',
+    '3xl': 'w-full max-w-3xl max-h-[90vh] flex flex-col',
     '4xl': 'w-full max-w-4xl max-h-[90vh] flex flex-col',
     full: 'w-full h-full max-w-none max-h-none m-0 rounded-none'
   }

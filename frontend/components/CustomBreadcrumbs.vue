@@ -140,6 +140,18 @@ const breadcrumbItems = computed(() => {
     ]
   }
 
+  // Template Content: /admin/risk-assessment/templates/{templateId}/content
+  const templateContentMatch = path.match(/^\/admin\/risk-assessment\/templates\/(\d+)\/content$/)
+  if (templateContentMatch) {
+    const templateId = templateContentMatch[1]
+
+    return [
+      { name: '風險評估表', href: '/admin/risk-assessment' },
+      { name: '範本管理', href: '/admin/risk-assessment/templates' },
+      { name: '範本內容管理', href: path }
+    ]
+  }
+
   // Content: /admin/risk-assessment/questions/{companyId}/management/{questionId}/content
   const contentMatch = path.match(/^\/admin\/risk-assessment\/questions\/(\d+)\/management\/(\d+)\/content$/)
   if (contentMatch) {

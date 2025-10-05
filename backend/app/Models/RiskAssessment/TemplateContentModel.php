@@ -23,7 +23,7 @@ class TemplateContentModel extends Model
         'weight',
         'sort_order',
         'is_required',
-        'a_content',
+        // 'a_content', // REMOVED: Now using risk_factors.description instead
         'b_content',
         'c_placeholder',
         'd_placeholder_1',
@@ -52,11 +52,10 @@ class TemplateContentModel extends Model
         'template_id' => 'required|integer',
         'topic_id' => 'permit_empty|integer',
         'risk_factor_id' => 'permit_empty|integer',
-        'description' => 'required',
         'sort_order' => 'permit_empty|integer',
         'is_required' => 'permit_empty|in_list[0,1]'
     ];
-    
+
     protected $validationMessages = [
         'template_id' => [
             'required' => 'Template ID is required',
@@ -67,9 +66,6 @@ class TemplateContentModel extends Model
         ],
         'risk_factor_id' => [
             'integer' => 'Risk Factor ID must be an integer'
-        ],
-        'description' => [
-            'required' => 'Content description is required'
         ]
     ];
 
@@ -88,7 +84,8 @@ class TemplateContentModel extends Model
                 template_contents.*,
                 risk_categories.category_name,
                 risk_topics.topic_name,
-                risk_factors.factor_name
+                risk_factors.factor_name,
+                risk_factors.description as factor_description
             ')
             ->join('risk_categories', 'risk_categories.id = template_contents.category_id', 'left')
             ->join('risk_topics', 'risk_topics.id = template_contents.topic_id', 'left')
@@ -131,15 +128,18 @@ class TemplateContentModel extends Model
     }
 
     /**
-     * Get content with category, topic, and factor names
+     * Get content with category, topic, and factor names and descriptions
      */
     public function getContentWithCategory($id)
     {
         return $this->select('
                 template_contents.*,
                 risk_categories.category_name,
+                risk_categories.description as category_description,
                 risk_topics.topic_name,
-                risk_factors.factor_name
+                risk_topics.description as topic_description,
+                risk_factors.factor_name,
+                risk_factors.description as factor_description
             ')
             ->join('risk_categories', 'risk_categories.id = template_contents.category_id', 'left')
             ->join('risk_topics', 'risk_topics.id = template_contents.topic_id', 'left')

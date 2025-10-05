@@ -616,18 +616,22 @@ class QuestionManagementController extends BaseController
                 ]);
             }
 
-            // 查詢單一內容項目，並 JOIN assessment 以取得 company_id
-            $content = $this->contentModel
-                ->select('question_contents.*, company_assessments.company_id, company_assessments.id as assessment_id')
-                ->join('company_assessments', 'company_assessments.id = question_contents.assessment_id', 'left')
-                ->where('question_contents.id', $contentId)
-                ->first();
+            // 使用 getContentWithDetails 方法獲取完整資料（包含類別、主題、因子及描述）
+            $content = $this->contentModel->getContentWithDetails($contentId);
 
             if (!$content) {
                 return $this->response->setStatusCode(404)->setJSON([
                     'success' => false,
                     'message' => '找不到指定的內容項目'
                 ]);
+            }
+
+            // 額外獲取 company_id
+            if (!empty($content['assessment_id'])) {
+                $assessment = $this->assessmentModel->find($content['assessment_id']);
+                if ($assessment) {
+                    $content['company_id'] = $assessment['company_id'];
+                }
             }
 
             return $this->response->setJSON([

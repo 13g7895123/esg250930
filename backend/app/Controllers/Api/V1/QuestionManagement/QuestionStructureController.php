@@ -774,4 +774,320 @@ class QuestionStructureController extends BaseController
             ]);
         }
     }
+
+    /**
+     * Import structure from Excel with RichText support
+     * POST /api/v1/question-management/assessment/{assessmentId}/import-structure
+     */
+    public function importStructure()
+    {
+        try {
+            $assessmentId = $this->request->uri->getSegment(4);
+
+            // Get the assessment
+            $assessmentModel = new \App\Models\RiskAssessment\CompanyAssessmentModel();
+            $assessment = $assessmentModel->find($assessmentId);
+
+            if (!$assessment) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '評估不存在'
+                ]);
+            }
+
+            // Get uploaded file
+            $file = $this->request->getFile('file');
+
+            if (!$file || !$file->isValid()) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '請上傳有效的 Excel 檔案'
+                ]);
+            }
+
+            // Load Excel file
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
+            $sheet = $spreadsheet->getActiveSheet();
+
+            // Initialize converters
+            $richTextToHtml = new \App\Libraries\RichTextToHtmlConverter();
+
+            // Get data
+            $rows = $sheet->toArray();
+            $highestRow = $sheet->getHighestRow();
+
+            if ($highestRow <= 1) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => 'Excel 檔案中沒有資料'
+                ]);
+            }
+
+            // Check if assessment has topic layer enabled
+            $hasTopicLayer = $assessment['enable_topic_layer'] ?? true;
+
+            $imported = 0;
+            $errors = [];
+
+            // Process each row (skip header row 1)
+            for ($rowIndex = 2; $rowIndex <= $highestRow; $rowIndex++) {
+                try {
+                    $row = $rows[$rowIndex - 1];
+
+                    if ($hasTopicLayer) {
+                        // Three-layer structure
+                        $categoryName = trim($row[0] ?? '');
+                        $topicName = trim($row[2] ?? '');
+                        $factorName = trim($row[4] ?? '');
+
+                        // Convert RichText to HTML
+                        $cellB = $sheet->getCell('B' . $rowIndex);
+                        $categoryDescHtml = $this->convertCellToHtml($cellB, $richTextToHtml);
+
+                        $cellD = $sheet->getCell('D' . $rowIndex);
+                        $topicDescHtml = $this->convertCellToHtml($cellD, $richTextToHtml);
+
+                        $cellF = $sheet->getCell('F' . $rowIndex);
+                        $factorDescHtml = $this->convertCellToHtml($cellF, $richTextToHtml);
+
+                        if (empty($categoryName) || empty($factorName)) {
+                            $errors[] = "第 {$rowIndex} 行：缺少必填欄位";
+                            continue;
+                        }
+
+                        // Find or create category
+                        $category = $this->categoryModel->where('assessment_id', $assessmentId)
+                            ->where('category_name', $categoryName)
+                            ->first();
+
+                        if (!$category) {
+                            $maxSort = $this->categoryModel->where('assessment_id', $assessmentId)
+                                ->selectMax('sort_order')
+                                ->first();
+                            $nextSort = ($maxSort['sort_order'] ?? 0) + 1;
+
+                            $categoryId = $this->categoryModel->insert([
+                                'assessment_id' => $assessmentId,
+                                'category_name' => $categoryName,
+                                'description' => !empty($categoryDescHtml) ? $categoryDescHtml : null,
+                                'sort_order' => $nextSort
+                            ]);
+                        } else {
+                            $categoryId = $category['id'];
+                            if (!empty($categoryDescHtml)) {
+                                $this->categoryModel->update($categoryId, ['description' => $categoryDescHtml]);
+                            }
+                        }
+
+                        // Find or create topic
+                        $topicId = null;
+                        if (!empty($topicName)) {
+                            $topic = $this->topicModel->where('assessment_id', $assessmentId)
+                                ->where('category_id', $categoryId)
+                                ->where('topic_name', $topicName)
+                                ->first();
+
+                            if (!$topic) {
+                                $maxSort = $this->topicModel->where('assessment_id', $assessmentId)
+                                    ->where('category_id', $categoryId)
+                                    ->selectMax('sort_order')
+                                    ->first();
+                                $nextSort = ($maxSort['sort_order'] ?? 0) + 1;
+
+                                $topicId = $this->topicModel->insert([
+                                    'assessment_id' => $assessmentId,
+                                    'category_id' => $categoryId,
+                                    'topic_name' => $topicName,
+                                    'description' => !empty($topicDescHtml) ? $topicDescHtml : null,
+                                    'sort_order' => $nextSort
+                                ]);
+                            } else {
+                                $topicId = $topic['id'];
+                                if (!empty($topicDescHtml)) {
+                                    $this->topicModel->update($topicId, ['description' => $topicDescHtml]);
+                                }
+                            }
+                        }
+
+                        // Find or create factor
+                        $factor = $this->factorModel->where('assessment_id', $assessmentId)
+                            ->where('category_id', $categoryId)
+                            ->where('factor_name', $factorName);
+
+                        if ($topicId) {
+                            $factor = $factor->where('topic_id', $topicId);
+                        }
+
+                        $factor = $factor->first();
+
+                        if (!$factor) {
+                            $this->factorModel->insert([
+                                'assessment_id' => $assessmentId,
+                                'category_id' => $categoryId,
+                                'topic_id' => $topicId,
+                                'factor_name' => $factorName,
+                                'description' => !empty($factorDescHtml) ? $factorDescHtml : null
+                            ]);
+                        } else {
+                            if (!empty($factorDescHtml)) {
+                                $this->factorModel->update($factor['id'], ['description' => $factorDescHtml]);
+                            }
+                        }
+
+                    } else {
+                        // Two-layer structure
+                        $categoryName = trim($row[0] ?? '');
+                        $factorName = trim($row[2] ?? '');
+
+                        $cellB = $sheet->getCell('B' . $rowIndex);
+                        $categoryDescHtml = $this->convertCellToHtml($cellB, $richTextToHtml);
+
+                        $cellD = $sheet->getCell('D' . $rowIndex);
+                        $factorDescHtml = $this->convertCellToHtml($cellD, $richTextToHtml);
+
+                        if (empty($categoryName) || empty($factorName)) {
+                            $errors[] = "第 {$rowIndex} 行：缺少必填欄位";
+                            continue;
+                        }
+
+                        // Find or create category
+                        $category = $this->categoryModel->where('assessment_id', $assessmentId)
+                            ->where('category_name', $categoryName)
+                            ->first();
+
+                        if (!$category) {
+                            $maxSort = $this->categoryModel->where('assessment_id', $assessmentId)
+                                ->selectMax('sort_order')
+                                ->first();
+                            $nextSort = ($maxSort['sort_order'] ?? 0) + 1;
+
+                            $categoryId = $this->categoryModel->insert([
+                                'assessment_id' => $assessmentId,
+                                'category_name' => $categoryName,
+                                'description' => !empty($categoryDescHtml) ? $categoryDescHtml : null,
+                                'sort_order' => $nextSort
+                            ]);
+                        } else {
+                            $categoryId = $category['id'];
+                            if (!empty($categoryDescHtml)) {
+                                $this->categoryModel->update($categoryId, ['description' => $categoryDescHtml]);
+                            }
+                        }
+
+                        // Find or create factor
+                        $factor = $this->factorModel->where('assessment_id', $assessmentId)
+                            ->where('category_id', $categoryId)
+                            ->where('factor_name', $factorName)
+                            ->first();
+
+                        if (!$factor) {
+                            $this->factorModel->insert([
+                                'assessment_id' => $assessmentId,
+                                'category_id' => $categoryId,
+                                'topic_id' => null,
+                                'factor_name' => $factorName,
+                                'description' => !empty($factorDescHtml) ? $factorDescHtml : null
+                            ]);
+                        } else {
+                            if (!empty($factorDescHtml)) {
+                                $this->factorModel->update($factor['id'], ['description' => $factorDescHtml]);
+                            }
+                        }
+                    }
+
+                    $imported++;
+
+                } catch (\Exception $e) {
+                    $errors[] = "第 {$rowIndex} 行：" . $e->getMessage();
+                    log_message('error', "Row {$rowIndex} import error: " . $e->getMessage());
+                }
+            }
+
+            $message = "成功匯入 {$imported} 筆資料";
+            if (!empty($errors)) {
+                $message .= "，" . count($errors) . " 筆失敗";
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => $message,
+                'data' => [
+                    'imported' => $imported,
+                    'errors' => $errors
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Structure import error: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '匯入失敗：' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Convert Excel cell to HTML with RichText support
+     */
+    private function convertCellToHtml($cell, $richTextToHtml)
+    {
+        try {
+            $cellValue = $cell->getValue();
+
+            if (empty($cellValue)) {
+                return '';
+            }
+
+            if ($cellValue instanceof \PhpOffice\PhpSpreadsheet\RichText\RichText) {
+                return $richTextToHtml->convert($cellValue);
+            }
+
+            $cellStyle = $cell->getStyle();
+            $font = $cellStyle->getFont();
+
+            $hasFormatting = $font->getBold() ||
+                           $font->getItalic() ||
+                           $font->getUnderline() ||
+                           $font->getStrikethrough() ||
+                           ($font->getColor() && $font->getColor()->getRGB());
+
+            if ($hasFormatting) {
+                $text = htmlspecialchars($cellValue);
+
+                if ($font->getBold()) {
+                    $text = '<strong>' . $text . '</strong>';
+                }
+                if ($font->getItalic()) {
+                    $text = '<em>' . $text . '</em>';
+                }
+                if ($font->getUnderline() && $font->getUnderline() !== \PhpOffice\PhpSpreadsheet\Style\Font::UNDERLINE_NONE) {
+                    $text = '<u>' . $text . '</u>';
+                }
+                if ($font->getStrikethrough()) {
+                    $text = '<s>' . $text . '</s>';
+                }
+
+                if ($font->getColor() && $font->getColor()->getRGB()) {
+                    $rgb = $font->getColor()->getRGB();
+                    if ($rgb && strtoupper($rgb) !== '000000' && strtoupper($rgb) !== 'FF000000') {
+                        $color = '#' . $rgb;
+                        $text = '<span style="color: ' . $color . '">' . $text . '</span>';
+                    }
+                }
+
+                return '<p>' . $text . '</p>';
+            } else {
+                return '<p>' . htmlspecialchars($cellValue) . '</p>';
+            }
+
+        } catch (\Exception $e) {
+            log_message('warning', 'Cell conversion error: ' . $e->getMessage());
+            $cellValue = $cell->getValue();
+            if (is_string($cellValue)) {
+                return '<p>' . htmlspecialchars($cellValue) . '</p>';
+            }
+            return '';
+        }
+    }
+
 }

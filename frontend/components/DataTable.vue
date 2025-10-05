@@ -372,7 +372,7 @@ const props = defineProps({
   },
   pageSizeOptions: {
     type: Array,
-    default: () => [5, 10, 20, 50, 100]
+    default: () => [5, 10, 20, 50, 100, 999999]
   },
   
   // Empty State
@@ -545,7 +545,9 @@ const totalPages = computed(() => Math.ceil(sortedData.value.length / pageSize.v
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  return sortedData.value.slice(start, end)
+  const result = sortedData.value.slice(start, end)
+  console.log(`[DataTable] Paginated data: showing ${result.length} of ${sortedData.value.length} items (page ${currentPage.value}, pageSize ${pageSize.value})`)
+  return result
 })
 
 const visiblePages = computed(() => {

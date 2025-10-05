@@ -34,9 +34,53 @@
           @fill-test-data="fillTestData"
         />
 
+        <!-- Risk Structure Information (舊版風格) -->
+        <div v-if="showStructureInfo" class="mb-6">
+          <div :class="getStructureGridClass">
+            <!-- Risk Category -->
+            <div
+              v-if="questionData?.category_name"
+              class="flex items-center gap-3 bg-gray-100 dark:bg-gray-700 p-4 rounded-2xl"
+            >
+              <h3 class="font-bold text-gray-900 dark:text-white text-xl whitespace-nowrap">風險類別</h3>
+              <div class="flex-1 min-w-0">
+                <p class="text-gray-900 dark:text-white text-xl truncate">
+                  {{ questionData.category_name }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Risk Topic -->
+            <div
+              v-if="questionData?.topic_name"
+              class="flex items-center gap-3 bg-gray-100 dark:bg-gray-700 p-4 rounded-2xl"
+            >
+              <h3 class="font-bold text-gray-900 dark:text-white text-xl whitespace-nowrap">風險主題</h3>
+              <div class="flex-1 min-w-0">
+                <p class="text-gray-900 dark:text-white text-xl truncate">
+                  {{ questionData.topic_name }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Risk Factor -->
+            <div
+              v-if="questionData?.factor_name"
+              class="flex items-center gap-3 risk-factor-bg p-4 rounded-2xl"
+            >
+              <h3 class="font-bold text-white text-xl whitespace-nowrap">風險因子</h3>
+              <div class="flex-1 min-w-0">
+                <p class="text-white text-xl font-medium truncate">
+                  {{ questionData.factor_name }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Form Sections -->
         <div class="space-y-6">
-          <!-- Section A: 風險因子議題描述 -->
+          <!-- Section A: 風險因子議題描述 (Editable rich text like Section B) -->
           <EditorSection
             section-id="A"
             title="風險因子議題描述"
@@ -45,7 +89,6 @@
           >
             <RichTextEditor
               v-model="formData.riskFactorDescription"
-              :readonly="computedFeatures.readonly"
               :show-html-info="false"
               placeholder="請輸入風險因子議題描述..."
             />
@@ -354,6 +397,37 @@ const pageSubtitle = computed(() => {
   return features.value.pageSubtitle
 })
 
+// 顯示風險架構資訊卡片 (所有模式都顯示，只要有資料)
+const showStructureInfo = computed(() => {
+  return !!questionData.value && (
+    questionData.value.category_name ||
+    questionData.value.topic_name ||
+    questionData.value.factor_name
+  )
+})
+
+// 計算風險架構資訊卡片的 grid class (根據有多少層級動態調整)
+const getStructureGridClass = computed(() => {
+  if (!questionData.value) return 'grid grid-cols-1 gap-5 mb-4'
+
+  const hasCategory = !!questionData.value.category_name
+  const hasTopic = !!questionData.value.topic_name
+  const hasFactor = !!questionData.value.factor_name
+
+  const count = [hasCategory, hasTopic, hasFactor].filter(Boolean).length
+
+  if (count === 3) {
+    // 三個都有：類別、主題、因子 (舊版樣式: 1fr 1fr 2fr)
+    return 'grid grid-cols-[1fr_1fr_2fr] gap-5 mb-4'
+  } else if (count === 2) {
+    // 兩個：通常是類別和因子
+    return 'grid grid-cols-2 gap-5 mb-4'
+  } else {
+    // 一個
+    return 'grid grid-cols-1 gap-5 mb-4'
+  }
+})
+
 // 計算動態 features (支援預覽模式切換)
 const computedFeatures = computed(() => {
   if (isPreviewMode.value) {
@@ -599,5 +673,12 @@ const handleScaleSave = async () => {
 </script>
 
 <style scoped>
-/* 樣式已使用 Tailwind CSS 和各元件的 scoped styles */
+/* 風險架構資訊卡片樣式 */
+.risk-factor-bg {
+  background-color: #059669; /* Tailwind green-600 */
+}
+
+.dark .risk-factor-bg {
+  background-color: #047857; /* Tailwind green-700 for dark mode */
+}
 </style>

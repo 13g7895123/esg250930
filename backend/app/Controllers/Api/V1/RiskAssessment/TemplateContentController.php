@@ -54,6 +54,27 @@ class TemplateContentController extends BaseController
 
             // Get total for pagination
             $total = $builder->countAllResults(false);
+
+            // If limit is 0, return all contents without pagination
+            if ($limit === 0) {
+                $contents = $builder->orderBy($sort, $order)->findAll();
+
+                return $this->response->setJSON([
+                    'success' => true,
+                    'data' => [
+                        'contents' => $contents,
+                        'pagination' => [
+                            'current_page' => 1,
+                            'per_page' => $total,
+                            'total' => $total,
+                            'total_pages' => 1,
+                            'has_next' => false,
+                            'has_prev' => false
+                        ]
+                    ]
+                ]);
+            }
+
             $contents = $builder->paginate($limit, 'default', $page);
 
             $pagination = [
@@ -145,10 +166,8 @@ class TemplateContentController extends BaseController
                 'category_id' => 'permit_empty|integer',
                 'topic_id' => 'permit_empty|integer',
                 'risk_factor_id' => 'permit_empty|integer',
-                'description' => 'required',
                 'is_required' => 'permit_empty|in_list[0,1]',
-                // 新增的題目欄位驗證規則
-                'a_content' => 'permit_empty|string',
+                // 題目欄位驗證規則
                 'b_content' => 'permit_empty|string',
                 'c_placeholder' => 'permit_empty|string',
                 'd_placeholder_1' => 'permit_empty|string',
@@ -192,16 +211,22 @@ class TemplateContentController extends BaseController
                 }
             }
 
+            // Update risk factor description if provided
+            if (!empty($input['riskFactorId']) && isset($input['factorDescription'])) {
+                $factorModel = new \App\Models\RiskAssessment\RiskFactorModel();
+                $factorModel->update($input['riskFactorId'], [
+                    'description' => $input['factorDescription']
+                ]);
+            }
+
             $data = [
                 'template_id' => $templateId,
                 'category_id' => $categoryId,
                 'topic_id' => $input['topicId'] ?? null,
                 'risk_factor_id' => $input['riskFactorId'] ?? null,
-                'description' => $input['description'],
                 'sort_order' => $this->contentModel->getNextSortOrder($templateId),
                 'is_required' => $input['is_required'] ?? 1,
                 // 新增的題目欄位
-                'a_content' => $input['a_content'] ?? null,
                 'b_content' => $input['b_content'] ?? null,
                 'c_placeholder' => $input['c_placeholder'] ?? null,
                 'd_placeholder_1' => $input['d_placeholder_1'] ?? null,
@@ -276,10 +301,8 @@ class TemplateContentController extends BaseController
                 'category_id' => 'permit_empty|integer',
                 'topic_id' => 'permit_empty|integer',
                 'risk_factor_id' => 'permit_empty|integer',
-                'description' => 'permit_empty|string',
                 'is_required' => 'permit_empty|in_list[0,1]',
-                // 新增的題目欄位驗證規則
-                'a_content' => 'permit_empty|string',
+                // 題目欄位驗證規則
                 'b_content' => 'permit_empty|string',
                 'c_placeholder' => 'permit_empty|string',
                 'd_placeholder_1' => 'permit_empty|string',
@@ -323,27 +346,37 @@ class TemplateContentController extends BaseController
                 }
             }
 
+            // Update risk factor description if provided
+            $riskFactorId = isset($input['riskFactorId']) ? $input['riskFactorId'] : ($content['risk_factor_id'] ?? null);
+            if (!empty($riskFactorId) && isset($input['factorDescription'])) {
+                $factorModel = new \App\Models\RiskAssessment\RiskFactorModel();
+                $factorModel->update($riskFactorId, [
+                    'description' => $input['factorDescription']
+                ]);
+            }
+
             $data = [
                 'category_id' => $categoryId,
                 'topic_id' => isset($input['topicId']) ? $input['topicId'] : ($content['topic_id'] ?? null),
-                'risk_factor_id' => isset($input['riskFactorId']) ? $input['riskFactorId'] : ($content['risk_factor_id'] ?? null),
-                'description' => $input['description'] ?? $content['description'],
-                'is_required' => $input['is_required'] ?? $content['is_required'],
+                'risk_factor_id' => $riskFactorId,
+                'is_required' => $input['is_required'] ?? ($content['is_required'] ?? 1),
                 // 新增的題目欄位
-                'a_content' => $input['a_content'] ?? $content['a_content'],
-                'b_content' => $input['b_content'] ?? $content['b_content'],
-                'c_placeholder' => $input['c_placeholder'] ?? $content['c_placeholder'],
-                'd_placeholder_1' => $input['d_placeholder_1'] ?? $content['d_placeholder_1'],
-                'd_placeholder_2' => $input['d_placeholder_2'] ?? $content['d_placeholder_2'],
-                'e1_placeholder_1' => $input['e1_placeholder_1'] ?? $content['e1_placeholder_1'],
-                'e1_select_1' => $input['e1_select_1'] ?? $content['e1_select_1'],
-                'e1_select_2' => $input['e1_select_2'] ?? $content['e1_select_2'],
-                'e1_placeholder_2' => $input['e1_placeholder_2'] ?? $content['e1_placeholder_2'],
+                'b_content' => $input['b_content'] ?? ($content['b_content'] ?? null),
+                'c_placeholder' => $input['c_placeholder'] ?? ($content['c_placeholder'] ?? null),
+                'd_placeholder_1' => $input['d_placeholder_1'] ?? ($content['d_placeholder_1'] ?? null),
+                'd_placeholder_2' => $input['d_placeholder_2'] ?? ($content['d_placeholder_2'] ?? null),
+                'e1_placeholder_1' => $input['e1_placeholder_1'] ?? ($content['e1_placeholder_1'] ?? null),
+                'e2_select_1' => $input['e2_select_1'] ?? ($content['e2_select_1'] ?? null),
+                'e2_select_2' => $input['e2_select_2'] ?? ($content['e2_select_2'] ?? null),
+                'e2_placeholder' => $input['e2_placeholder'] ?? ($content['e2_placeholder'] ?? null),
+                'f2_select_1' => $input['f2_select_1'] ?? ($content['f2_select_1'] ?? null),
+                'f2_select_2' => $input['f2_select_2'] ?? ($content['f2_select_2'] ?? null),
+                'f2_placeholder' => $input['f2_placeholder'] ?? ($content['f2_placeholder'] ?? null),
                 // 資訊圖示懸浮文字欄位
-                'e1_info' => $input['e1_info'] ?? $content['e1_info'],
-                'f1_info' => $input['f1_info'] ?? $content['f1_info'],
-                'g1_info' => $input['g1_info'] ?? $content['g1_info'],
-                'h1_info' => $input['h1_info'] ?? $content['h1_info']
+                'e1_info' => $input['e1_info'] ?? ($content['e1_info'] ?? null),
+                'f1_info' => $input['f1_info'] ?? ($content['f1_info'] ?? null),
+                'g1_info' => $input['g1_info'] ?? ($content['g1_info'] ?? null),
+                'h1_info' => $input['h1_info'] ?? ($content['h1_info'] ?? null)
             ];
 
             $success = $this->contentModel->update($id, $data);
@@ -500,6 +533,798 @@ class TemplateContentController extends BaseController
             return $this->response->setStatusCode(500)->setJSON([
                 'success' => false,
                 'message' => '更新排序失敗: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Batch import template contents
+     * POST /api/v1/risk-assessment/templates/{templateId}/contents/batch-import
+     */
+    public function batchImport()
+    {
+        try {
+            $templateId = $this->request->uri->getSegment(5);
+
+            // Check if template exists
+            $template = $this->templateModel->find($templateId);
+            if (!$template) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '範本不存在'
+                ]);
+            }
+
+            $input = $this->request->getJSON(true);
+            $items = $input['items'] ?? [];
+
+            if (empty($items)) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '沒有要匯入的資料'
+                ]);
+            }
+
+            $db = \Config\Database::connect();
+            $db->transStart();
+
+            $imported = 0;
+            $errors = [];
+
+            // Load required models
+            $topicModel = new \App\Models\RiskAssessment\RiskTopicModel();
+            $factorModel = new \App\Models\RiskAssessment\RiskFactorModel();
+
+            foreach ($items as $index => $item) {
+                try {
+                    // Validate required fields
+                    if (empty($item['categoryName']) || empty($item['factorName'])) {
+                        $errors[] = "第 " . ($index + 2) . " 行：缺少必填欄位（風險類別、風險因子）";
+                        continue;
+                    }
+
+                    // 1. Find or create category
+                    $category = $this->categoryModel
+                        ->where('template_id', $templateId)
+                        ->where('category_name', $item['categoryName'])
+                        ->first();
+
+                    if (!$category) {
+                        $categoryId = $this->categoryModel->insert([
+                            'template_id' => $templateId,
+                            'category_name' => $item['categoryName']
+                        ]);
+                        $category = ['id' => $categoryId];
+                    }
+
+                    // 2. Find or create topic (if provided)
+                    $topicId = null;
+                    if (!empty($item['topicName'])) {
+                        $topic = $topicModel
+                            ->where('template_id', $templateId)
+                            ->where('category_id', $category['id'])
+                            ->where('topic_name', $item['topicName'])
+                            ->first();
+
+                        if (!$topic) {
+                            $topicId = $topicModel->insert([
+                                'template_id' => $templateId,
+                                'category_id' => $category['id'],
+                                'topic_name' => $item['topicName']
+                            ]);
+                        } else {
+                            $topicId = $topic['id'];
+                        }
+                    }
+
+                    // 3. Find or create factor (if provided)
+                    $factorId = null;
+                    if (!empty($item['factorName'])) {
+                        $factor = $factorModel
+                            ->where('template_id', $templateId)
+                            ->where('category_id', $category['id'])
+                            ->where('factor_name', $item['factorName'])
+                            ->first();
+
+                        if (!$factor) {
+                            $factorData = [
+                                'template_id' => $templateId,
+                                'category_id' => $category['id'],
+                                'factor_name' => $item['factorName']
+                            ];
+
+                            // Add topic_id if exists
+                            if ($topicId) {
+                                $factorData['topic_id'] = $topicId;
+                            }
+
+                            $factorId = $factorModel->insert($factorData);
+                        } else {
+                            $factorId = $factor['id'];
+                        }
+                    }
+
+                    // 4. Create content
+                    $contentData = [
+                        'template_id' => $templateId,
+                        'category_id' => $category['id'],
+                        'topic_id' => $topicId,
+                        'risk_factor_id' => $factorId,
+                        'sort_order' => $item['sort_order'] ?? ($imported + 1),
+                        'is_required' => $item['is_required'] ?? 0,
+                        'b_content' => $item['b_content'] ?? null,
+                        'c_placeholder' => $item['c_placeholder'] ?? null,
+                        'd_placeholder_1' => $item['d_placeholder_1'] ?? null,
+                        'd_placeholder_2' => $item['d_placeholder_2'] ?? null,
+                        'e1_placeholder_1' => $item['e1_placeholder_1'] ?? null,
+                        'e2_select_1' => $item['e2_select_1'] ?? null,
+                        'e2_select_2' => $item['e2_select_2'] ?? null,
+                        'e2_placeholder' => $item['e2_placeholder'] ?? null,
+                        'f2_select_1' => $item['f2_select_1'] ?? null,
+                        'f2_select_2' => $item['f2_select_2'] ?? null,
+                        'f2_placeholder' => $item['f2_placeholder'] ?? null,
+                        'e1_info' => $item['e1_info'] ?? null,
+                        'f1_info' => $item['f1_info'] ?? null,
+                        'g1_info' => $item['g1_info'] ?? null,
+                        'h1_info' => $item['h1_info'] ?? null
+                    ];
+
+                    $this->contentModel->insert($contentData);
+                    $imported++;
+
+                } catch (\Exception $e) {
+                    $errors[] = "第 " . ($index + 2) . " 行：" . $e->getMessage();
+                }
+            }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === FALSE) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'message' => '匯入失敗'
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => "成功匯入 {$imported} 筆資料",
+                'imported' => $imported,
+                'errors' => $errors
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Template content batch import error: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '匯入失敗：' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Export template contents to Excel with RichText support
+     * POST /api/v1/risk-assessment/templates/{templateId}/export-excel
+     */
+    public function exportExcel()
+    {
+        try {
+            $templateId = $this->request->uri->getSegment(5);
+
+            // Check if template exists
+            $template = $this->templateModel->find($templateId);
+            if (!$template) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '範本不存在'
+                ]);
+            }
+
+            // Get template contents with category information
+            $contents = $this->contentModel->getContentsWithCategory($templateId)->findAll();
+
+            // Create Excel file
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setTitle('範本內容');
+
+            // Initialize converters
+            $htmlToRichText = new \App\Libraries\HtmlToRichTextConverter();
+
+            // Set headers (updated to include A column for risk factor description)
+            $headers = [
+                'A' => '風險類別',
+                'B' => '風險主題',
+                'C' => '風險因子',
+                'D' => 'A風險因子描述',
+                'E' => 'B參考文字',
+                'F' => 'C是否有風險事件',
+                'G' => 'C風險事件描述',
+                'H' => 'D是否有對應作為',
+                'I' => 'D對應作為描述',
+                'J' => 'D對應作為費用',
+                'K' => 'E風險描述',
+                'L' => 'E風險可能性',
+                'M' => 'E風險衝擊程度',
+                'N' => 'E風險計算說明',
+                'O' => 'F機會描述',
+                'P' => 'F機會可能性',
+                'Q' => 'F機會衝擊程度',
+                'R' => 'F機會計算說明',
+                'S' => 'G對外負面衝擊程度',
+                'T' => 'G對外負面衝擊描述',
+                'U' => 'H對外正面影響程度',
+                'V' => 'H對外正面影響描述',
+                'W' => 'E1資訊提示',
+                'X' => 'F1資訊提示',
+                'Y' => 'G1資訊提示',
+                'Z' => 'H1資訊提示'
+            ];
+
+            // Apply header styling
+            foreach ($headers as $col => $header) {
+                $cell = $sheet->getCell($col . '1');
+                $cell->setValue($header);
+
+                $cell->getStyle()->applyFromArray([
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => '4472C4']
+                    ],
+                    'font' => [
+                        'bold' => true,
+                        'color' => ['rgb' => 'FFFFFF'],
+                        'size' => 12
+                    ],
+                    'alignment' => [
+                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                        'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                        'wrapText' => true
+                    ]
+                ]);
+            }
+
+            // Set column widths (updated to include A column)
+            $sheet->getColumnDimension('A')->setWidth(15); // 風險類別
+            $sheet->getColumnDimension('B')->setWidth(15); // 風險主題
+            $sheet->getColumnDimension('C')->setWidth(15); // 風險因子
+            $sheet->getColumnDimension('D')->setWidth(50); // A風險因子描述
+            $sheet->getColumnDimension('E')->setWidth(50); // B參考文字
+            $sheet->getColumnDimension('F')->setWidth(12); // C是否有風險事件
+            $sheet->getColumnDimension('G')->setWidth(40); // C風險事件描述
+            $sheet->getColumnDimension('H')->setWidth(12); // D是否有對應作為
+            $sheet->getColumnDimension('I')->setWidth(40); // D對應作為描述
+            $sheet->getColumnDimension('J')->setWidth(20); // D對應作為費用
+            $sheet->getColumnDimension('K')->setWidth(40); // E風險描述
+            $sheet->getColumnDimension('L')->setWidth(12); // E風險可能性
+            $sheet->getColumnDimension('M')->setWidth(12); // E風險衝擊程度
+            $sheet->getColumnDimension('N')->setWidth(30); // E風險計算說明
+            $sheet->getColumnDimension('O')->setWidth(40); // F機會描述
+            $sheet->getColumnDimension('P')->setWidth(12); // F機會可能性
+            $sheet->getColumnDimension('Q')->setWidth(12); // F機會衝擊程度
+            $sheet->getColumnDimension('R')->setWidth(30); // F機會計算說明
+            $sheet->getColumnDimension('S')->setWidth(15); // G對外負面衝擊程度
+            $sheet->getColumnDimension('T')->setWidth(40); // G對外負面衝擊描述
+            $sheet->getColumnDimension('U')->setWidth(15); // H對外正面影響程度
+            $sheet->getColumnDimension('V')->setWidth(40); // H對外正面影響描述
+            $sheet->getColumnDimension('W')->setWidth(30); // E1資訊提示
+            $sheet->getColumnDimension('X')->setWidth(30); // F1資訊提示
+            $sheet->getColumnDimension('Y')->setWidth(30); // G1資訊提示
+            $sheet->getColumnDimension('Z')->setWidth(30); // H1資訊提示
+
+            // Fill data rows (updated to include A column for factor description)
+            $row = 2;
+            foreach ($contents as $content) {
+                $sheet->setCellValue('A' . $row, $content['category_name'] ?? '');
+                $sheet->setCellValue('B' . $row, $content['topic_name'] ?? '');
+                $sheet->setCellValue('C' . $row, $content['factor_name'] ?? '');
+
+                // Convert HTML to RichText for factor_description (column D - A欄位)
+                if (!empty($content['factor_description'])) {
+                    $richText = $htmlToRichText->convert($content['factor_description']);
+                    $sheet->setCellValue('D' . $row, $richText);
+                } else {
+                    $sheet->setCellValue('D' . $row, '');
+                }
+
+                // Convert HTML to RichText for b_content (column E - B欄位)
+                if (!empty($content['b_content'])) {
+                    $richText = $htmlToRichText->convert($content['b_content']);
+                    $sheet->setCellValue('E' . $row, $richText);
+                } else {
+                    $sheet->setCellValue('E' . $row, '');
+                }
+
+                // C section
+                $sheet->setCellValue('F' . $row, ($content['c_has_risk_event'] ?? 'no') === 'yes' ? '是' : '否');
+                $sheet->setCellValue('G' . $row, $content['c_placeholder'] ?? '');
+
+                // D section
+                $sheet->setCellValue('H' . $row, ($content['d_has_counter_action'] ?? 'no') === 'yes' ? '是' : '否');
+                $sheet->setCellValue('I' . $row, $content['d_placeholder_1'] ?? '');
+                $sheet->setCellValue('J' . $row, $content['d_placeholder_2'] ?? '');
+
+                // E section
+                $sheet->setCellValue('K' . $row, $content['e1_placeholder_1'] ?? '');
+                $sheet->setCellValue('L' . $row, $content['e2_select_1'] ?? '');
+                $sheet->setCellValue('M' . $row, $content['e2_select_2'] ?? '');
+                $sheet->setCellValue('N' . $row, $content['e2_placeholder'] ?? '');
+
+                // F section
+                $sheet->setCellValue('O' . $row, $content['f1_placeholder_1'] ?? '');
+                $sheet->setCellValue('P' . $row, $content['f2_select_1'] ?? '');
+                $sheet->setCellValue('Q' . $row, $content['f2_select_2'] ?? '');
+                $sheet->setCellValue('R' . $row, $content['f2_placeholder'] ?? '');
+
+                // G section
+                $sheet->setCellValue('S' . $row, $content['g1_select'] ?? '');
+                $sheet->setCellValue('T' . $row, $content['g1_placeholder_1'] ?? '');
+
+                // H section
+                $sheet->setCellValue('U' . $row, $content['h1_select'] ?? '');
+                $sheet->setCellValue('V' . $row, $content['h1_placeholder_1'] ?? '');
+
+                // Info hover texts
+                $sheet->setCellValue('W' . $row, $content['e1_info'] ?? '');
+                $sheet->setCellValue('X' . $row, $content['f1_info'] ?? '');
+                $sheet->setCellValue('Y' . $row, $content['g1_info'] ?? '');
+                $sheet->setCellValue('Z' . $row, $content['h1_info'] ?? '');
+
+                // Apply row styling (updated to cover all columns A-Z)
+                $rowStyle = [
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => $row % 2 === 0 ? 'FFFFFF' : 'F2F2F2']
+                    ],
+                    'alignment' => [
+                        'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP,
+                        'wrapText' => true
+                    ],
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            'color' => ['rgb' => 'D0D0D0']
+                        ]
+                    ]
+                ];
+
+                $sheet->getStyle('A' . $row . ':Z' . $row)->applyFromArray($rowStyle);
+
+                $row++;
+            }
+
+            // Create help sheet
+            $helpSheet = $spreadsheet->createSheet();
+            $helpSheet->setTitle('填寫說明');
+
+            $helpData = [
+                ['欄位名稱', '說明', '範例'],
+                ['風險類別', '必填。風險所屬的分類', '財務風險'],
+                ['風險主題', '選填。更細緻的風險分類（依據範本設定）', '市場風險'],
+                ['風險因子', '必填。具體的風險因子', '匯率波動'],
+                ['A風險因子描述', '選填。風險因子議題描述（支援富文本格式）', '企業營運高度依賴【自然資源】的_風險評估_...'],
+                ['B參考文字', '選填。參考資訊（支援富文本格式）', '請參考【最近一年】的_財報資料_...'],
+                ['C是否有風險事件', '選填。是否發生風險事件，填寫「是」或「否」', '否'],
+                ['C風險事件描述', '選填。風險事件的詳細描述', '請描述可能發生的風險事件'],
+                ['D是否有對應作為', '選填。是否有對應措施，填寫「是」或「否」', '是'],
+                ['D對應作為描述', '選填。對應措施的詳細說明', '請說明對應的處理措施'],
+                ['D對應作為費用', '選填。對應措施所需費用', '預估所需費用'],
+                ['E風險描述', '選填。風險情境描述', '描述風險情境'],
+                ['E風險可能性', '選填。風險發生可能性（填寫數字1-5）', ''],
+                ['E風險衝擊程度', '選填。風險衝擊程度（填寫數字1-5）', ''],
+                ['E風險計算說明', '選填。風險計算方式說明', '風險值 = 可能性 × 衝擊'],
+                ['F機會描述', '選填。機會情境描述', '描述機會情境'],
+                ['F機會可能性', '選填。機會發生可能性（填寫數字1-5）', ''],
+                ['F機會衝擊程度', '選填。機會效益程度（填寫數字1-5）', ''],
+                ['F機會計算說明', '選填。機會計算方式說明', '機會值 = 可能性 × 效益'],
+                ['G對外負面衝擊程度', '選填。對外負面衝擊程度（填寫level-1至level-5）', ''],
+                ['G對外負面衝擊描述', '選填。負面衝擊詳細描述', '負面影響描述'],
+                ['H對外正面影響程度', '選填。對外正面影響程度（填寫level-1至level-5）', ''],
+                ['H對外正面影響描述', '選填。正面影響詳細描述', '正面影響描述'],
+                ['E1資訊提示', '選填。E1區塊資訊提示文字', '風險評估說明'],
+                ['F1資訊提示', '選填。F1區塊資訊提示文字', '機會評估說明'],
+                ['G1資訊提示', '選填。G1區塊資訊提示文字', '負面影響說明'],
+                ['H1資訊提示', '選填。H1區塊資訊提示文字', '正面影響說明'],
+                ['', '', ''],
+                ['注意事項', '', ''],
+                ['1. 第一行為範例資料，匯入時會自動跳過', '', ''],
+                ['2. 風險類別和風險因子為必填欄位', '', ''],
+                ['3. A、B欄位支援富文本格式：【文字】=粗體、_文字_=斜體', '', ''],
+                ['4. 如果類別、主題、因子不存在，系統會自動建立', '', ''],
+                ['5. 匯出時HTML格式會轉換為Excel富文本格式，匯入時自動還原為HTML', '', ''],
+                ['6. 可能性與衝擊程度欄位請填寫數字1-5', '', ''],
+                ['7. 程度等級欄位請填寫level-1至level-5格式', '', '']
+            ];
+
+            foreach ($helpData as $rowIndex => $rowData) {
+                $helpSheet->fromArray($rowData, null, 'A' . ($rowIndex + 1));
+            }
+
+            // Output Excel file
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+
+            $filename = '範本內容_' . $templateId . '_' . time() . '.xlsx';
+
+            // Save to temporary file first
+            $tempFile = WRITEPATH . 'uploads/' . $filename;
+            $writer->save($tempFile);
+
+            // Read file content
+            $fileContent = file_get_contents($tempFile);
+
+            // Delete temporary file
+            unlink($tempFile);
+
+            // Return file using CodeIgniter's response
+            return $this->response
+                ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                ->setHeader('Content-Disposition', 'attachment;filename="' . $filename . '"')
+                ->setHeader('Cache-Control', 'max-age=0')
+                ->setBody($fileContent);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Template content export Excel error: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '匯出失敗：' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Import template contents from Excel with RichText support
+     * POST /api/v1/risk-assessment/templates/{templateId}/import-excel
+     */
+    public function importExcel()
+    {
+        try {
+            $templateId = $this->request->uri->getSegment(5);
+
+            // Check if template exists
+            $template = $this->templateModel->find($templateId);
+            if (!$template) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '範本不存在'
+                ]);
+            }
+
+            // Get uploaded file
+            $file = $this->request->getFile('file');
+
+            if (!$file || !$file->isValid()) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '請上傳有效的 Excel 檔案'
+                ]);
+            }
+
+            // Load Excel file
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
+            $sheet = $spreadsheet->getActiveSheet();
+
+            // Initialize converters
+            $richTextToHtml = new \App\Libraries\RichTextToHtmlConverter();
+
+            // Get data (skip first row which is header)
+            $rows = $sheet->toArray();
+            array_shift($rows); // Remove header row
+
+            if (empty($rows)) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => 'Excel 檔案中沒有資料'
+                ]);
+            }
+
+            $imported = 0;
+            $errors = [];
+
+            // Models for category, topic, factor lookup/creation
+            $categoryModel = new RiskCategoryModel();
+            $topicModel = new \App\Models\RiskAssessment\RiskTopicModel();
+            $factorModel = new \App\Models\RiskAssessment\RiskFactorModel();
+
+            foreach ($rows as $index => $row) {
+                $rowNumber = $index + 2; // +2 because: +1 for 0-index, +1 for skipped header
+
+                try {
+                    // Parse row data (updated field mapping - removed 排序 and 是否必填)
+                    $categoryName = trim($row[0] ?? '');
+                    $topicName = trim($row[1] ?? '');
+                    $factorName = trim($row[2] ?? '');
+                    // Position 3 is now B參考文字 (will be processed later with RichText)
+                    // Removed: sortOrder (position 3) and isRequired (position 4)
+
+                    // Validate required fields
+                    if (empty($categoryName) || empty($factorName)) {
+                        $errors[] = "第 {$rowNumber} 行：缺少必填欄位（風險類別、風險因子）";
+                        continue;
+                    }
+
+                    // Find or create category
+                    $category = $categoryModel->where('template_id', $templateId)
+                        ->where('category_name', $categoryName)
+                        ->first();
+
+                    if (!$category) {
+                        // Get next sort order manually
+                        $maxSort = $categoryModel->where('template_id', $templateId)
+                            ->selectMax('sort_order')
+                            ->first();
+                        $nextSort = ($maxSort['sort_order'] ?? 0) + 1;
+
+                        $categoryId = $categoryModel->insert([
+                            'template_id' => $templateId,
+                            'category_name' => $categoryName,
+                            'sort_order' => $nextSort
+                        ]);
+                    } else {
+                        $categoryId = $category['id'];
+                    }
+
+                    // Find or create topic (if provided)
+                    $topicId = null;
+                    if (!empty($topicName)) {
+                        $topic = $topicModel->where('template_id', $templateId)
+                            ->where('topic_name', $topicName)
+                            ->where('category_id', $categoryId)
+                            ->first();
+
+                        if (!$topic) {
+                            // Get next sort order manually
+                            $maxSort = $topicModel->where('template_id', $templateId)
+                                ->where('category_id', $categoryId)
+                                ->selectMax('sort_order')
+                                ->first();
+                            $nextSort = ($maxSort['sort_order'] ?? 0) + 1;
+
+                            $topicId = $topicModel->insert([
+                                'template_id' => $templateId,
+                                'category_id' => $categoryId,
+                                'topic_name' => $topicName,
+                                'sort_order' => $nextSort
+                            ]);
+                        } else {
+                            $topicId = $topic['id'];
+                        }
+                    }
+
+                    // Find or create factor
+                    $factor = $factorModel->where('template_id', $templateId)
+                        ->where('factor_name', $factorName)
+                        ->first();
+
+                    if (!$factor) {
+                        $factorId = $factorModel->insert([
+                            'template_id' => $templateId,
+                            'category_id' => $categoryId,
+                            'topic_id' => $topicId,
+                            'factor_name' => $factorName
+                            // Note: sort_order has been removed from risk_factors table
+                        ]);
+                    } else {
+                        $factorId = $factor['id'];
+                    }
+
+                    // Convert RichText to HTML for A column (factor_description at position 3)
+                    $factorDescriptionHtml = '';
+                    $cellD = $sheet->getCell('D' . $rowNumber);
+
+                    // Try to get RichText object first
+                    $richTextObj = null;
+                    try {
+                        // Check if cell has rich text formatting
+                        $cellValue = $cellD->getValue();
+
+                        if ($cellValue instanceof \PhpOffice\PhpSpreadsheet\RichText\RichText) {
+                            // Already a RichText object
+                            $richTextObj = $cellValue;
+                        } elseif (!empty($cellValue)) {
+                            // Check if the cell has any formatting by examining the cell style
+                            // If there's text but no RichText object, convert styled text to HTML
+                            $cellStyle = $cellD->getStyle();
+                            $font = $cellStyle->getFont();
+
+                            // Check if there's any formatting applied
+                            $hasFormatting = $font->getBold() ||
+                                           $font->getItalic() ||
+                                           $font->getUnderline() ||
+                                           $font->getStrikethrough() ||
+                                           ($font->getColor() && $font->getColor()->getRGB());
+
+                            if ($hasFormatting) {
+                                // Create a synthetic RichText-like HTML
+                                $text = htmlspecialchars($cellValue);
+
+                                // Apply formatting
+                                if ($font->getBold()) {
+                                    $text = '<strong>' . $text . '</strong>';
+                                }
+                                if ($font->getItalic()) {
+                                    $text = '<em>' . $text . '</em>';
+                                }
+                                if ($font->getUnderline() && $font->getUnderline() !== \PhpOffice\PhpSpreadsheet\Style\Font::UNDERLINE_NONE) {
+                                    $text = '<u>' . $text . '</u>';
+                                }
+                                if ($font->getStrikethrough()) {
+                                    $text = '<s>' . $text . '</s>';
+                                }
+
+                                // Apply color
+                                if ($font->getColor() && $font->getColor()->getRGB()) {
+                                    $rgb = $font->getColor()->getRGB();
+                                    if ($rgb && strtoupper($rgb) !== '000000' && strtoupper($rgb) !== 'FF000000') {
+                                        $color = '#' . $rgb;
+                                        $text = '<span style="color: ' . $color . '">' . $text . '</span>';
+                                    }
+                                }
+
+                                $factorDescriptionHtml = '<p>' . $text . '</p>';
+                            } else {
+                                // Plain text - wrap in paragraph
+                                $factorDescriptionHtml = '<p>' . htmlspecialchars($cellValue) . '</p>';
+                            }
+                        }
+
+                        // If we have a RichText object, convert it
+                        if ($richTextObj) {
+                            $factorDescriptionHtml = $richTextToHtml->convert($richTextObj);
+                        }
+                    } catch (\Exception $e) {
+                        // Fallback to plain text if anything goes wrong
+                        log_message('warning', 'RichText conversion error for factor description: ' . $e->getMessage());
+                        $cellValue = $cellD->getValue();
+                        if (!empty($cellValue)) {
+                            $factorDescriptionHtml = '<p>' . htmlspecialchars($cellValue) . '</p>';
+                        }
+                    }
+
+                    // Update factor description if provided
+                    if (!empty($factorDescriptionHtml)) {
+                        $factorModel->update($factorId, [
+                            'description' => $factorDescriptionHtml
+                        ]);
+                    }
+
+                    // Convert RichText to HTML for B column (b_content at position 4)
+                    $bContentHtml = '';
+                    $cellE = $sheet->getCell('E' . $rowNumber);
+
+                    // Try to get RichText object first
+                    $richTextObj = null;
+                    try {
+                        // Check if cell has rich text formatting
+                        $cellValue = $cellE->getValue();
+
+                        if ($cellValue instanceof \PhpOffice\PhpSpreadsheet\RichText\RichText) {
+                            // Already a RichText object
+                            $richTextObj = $cellValue;
+                        } elseif (!empty($cellValue)) {
+                            // Check if the cell has any formatting by examining the cell style
+                            // If there's text but no RichText object, convert styled text to HTML
+                            $cellStyle = $cellE->getStyle();
+                            $font = $cellStyle->getFont();
+
+                            // Check if there's any formatting applied
+                            $hasFormatting = $font->getBold() ||
+                                           $font->getItalic() ||
+                                           $font->getUnderline() ||
+                                           $font->getStrikethrough() ||
+                                           ($font->getColor() && $font->getColor()->getRGB());
+
+                            if ($hasFormatting) {
+                                // Create a synthetic RichText-like HTML
+                                $text = htmlspecialchars($cellValue);
+
+                                // Apply formatting
+                                if ($font->getBold()) {
+                                    $text = '<strong>' . $text . '</strong>';
+                                }
+                                if ($font->getItalic()) {
+                                    $text = '<em>' . $text . '</em>';
+                                }
+                                if ($font->getUnderline() && $font->getUnderline() !== \PhpOffice\PhpSpreadsheet\Style\Font::UNDERLINE_NONE) {
+                                    $text = '<u>' . $text . '</u>';
+                                }
+                                if ($font->getStrikethrough()) {
+                                    $text = '<s>' . $text . '</s>';
+                                }
+
+                                // Apply color
+                                if ($font->getColor() && $font->getColor()->getRGB()) {
+                                    $rgb = $font->getColor()->getRGB();
+                                    if ($rgb && strtoupper($rgb) !== '000000' && strtoupper($rgb) !== 'FF000000') {
+                                        $color = '#' . $rgb;
+                                        $text = '<span style="color: ' . $color . '">' . $text . '</span>';
+                                    }
+                                }
+
+                                $bContentHtml = '<p>' . $text . '</p>';
+                            } else {
+                                // Plain text - wrap in paragraph
+                                $bContentHtml = '<p>' . htmlspecialchars($cellValue) . '</p>';
+                            }
+                        }
+
+                        // If we have a RichText object, convert it
+                        if ($richTextObj) {
+                            $bContentHtml = $richTextToHtml->convert($richTextObj);
+                        }
+                    } catch (\Exception $e) {
+                        // Fallback to plain text if anything goes wrong
+                        log_message('warning', 'RichText conversion error for b_content: ' . $e->getMessage());
+                        $cellValue = $cellE->getValue();
+                        if (!empty($cellValue)) {
+                            $bContentHtml = '<p>' . htmlspecialchars($cellValue) . '</p>';
+                        }
+                    }
+
+                    // Auto-generate next sort order
+                    $maxSort = $this->contentModel->where('template_id', $templateId)
+                        ->selectMax('sort_order')
+                        ->first();
+                    $sortOrder = ($maxSort['sort_order'] ?? 0) + 1;
+
+                    // Insert content (updated field mapping to match new Excel structure with A column)
+                    // New Excel columns: 風險類別(0), 風險主題(1), 風險因子(2), A風險因子描述(3), B參考文字(4),
+                    // C是否有風險事件(5), C風險事件描述(6), D是否有對應作為(7), D對應作為描述(8), D對應作為費用(9),
+                    // E風險描述(10), E風險可能性(11), E風險衝擊程度(12), E風險計算說明(13),
+                    // F機會描述(14), F機會可能性(15), F機會衝擊程度(16), F機會計算說明(17),
+                    // G對外負面衝擊程度(18), G對外負面衝擊描述(19), H對外正面影響程度(20), H對外正面影響描述(21),
+                    // E1資訊提示(22), F1資訊提示(23), G1資訊提示(24), H1資訊提示(25)
+                    $contentData = [
+                        'template_id' => $templateId,
+                        'category_id' => $categoryId,
+                        'topic_id' => $topicId,
+                        'risk_factor_id' => $factorId,
+                        'sort_order' => $sortOrder,
+                        'is_required' => 1, // Default to required
+                        // Note: A column (factor_description) is handled separately above
+                        'b_content' => $bContentHtml, // Position 4
+                        'c_has_risk_event' => ($row[5] ?? '') === '是' ? 'yes' : 'no',
+                        'c_placeholder' => $row[6] ?? null,
+                        'd_has_counter_action' => ($row[7] ?? '') === '是' ? 'yes' : 'no',
+                        'd_placeholder_1' => $row[8] ?? null,
+                        'd_placeholder_2' => $row[9] ?? null,
+                        'e1_placeholder_1' => $row[10] ?? null,
+                        'e2_select_1' => $row[11] ?? null,
+                        'e2_select_2' => $row[12] ?? null,
+                        'e2_placeholder' => $row[13] ?? null,
+                        'f1_placeholder_1' => $row[14] ?? null,
+                        'f2_select_1' => $row[15] ?? null,
+                        'f2_select_2' => $row[16] ?? null,
+                        'f2_placeholder' => $row[17] ?? null,
+                        'g1_select' => $row[18] ?? null,
+                        'g1_placeholder_1' => $row[19] ?? null,
+                        'h1_select' => $row[20] ?? null,
+                        'h1_placeholder_1' => $row[21] ?? null,
+                        'e1_info' => $row[22] ?? null,
+                        'f1_info' => $row[23] ?? null,
+                        'g1_info' => $row[24] ?? null,
+                        'h1_info' => $row[25] ?? null
+                    ];
+
+                    $this->contentModel->insert($contentData);
+                    $imported++;
+
+                } catch (\Exception $e) {
+                    $errors[] = "第 {$rowNumber} 行：" . $e->getMessage();
+                }
+            }
+
+            return $this->response->setStatusCode(200)->setJSON([
+                'success' => true,
+                'message' => "成功匯入 {$imported} 筆資料",
+                'imported' => $imported,
+                'errors' => $errors
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Template content import Excel error: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '匯入失敗：' . $e->getMessage()
             ]);
         }
     }

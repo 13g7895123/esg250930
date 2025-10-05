@@ -33,11 +33,13 @@ export const useLocalCompanies = () => {
       console.log('===================')
 
       const result = await api.companies.getAll({ search, page, limit, sort, order })
-      const response = result.data
 
-      if (response.success && response.data) {
+      // result.data is the API response: { success: true, data: { companies: [...], pagination: {...} } }
+      if (result.success && result.data?.success && result.data.data) {
+        const apiData = result.data.data // This contains { companies: [...], pagination: {...} }
+
         // Transform API response to match frontend format
-        const transformedCompanies = (response.data.companies || []).map(company => ({
+        const transformedCompanies = (apiData.companies || []).map(company => ({
           id: company.id,
           companyName: company.company_name,
           externalId: company.external_id,
@@ -47,7 +49,7 @@ export const useLocalCompanies = () => {
         localCompanies.value = transformedCompanies
         return {
           companies: transformedCompanies,
-          pagination: response.data.pagination || {}
+          pagination: apiData.pagination || {}
         }
       }
 
@@ -74,15 +76,16 @@ export const useLocalCompanies = () => {
         external_id: companyData.external_id || companyData.externalId,
         abbreviation: companyData.abbreviation || ''
       })
-      const response = result.data
 
-      if (response.success && response.data) {
+      if (result.success && result.data?.success && result.data.data) {
+        const apiData = result.data.data
+
         // Transform API response to match frontend format
         const newCompany = {
-          id: response.data.id,
-          companyName: response.data.company_name,
-          externalId: response.data.external_id,
-          abbreviation: response.data.abbreviation || ''
+          id: apiData.id,
+          companyName: apiData.company_name,
+          externalId: apiData.external_id,
+          abbreviation: apiData.abbreviation || ''
         }
 
         // Add to local state
@@ -113,15 +116,16 @@ export const useLocalCompanies = () => {
         company_name: companyData.company_name || companyData.companyName,
         abbreviation: companyData.abbreviation || ''
       })
-      const response = result.data
 
-      if (response.success && response.data) {
+      if (result.success && result.data?.success && result.data.data) {
+        const apiData = result.data.data
+
         // Transform API response to match frontend format
         const updatedCompany = {
-          id: response.data.id,
-          companyName: response.data.company_name,
-          externalId: response.data.external_id,
-          abbreviation: response.data.abbreviation || ''
+          id: apiData.id,
+          companyName: apiData.company_name,
+          externalId: apiData.external_id,
+          abbreviation: apiData.abbreviation || ''
         }
 
         // Update local state
@@ -152,9 +156,8 @@ export const useLocalCompanies = () => {
 
     try {
       const result = await api.companies.delete(id)
-      const response = result.data
 
-      if (response.success) {
+      if (result.success && result.data?.success) {
         // Remove from local state
         localCompanies.value = localCompanies.value.filter(company => company.id != id)
         return true
@@ -176,14 +179,15 @@ export const useLocalCompanies = () => {
 
     try {
       const result = await api.companies.getByExternalId(externalId)
-      const response = result.data
 
-      if (response.success && response.data) {
+      if (result.success && result.data?.success && result.data.data) {
+        const apiData = result.data.data
+
         return {
-          id: response.data.id,
-          companyName: response.data.company_name,
-          externalId: response.data.external_id,
-          abbreviation: response.data.abbreviation || ''
+          id: apiData.id,
+          companyName: apiData.company_name,
+          externalId: apiData.external_id,
+          abbreviation: apiData.abbreviation || ''
         }
       }
 
@@ -204,10 +208,9 @@ export const useLocalCompanies = () => {
 
     try {
       const result = await api.companies.getStats()
-      const response = result.data
 
-      if (response.success && response.data) {
-        return response.data
+      if (result.success && result.data?.success && result.data.data) {
+        return result.data.data
       }
 
       return null
@@ -235,14 +238,15 @@ export const useLocalCompanies = () => {
     // If not found in cache, load from API
     try {
       const result = await api.companies.getById(id)
-      const response = result.data
 
-      if (response.success && response.data) {
+      if (result.success && result.data?.success && result.data.data) {
+        const apiData = result.data.data
+
         return {
-          id: response.data.id,
-          companyName: response.data.company_name,
-          externalId: response.data.external_id,
-          abbreviation: response.data.abbreviation || ''
+          id: apiData.id,
+          companyName: apiData.company_name,
+          externalId: apiData.external_id,
+          abbreviation: apiData.abbreviation || ''
         }
       }
 
@@ -279,15 +283,16 @@ export const useLocalCompanies = () => {
       const result = await api.companies.resolve({
         company_id: companyId
       })
-      const response = result.data
 
-      if (response.success && response.data) {
+      if (result.success && result.data?.success && result.data.data) {
+        const apiData = result.data.data
+
         const company = {
-          id: response.data.id,
-          companyName: response.data.company_name,
-          externalId: response.data.external_id,
-          abbreviation: response.data.abbreviation || '',
-          source: response.data.source // 'existing' or 'created'
+          id: apiData.id,
+          companyName: apiData.company_name,
+          externalId: apiData.external_id,
+          abbreviation: apiData.abbreviation || '',
+          source: apiData.source // 'existing' or 'created'
         }
 
         // Add to local state if not already there

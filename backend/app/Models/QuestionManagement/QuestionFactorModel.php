@@ -56,7 +56,6 @@ class QuestionFactorModel extends Model
         'topic_id',
         'category_id',
         'factor_name',
-        'factor_code',
         'description',
         'sort_order',
         'copied_from_template_factor'
@@ -85,7 +84,6 @@ class QuestionFactorModel extends Model
         'topic_id' => 'permit_empty|integer|is_not_unique[question_topics.id]',
         'category_id' => 'permit_empty|integer|is_not_unique[question_categories.id]',
         'factor_name' => 'required|max_length[255]',
-        'factor_code' => 'permit_empty|max_length[50]',
         'description' => 'permit_empty',
         'sort_order' => 'permit_empty|integer',
         'copied_from_template_factor' => 'permit_empty|integer'
@@ -111,9 +109,6 @@ class QuestionFactorModel extends Model
         'factor_name' => [
             'required' => '風險因子名稱為必填項目',
             'max_length' => '風險因子名稱不能超過255個字符'
-        ],
-        'factor_code' => [
-            'max_length' => '風險因子代碼不能超過50個字符'
         ],
         'sort_order' => [
             'integer' => '排序必須為整數'
@@ -152,9 +147,7 @@ class QuestionFactorModel extends Model
         $builder = $this->select('
                 question_factors.*,
                 question_topics.topic_name,
-                question_topics.topic_code,
                 COALESCE(question_categories.category_name, topic_categories.category_name) as category_name,
-                COALESCE(question_categories.category_code, topic_categories.category_code) as category_code,
                 (SELECT COUNT(*) FROM question_contents WHERE factor_id = question_factors.id) as content_count
             ')
             ->join('question_topics', 'question_topics.id = question_factors.topic_id', 'left')
@@ -207,9 +200,7 @@ class QuestionFactorModel extends Model
         $result = $this->select('
                 question_factors.*,
                 question_topics.topic_name,
-                question_topics.topic_code,
                 question_categories.category_name,
-                question_categories.category_code,
                 (SELECT COUNT(*) FROM question_contents WHERE factor_id = question_factors.id) as content_count
             ')
             ->join('question_topics', 'question_topics.id = question_factors.topic_id', 'left')
@@ -303,25 +294,6 @@ class QuestionFactorModel extends Model
         return $results;
     }
 
-    /**
-     * 檢查因子代碼在指定評估記錄中是否唯一
-     *
-     * @param int $assessmentId 評估記錄ID
-     * @param string $factorCode 因子代碼
-     * @param int|null $excludeId 排除的因子ID（編輯時使用）
-     * @return bool 是否唯一
-     */
-    public function isFactorCodeUniqueInAssessment(int $assessmentId, string $factorCode, ?int $excludeId = null): bool
-    {
-        $builder = $this->where('assessment_id', $assessmentId)
-            ->where('factor_code', $factorCode);
-
-        if ($excludeId) {
-            $builder->where('id !=', $excludeId);
-        }
-
-        return $builder->first() === null;
-    }
 
     /**
      * 取得指定評估記錄、主題或分類的下一個排序號
@@ -392,7 +364,6 @@ class QuestionFactorModel extends Model
                 'topic_id' => $newTopicId,
                 'category_id' => $newCategoryId,
                 'factor_name' => $templateFactor['factor_name'],
-                'factor_code' => $templateFactor['factor_code'] ?? null,
                 'description' => $templateFactor['description'] ?? null,
                 'sort_order' => $templateFactor['sort_order'] ?? 1,
                 'copied_from_template_factor' => $templateFactor['id']

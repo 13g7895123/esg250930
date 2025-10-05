@@ -356,13 +356,77 @@ const formatFontSize = (size) => {
   editorRef.value.focus()
 }
 
-// Color formatting functions
+// Color formatting functions - 使用 style 屬性而非 HTML 屬性
 const formatTextColor = (color) => {
-  formatText('foreColor', color)
+  if (!editorRef.value) return
+
+  editorRef.value.focus()
+
+  const selection = window.getSelection()
+  const selectedText = selection.toString()
+
+  if (!selectedText || selectedText.length === 0) {
+    const toast = useToast()
+    toast.add({
+      title: '請先選取文字',
+      description: '請選取要變更顏色的文字內容',
+      color: 'blue'
+    })
+    return
+  }
+
+  if (selection.rangeCount === 0) return
+
+  const range = selection.getRangeAt(0)
+  const selectedContent = range.extractContents()
+
+  // 使用 span 標籤和 style 屬性
+  const span = document.createElement('span')
+  span.style.color = color
+  span.appendChild(selectedContent)
+  range.insertNode(span)
+
+  // 更新內容
+  updateContent()
+  console.log('文字顏色設定成功 (style):', color)
+
+  editorRef.value.focus()
 }
 
 const formatBackgroundColor = (color) => {
-  formatText('hiliteColor', color)
+  if (!editorRef.value) return
+
+  editorRef.value.focus()
+
+  const selection = window.getSelection()
+  const selectedText = selection.toString()
+
+  if (!selectedText || selectedText.length === 0) {
+    const toast = useToast()
+    toast.add({
+      title: '請先選取文字',
+      description: '請選取要變更背景顏色的文字內容',
+      color: 'blue'
+    })
+    return
+  }
+
+  if (selection.rangeCount === 0) return
+
+  const range = selection.getRangeAt(0)
+  const selectedContent = range.extractContents()
+
+  // 使用 span 標籤和 style 屬性
+  const span = document.createElement('span')
+  span.style.backgroundColor = color
+  span.appendChild(selectedContent)
+  range.insertNode(span)
+
+  // 更新內容
+  updateContent()
+  console.log('背景顏色設定成功 (style):', color)
+
+  editorRef.value.focus()
 }
 
 // Update content and emit

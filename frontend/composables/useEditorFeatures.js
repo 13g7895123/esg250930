@@ -82,9 +82,7 @@ export const useEditorFeatures = (mode) => {
       /**
        * 量表按鈕文字
        */
-      scaleButtonText: currentMode === 'preview'
-        ? '可能性量表'
-        : '可能性量表',
+      scaleButtonText: '量表檢視',
 
       // ========== 表單欄位狀態 ==========
 
