@@ -741,34 +741,26 @@ class TemplateContentController extends BaseController
             // Initialize converters
             $htmlToRichText = new \App\Libraries\HtmlToRichTextConverter();
 
-            // Set headers (updated to include A column for risk factor description)
+            // Set headers (removed F, H, L, M, P, Q, S, U - checkbox and select fields)
             $headers = [
                 'A' => '風險類別',
                 'B' => '風險主題',
                 'C' => '風險因子',
                 'D' => 'A風險因子描述',
                 'E' => 'B參考文字',
-                'F' => 'C是否有風險事件',
-                'G' => 'C風險事件描述',
-                'H' => 'D是否有對應作為',
-                'I' => 'D對應作為描述',
-                'J' => 'D對應作為費用',
-                'K' => 'E風險描述',
-                'L' => 'E風險可能性',
-                'M' => 'E風險衝擊程度',
-                'N' => 'E風險計算說明',
-                'O' => 'F機會描述',
-                'P' => 'F機會可能性',
-                'Q' => 'F機會衝擊程度',
-                'R' => 'F機會計算說明',
-                'S' => 'G對外負面衝擊程度',
-                'T' => 'G對外負面衝擊描述',
-                'U' => 'H對外正面影響程度',
-                'V' => 'H對外正面影響描述',
-                'W' => 'E1資訊提示',
-                'X' => 'F1資訊提示',
-                'Y' => 'G1資訊提示',
-                'Z' => 'H1資訊提示'
+                'F' => 'C風險事件描述',
+                'G' => 'D對應作為描述',
+                'H' => 'D對應作為費用',
+                'I' => 'E風險描述',
+                'J' => 'E風險計算說明',
+                'K' => 'F機會描述',
+                'L' => 'F機會計算說明',
+                'M' => 'G對外負面衝擊描述',
+                'N' => 'H對外正面影響描述',
+                'O' => 'E1資訊提示',
+                'P' => 'F1資訊提示',
+                'Q' => 'G1資訊提示',
+                'R' => 'H1資訊提示'
             ];
 
             // Apply header styling
@@ -794,35 +786,27 @@ class TemplateContentController extends BaseController
                 ]);
             }
 
-            // Set column widths (updated to include A column)
+            // Set column widths (removed checkbox and select fields)
             $sheet->getColumnDimension('A')->setWidth(15); // 風險類別
             $sheet->getColumnDimension('B')->setWidth(15); // 風險主題
             $sheet->getColumnDimension('C')->setWidth(15); // 風險因子
             $sheet->getColumnDimension('D')->setWidth(50); // A風險因子描述
             $sheet->getColumnDimension('E')->setWidth(50); // B參考文字
-            $sheet->getColumnDimension('F')->setWidth(12); // C是否有風險事件
-            $sheet->getColumnDimension('G')->setWidth(40); // C風險事件描述
-            $sheet->getColumnDimension('H')->setWidth(12); // D是否有對應作為
-            $sheet->getColumnDimension('I')->setWidth(40); // D對應作為描述
-            $sheet->getColumnDimension('J')->setWidth(20); // D對應作為費用
-            $sheet->getColumnDimension('K')->setWidth(40); // E風險描述
-            $sheet->getColumnDimension('L')->setWidth(12); // E風險可能性
-            $sheet->getColumnDimension('M')->setWidth(12); // E風險衝擊程度
-            $sheet->getColumnDimension('N')->setWidth(30); // E風險計算說明
-            $sheet->getColumnDimension('O')->setWidth(40); // F機會描述
-            $sheet->getColumnDimension('P')->setWidth(12); // F機會可能性
-            $sheet->getColumnDimension('Q')->setWidth(12); // F機會衝擊程度
-            $sheet->getColumnDimension('R')->setWidth(30); // F機會計算說明
-            $sheet->getColumnDimension('S')->setWidth(15); // G對外負面衝擊程度
-            $sheet->getColumnDimension('T')->setWidth(40); // G對外負面衝擊描述
-            $sheet->getColumnDimension('U')->setWidth(15); // H對外正面影響程度
-            $sheet->getColumnDimension('V')->setWidth(40); // H對外正面影響描述
-            $sheet->getColumnDimension('W')->setWidth(30); // E1資訊提示
-            $sheet->getColumnDimension('X')->setWidth(30); // F1資訊提示
-            $sheet->getColumnDimension('Y')->setWidth(30); // G1資訊提示
-            $sheet->getColumnDimension('Z')->setWidth(30); // H1資訊提示
+            $sheet->getColumnDimension('F')->setWidth(40); // C風險事件描述
+            $sheet->getColumnDimension('G')->setWidth(40); // D對應作為描述
+            $sheet->getColumnDimension('H')->setWidth(20); // D對應作為費用
+            $sheet->getColumnDimension('I')->setWidth(40); // E風險描述
+            $sheet->getColumnDimension('J')->setWidth(30); // E風險計算說明
+            $sheet->getColumnDimension('K')->setWidth(40); // F機會描述
+            $sheet->getColumnDimension('L')->setWidth(30); // F機會計算說明
+            $sheet->getColumnDimension('M')->setWidth(40); // G對外負面衝擊描述
+            $sheet->getColumnDimension('N')->setWidth(40); // H對外正面影響描述
+            $sheet->getColumnDimension('O')->setWidth(30); // E1資訊提示
+            $sheet->getColumnDimension('P')->setWidth(30); // F1資訊提示
+            $sheet->getColumnDimension('Q')->setWidth(30); // G1資訊提示
+            $sheet->getColumnDimension('R')->setWidth(30); // H1資訊提示
 
-            // Fill data rows (updated to include A column for factor description)
+            // Fill data rows (removed checkbox and select fields: F, H, L, M, P, Q, S, U from original)
             $row = 2;
             foreach ($contents as $content) {
                 $sheet->setCellValue('A' . $row, $content['category_name'] ?? '');
@@ -845,42 +829,34 @@ class TemplateContentController extends BaseController
                     $sheet->setCellValue('E' . $row, '');
                 }
 
-                // C section
-                $sheet->setCellValue('F' . $row, ($content['c_has_risk_event'] ?? 'no') === 'yes' ? '是' : '否');
-                $sheet->setCellValue('G' . $row, $content['c_placeholder'] ?? '');
+                // C section - only description (removed checkbox)
+                $sheet->setCellValue('F' . $row, $content['c_placeholder'] ?? '');
 
-                // D section
-                $sheet->setCellValue('H' . $row, ($content['d_has_counter_action'] ?? 'no') === 'yes' ? '是' : '否');
-                $sheet->setCellValue('I' . $row, $content['d_placeholder_1'] ?? '');
-                $sheet->setCellValue('J' . $row, $content['d_placeholder_2'] ?? '');
+                // D section - only descriptions (removed checkbox)
+                $sheet->setCellValue('G' . $row, $content['d_placeholder_1'] ?? '');
+                $sheet->setCellValue('H' . $row, $content['d_placeholder_2'] ?? '');
 
-                // E section
-                $sheet->setCellValue('K' . $row, $content['e1_placeholder_1'] ?? '');
-                $sheet->setCellValue('L' . $row, $content['e2_select_1'] ?? '');
-                $sheet->setCellValue('M' . $row, $content['e2_select_2'] ?? '');
-                $sheet->setCellValue('N' . $row, $content['e2_placeholder'] ?? '');
+                // E section - only description and calculation (removed selects)
+                $sheet->setCellValue('I' . $row, $content['e1_placeholder_1'] ?? '');
+                $sheet->setCellValue('J' . $row, $content['e2_placeholder'] ?? '');
 
-                // F section
-                $sheet->setCellValue('O' . $row, $content['f1_placeholder_1'] ?? '');
-                $sheet->setCellValue('P' . $row, $content['f2_select_1'] ?? '');
-                $sheet->setCellValue('Q' . $row, $content['f2_select_2'] ?? '');
-                $sheet->setCellValue('R' . $row, $content['f2_placeholder'] ?? '');
+                // F section - only description and calculation (removed selects)
+                $sheet->setCellValue('K' . $row, $content['f1_placeholder_1'] ?? '');
+                $sheet->setCellValue('L' . $row, $content['f2_placeholder'] ?? '');
 
-                // G section
-                $sheet->setCellValue('S' . $row, $content['g1_select'] ?? '');
-                $sheet->setCellValue('T' . $row, $content['g1_placeholder_1'] ?? '');
+                // G section - only description (removed select)
+                $sheet->setCellValue('M' . $row, $content['g1_placeholder_1'] ?? '');
 
-                // H section
-                $sheet->setCellValue('U' . $row, $content['h1_select'] ?? '');
-                $sheet->setCellValue('V' . $row, $content['h1_placeholder_1'] ?? '');
+                // H section - only description (removed select)
+                $sheet->setCellValue('N' . $row, $content['h1_placeholder_1'] ?? '');
 
                 // Info hover texts
-                $sheet->setCellValue('W' . $row, $content['e1_info'] ?? '');
-                $sheet->setCellValue('X' . $row, $content['f1_info'] ?? '');
-                $sheet->setCellValue('Y' . $row, $content['g1_info'] ?? '');
-                $sheet->setCellValue('Z' . $row, $content['h1_info'] ?? '');
+                $sheet->setCellValue('O' . $row, $content['e1_info'] ?? '');
+                $sheet->setCellValue('P' . $row, $content['f1_info'] ?? '');
+                $sheet->setCellValue('Q' . $row, $content['g1_info'] ?? '');
+                $sheet->setCellValue('R' . $row, $content['h1_info'] ?? '');
 
-                // Apply row styling (updated to cover all columns A-Z)
+                // Apply row styling (A-R columns)
                 $rowStyle = [
                     'fill' => [
                         'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -898,7 +874,7 @@ class TemplateContentController extends BaseController
                     ]
                 ];
 
-                $sheet->getStyle('A' . $row . ':Z' . $row)->applyFromArray($rowStyle);
+                $sheet->getStyle('A' . $row . ':R' . $row)->applyFromArray($rowStyle);
 
                 $row++;
             }
@@ -1276,13 +1252,11 @@ class TemplateContentController extends BaseController
                         ->first();
                     $sortOrder = ($maxSort['sort_order'] ?? 0) + 1;
 
-                    // Insert content (updated field mapping to match new Excel structure with A column)
-                    // New Excel columns: 風險類別(0), 風險主題(1), 風險因子(2), A風險因子描述(3), B參考文字(4),
-                    // C是否有風險事件(5), C風險事件描述(6), D是否有對應作為(7), D對應作為描述(8), D對應作為費用(9),
-                    // E風險描述(10), E風險可能性(11), E風險衝擊程度(12), E風險計算說明(13),
-                    // F機會描述(14), F機會可能性(15), F機會衝擊程度(16), F機會計算說明(17),
-                    // G對外負面衝擊程度(18), G對外負面衝擊描述(19), H對外正面影響程度(20), H對外正面影響描述(21),
-                    // E1資訊提示(22), F1資訊提示(23), G1資訊提示(24), H1資訊提示(25)
+                    // Insert content (updated field mapping - removed checkbox and select fields)
+                    // New Excel columns (0-17): 風險類別, 風險主題, 風險因子, A風險因子描述, B參考文字,
+                    // C風險事件描述, D對應作為描述, D對應作為費用, E風險描述, E風險計算說明,
+                    // F機會描述, F機會計算說明, G對外負面衝擊描述, H對外正面影響描述,
+                    // E1資訊提示, F1資訊提示, G1資訊提示, H1資訊提示
                     $contentData = [
                         'template_id' => $templateId,
                         'category_id' => $categoryId,
@@ -1292,27 +1266,21 @@ class TemplateContentController extends BaseController
                         'is_required' => 1, // Default to required
                         // Note: A column (factor_description) is handled separately above
                         'b_content' => $bContentHtml, // Position 4
-                        'c_has_risk_event' => ($row[5] ?? '') === '是' ? 'yes' : 'no',
-                        'c_placeholder' => $row[6] ?? null,
-                        'd_has_counter_action' => ($row[7] ?? '') === '是' ? 'yes' : 'no',
-                        'd_placeholder_1' => $row[8] ?? null,
-                        'd_placeholder_2' => $row[9] ?? null,
-                        'e1_placeholder_1' => $row[10] ?? null,
-                        'e2_select_1' => $row[11] ?? null,
-                        'e2_select_2' => $row[12] ?? null,
-                        'e2_placeholder' => $row[13] ?? null,
-                        'f1_placeholder_1' => $row[14] ?? null,
-                        'f2_select_1' => $row[15] ?? null,
-                        'f2_select_2' => $row[16] ?? null,
-                        'f2_placeholder' => $row[17] ?? null,
-                        'g1_select' => $row[18] ?? null,
-                        'g1_placeholder_1' => $row[19] ?? null,
-                        'h1_select' => $row[20] ?? null,
-                        'h1_placeholder_1' => $row[21] ?? null,
-                        'e1_info' => $row[22] ?? null,
-                        'f1_info' => $row[23] ?? null,
-                        'g1_info' => $row[24] ?? null,
-                        'h1_info' => $row[25] ?? null
+                        // These fields are not imported (keep existing values):
+                        // c_has_risk_event, d_has_counter_action, e2_select_1, e2_select_2, f2_select_1, f2_select_2, g1_select, h1_select
+                        'c_placeholder' => $row[5] ?? null,
+                        'd_placeholder_1' => $row[6] ?? null,
+                        'd_placeholder_2' => $row[7] ?? null,
+                        'e1_placeholder_1' => $row[8] ?? null,
+                        'e2_placeholder' => $row[9] ?? null,
+                        'f1_placeholder_1' => $row[10] ?? null,
+                        'f2_placeholder' => $row[11] ?? null,
+                        'g1_placeholder_1' => $row[12] ?? null,
+                        'h1_placeholder_1' => $row[13] ?? null,
+                        'e1_info' => $row[14] ?? null,
+                        'f1_info' => $row[15] ?? null,
+                        'g1_info' => $row[16] ?? null,
+                        'h1_info' => $row[17] ?? null
                     ];
 
                     $this->contentModel->insert($contentData);

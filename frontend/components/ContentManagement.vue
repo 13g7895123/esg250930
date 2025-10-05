@@ -1490,10 +1490,9 @@ const handleClickOutside = (event) => {
 // Excel Import/Export Methods
 const exportToExcel = async () => {
   showExportImportDropdown.value = false
-  try {
-    // Import SweetAlert2
-    const Swal = (await import('sweetalert2')).default
+  const toast = useToast()
 
+  try {
     // Call backend API to export Excel with RichText support
     // Use native fetch for blob responses as $fetch has issues with blob type
     const response = await fetch(`/api/v1/risk-assessment/templates/${props.parentId}/export-excel`, {
@@ -1520,23 +1519,19 @@ const exportToExcel = async () => {
     document.body.removeChild(a)
     window.URL.revokeObjectURL(url)
 
-    // Show success message with SweetAlert2
-    await Swal.fire({
-      icon: 'success',
+    // Show success message with useToast
+    toast.add({
       title: '匯出成功',
-      text: 'Excel 檔案已成功下載',
-      confirmButtonText: '確定'
+      description: 'Excel 檔案已成功下載',
+      color: 'green'
     })
   } catch (error) {
     console.error('Export failed:', error)
 
-    // Import SweetAlert2 for error message
-    const Swal = (await import('sweetalert2')).default
-    await Swal.fire({
-      icon: 'error',
+    toast.add({
       title: '匯出失敗',
-      text: error.message,
-      confirmButtonText: '確定'
+      description: error.message,
+      color: 'red'
     })
   }
 }
@@ -1674,29 +1669,21 @@ const downloadTemplate = async () => {
   try {
     const XLSX = await import('xlsx')
 
-    // Template data with example row (updated based on editor page fields)
+    // Template data with example row (removed checkbox and select fields)
     const templateData = [{
       '風險類別': '財務風險',
       '風險主題': '市場風險',
       '風險因子': '匯率波動',
       'A風險因子描述': '企業營運高度依賴【自然資源】的_風險評估_...',
       'B參考文字': '請參考【最近一年】的_財報資料_...',
-      'C是否有風險事件': '否',
       'C風險事件描述': '請描述可能發生的風險事件',
-      'D是否有對應作為': '是',
       'D對應作為描述': '請說明對應的處理措施',
       'D對應作為費用': '預估所需費用',
       'E風險描述': '描述風險情境',
-      'E風險可能性': '',
-      'E風險衝擊程度': '',
       'E風險計算說明': '風險值 = 可能性 × 衝擊',
       'F機會描述': '描述機會情境',
-      'F機會可能性': '',
-      'F機會衝擊程度': '',
       'F機會計算說明': '機會值 = 可能性 × 效益',
-      'G對外負面衝擊程度': '',
       'G對外負面衝擊描述': '負面影響描述',
-      'H對外正面影響程度': '',
       'H對外正面影響描述': '正面影響描述',
       'E1資訊提示': '風險評估說明',
       'F1資訊提示': '機會評估說明',
@@ -1707,29 +1694,21 @@ const downloadTemplate = async () => {
     const wb = XLSX.utils.book_new()
     const ws = XLSX.utils.json_to_sheet(templateData)
 
-    // Set column widths (updated to match new field structure with A column)
+    // Set column widths (removed checkbox and select fields)
     ws['!cols'] = [
       { wch: 15 }, // 風險類別
       { wch: 15 }, // 風險主題
       { wch: 15 }, // 風險因子
       { wch: 50 }, // A風險因子描述
       { wch: 50 }, // B參考文字
-      { wch: 12 }, // C是否有風險事件
       { wch: 40 }, // C風險事件描述
-      { wch: 12 }, // D是否有對應作為
       { wch: 40 }, // D對應作為描述
       { wch: 20 }, // D對應作為費用
       { wch: 40 }, // E風險描述
-      { wch: 12 }, // E風險可能性
-      { wch: 12 }, // E風險衝擊程度
       { wch: 30 }, // E風險計算說明
       { wch: 40 }, // F機會描述
-      { wch: 12 }, // F機會可能性
-      { wch: 12 }, // F機會衝擊程度
       { wch: 30 }, // F機會計算說明
-      { wch: 15 }, // G對外負面衝擊程度
       { wch: 40 }, // G對外負面衝擊描述
-      { wch: 15 }, // H對外正面影響程度
       { wch: 40 }, // H對外正面影響描述
       { wch: 30 }, // E1資訊提示
       { wch: 30 }, // F1資訊提示
@@ -1739,7 +1718,7 @@ const downloadTemplate = async () => {
 
     XLSX.utils.book_append_sheet(wb, ws, '資料填寫區')
 
-    // Add help sheet (updated to match new field structure with A column)
+    // Add help sheet (removed checkbox and select fields)
     const helpSheet = XLSX.utils.aoa_to_sheet([
       ['欄位名稱', '說明', '範例'],
       ['風險類別', '必填。風險所屬的分類', '財務風險'],
@@ -1747,22 +1726,14 @@ const downloadTemplate = async () => {
       ['風險因子', '必填。具體的風險因子', '匯率波動'],
       ['A風險因子描述', '選填。風險因子議題描述（支援富文本格式）', '企業營運高度依賴【自然資源】的_風險評估_...'],
       ['B參考文字', '選填。參考資訊（支援富文本格式）', '請參考【最近一年】的_財報資料_...'],
-      ['C是否有風險事件', '選填。是否發生風險事件，填寫「是」或「否」', '否'],
       ['C風險事件描述', '選填。風險事件的詳細描述', '請描述可能發生的風險事件'],
-      ['D是否有對應作為', '選填。是否有對應措施，填寫「是」或「否」', '是'],
       ['D對應作為描述', '選填。對應措施的詳細說明', '請說明對應的處理措施'],
       ['D對應作為費用', '選填。對應措施所需費用', '預估所需費用'],
       ['E風險描述', '選填。風險情境描述', '描述風險情境'],
-      ['E風險可能性', '選填。風險發生可能性（填寫數字1-5）', ''],
-      ['E風險衝擊程度', '選填。風險衝擊程度（填寫數字1-5）', ''],
       ['E風險計算說明', '選填。風險計算方式說明', '風險值 = 可能性 × 衝擊'],
       ['F機會描述', '選填。機會情境描述', '描述機會情境'],
-      ['F機會可能性', '選填。機會發生可能性（填寫數字1-5）', ''],
-      ['F機會衝擊程度', '選填。機會效益程度（填寫數字1-5）', ''],
       ['F機會計算說明', '選填。機會計算方式說明', '機會值 = 可能性 × 效益'],
-      ['G對外負面衝擊程度', '選填。對外負面衝擊程度（填寫level-1至level-5）', ''],
       ['G對外負面衝擊描述', '選填。負面衝擊詳細描述', '負面影響描述'],
-      ['H對外正面影響程度', '選填。對外正面影響程度（填寫level-1至level-5）', ''],
       ['H對外正面影響描述', '選填。正面影響詳細描述', '正面影響描述'],
       ['E1資訊提示', '選填。E1區塊資訊提示文字', '風險評估說明'],
       ['F1資訊提示', '選填。F1區塊資訊提示文字', '機會評估說明'],
@@ -1775,31 +1746,27 @@ const downloadTemplate = async () => {
       ['3. A、B欄位支援富文本格式：【文字】=粗體、_文字_=斜體'],
       ['4. 如果類別、主題、因子不存在，系統會自動建立'],
       ['5. 匯出時HTML格式會轉換為Excel富文本格式，匯入時自動還原為HTML'],
-      ['6. 可能性與衝擊程度欄位請填寫數字1-5'],
-      ['7. 程度等級欄位請填寫level-1至level-5格式']
+      ['6. 是否選項、可能性、衝擊程度等欄位不開放匯入，請於系統中設定']
     ])
     XLSX.utils.book_append_sheet(wb, helpSheet, '填寫說明')
 
     XLSX.writeFile(wb, '範本內容匯入範本.xlsx')
 
-    // Import SweetAlert2 for success message
-    const Swal = (await import('sweetalert2')).default
-    await Swal.fire({
-      icon: 'success',
+    // Show success message with useToast
+    const toast = useToast()
+    toast.add({
       title: '範本下載成功',
-      text: '請使用下載的範本填寫資料後匯入',
-      confirmButtonText: '確定'
+      description: '請使用下載的範本填寫資料後匯入',
+      color: 'green'
     })
   } catch (error) {
     console.error('Download template failed:', error)
 
-    // Import SweetAlert2 for error message
-    const Swal = (await import('sweetalert2')).default
-    await Swal.fire({
-      icon: 'error',
+    const toast = useToast()
+    toast.add({
       title: '下載範本失敗',
-      text: error.message,
-      confirmButtonText: '確定'
+      description: error.message,
+      color: 'red'
     })
   }
 }
@@ -1812,10 +1779,9 @@ const handleFileImport = async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
-  try {
-    // Import SweetAlert2
-    const Swal = (await import('sweetalert2')).default
+  const toast = useToast()
 
+  try {
     // Call backend API to import Excel with RichText support
     const formData = new FormData()
     formData.append('file', file)
@@ -1837,19 +1803,17 @@ const handleFileImport = async (event) => {
         console.error('Import errors:', result.errors)
 
         // Show warning with errors
-        await Swal.fire({
-          icon: 'warning',
+        toast.add({
           title: '匯入完成但有部分錯誤',
-          html: messageLines.join('<br>') + '<br><br>請查看控制台了解詳細錯誤訊息',
-          confirmButtonText: '確定'
+          description: messageLines.join('、') + '。請查看控制台了解詳細錯誤訊息',
+          color: 'orange'
         })
       } else {
         // Show success message
-        await Swal.fire({
-          icon: 'success',
+        toast.add({
           title: '匯入成功',
-          html: messageLines.join('<br>'),
-          confirmButtonText: '確定'
+          description: messageLines.join('、'),
+          color: 'green'
         })
       }
 
@@ -1858,23 +1822,19 @@ const handleFileImport = async (event) => {
       showImportModal.value = false
       selectedFileName.value = ''
     } else {
-      await Swal.fire({
-        icon: 'error',
+      toast.add({
         title: '匯入失敗',
-        text: result.message,
-        confirmButtonText: '確定'
+        description: result.message,
+        color: 'red'
       })
     }
   } catch (error) {
     console.error('Import failed:', error)
 
-    // Import SweetAlert2 for error message
-    const Swal = (await import('sweetalert2')).default
-    await Swal.fire({
-      icon: 'error',
+    toast.add({
       title: '匯入失敗',
-      text: error.message,
-      confirmButtonText: '確定'
+      description: error.message,
+      color: 'red'
     })
   }
 
