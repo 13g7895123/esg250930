@@ -1077,6 +1077,18 @@ class TemplateContentController extends BaseController
                         $errorMsg = "第 {$rowNumber} 行：缺少必填欄位（" . implode('、', $missing) . "）";
                         $errors[] = $errorMsg;
                         log_message('warning', $errorMsg);
+                        // Add to debug log for error tracking
+                        $debugLog[] = [
+                            'row' => $rowNumber,
+                            'status' => 'error',
+                            'reason' => '缺少必填欄位',
+                            'error' => "缺少必填欄位：" . implode('、', $missing),
+                            'data' => [
+                                'category' => $categoryName ?: null,
+                                'topic' => $topicName ?: null,
+                                'factor' => $factorName ?: null
+                            ]
+                        ];
                         continue;
                     }
 
@@ -1405,7 +1417,8 @@ class TemplateContentController extends BaseController
                                 'data' => [
                                     'category' => $categoryName,
                                     'topic' => $topicName,
-                                    'factor' => $factorName
+                                    'factor' => $factorName,
+                                    'factor_description' => strip_tags($factorDescriptionHtml ?: '')
                                 ]
                             ];
                             break;
@@ -1462,7 +1475,8 @@ class TemplateContentController extends BaseController
                             'data' => [
                                 'category' => $categoryName,
                                 'topic' => $topicName,
-                                'factor' => $factorName
+                                'factor' => $factorName,
+                                'factor_description' => strip_tags($factorDescriptionHtml ?: '')
                             ]
                         ];
                     }
@@ -1473,8 +1487,14 @@ class TemplateContentController extends BaseController
                     log_message('error', $errorMsg);
                     $debugLog[] = [
                         'row' => $rowNumber,
-                        'status' => 'exception',
-                        'error' => $e->getMessage()
+                        'status' => 'error',
+                        'reason' => '系統錯誤',
+                        'error' => $e->getMessage(),
+                        'data' => [
+                            'category' => $categoryName ?? null,
+                            'topic' => $topicName ?? null,
+                            'factor' => $factorName ?? null
+                        ]
                     ];
                 }
             }
