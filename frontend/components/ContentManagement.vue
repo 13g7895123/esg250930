@@ -1490,7 +1490,7 @@ const handleClickOutside = (event) => {
 // Excel Import/Export Methods
 const exportToExcel = async () => {
   showExportImportDropdown.value = false
-  const toast = useToast()
+  const { $notify } = useNuxtApp()
 
   try {
     // Call backend API to export Excel with RichText support
@@ -1519,20 +1519,11 @@ const exportToExcel = async () => {
     document.body.removeChild(a)
     window.URL.revokeObjectURL(url)
 
-    // Show success message with useToast
-    toast.add({
-      title: '匯出成功',
-      description: 'Excel 檔案已成功下載',
-      color: 'green'
-    })
+    // Show success message with shared SweetAlert composable
+    $notify.success('Excel 檔案已成功下載')
   } catch (error) {
     console.error('Export failed:', error)
-
-    toast.add({
-      title: '匯出失敗',
-      description: error.message,
-      color: 'red'
-    })
+    $notify.error(`匯出失敗：${error.message}`)
   }
 }
 
@@ -1752,22 +1743,14 @@ const downloadTemplate = async () => {
 
     XLSX.writeFile(wb, '範本內容匯入範本.xlsx')
 
-    // Show success message with useToast
-    const toast = useToast()
-    toast.add({
-      title: '範本下載成功',
-      description: '請使用下載的範本填寫資料後匯入',
-      color: 'green'
-    })
+    // Show success message with shared SweetAlert composable
+    const { $notify } = useNuxtApp()
+    $notify.success('範本下載成功，請使用下載的範本填寫資料後匯入')
   } catch (error) {
     console.error('Download template failed:', error)
 
-    const toast = useToast()
-    toast.add({
-      title: '下載範本失敗',
-      description: error.message,
-      color: 'red'
-    })
+    const { $notify } = useNuxtApp()
+    $notify.error(`下載範本失敗：${error.message}`)
   }
 }
 
@@ -1779,7 +1762,7 @@ const handleFileImport = async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
-  const toast = useToast()
+  const { $notify } = useNuxtApp()
 
   try {
     // Call backend API to import Excel with RichText support
@@ -1794,27 +1777,18 @@ const handleFileImport = async (event) => {
     // Show result message
     if (result.success) {
       const messageLines = [
-        `成功匯入: ${result.imported}筆`,
-        result.skipped > 0 ? `跳過重複: ${result.skipped}筆` : null,
-        result.errors.length > 0 ? `錯誤: ${result.errors.length}筆` : null
-      ].filter(Boolean)
+        `成功匯入 ${result.imported} 筆`,
+        result.skipped > 0 ? `跳過重複 ${result.skipped} 筆` : null,
+        result.errors.length > 0 ? `錯誤 ${result.errors.length} 筆` : null
+      ].filter(Boolean).join('、')
 
       if (result.errors.length > 0) {
         console.error('Import errors:', result.errors)
-
         // Show warning with errors
-        toast.add({
-          title: '匯入完成但有部分錯誤',
-          description: messageLines.join('、') + '。請查看控制台了解詳細錯誤訊息',
-          color: 'orange'
-        })
+        $notify.warning(`${messageLines}<br>請查看控制台了解詳細錯誤訊息`)
       } else {
         // Show success message
-        toast.add({
-          title: '匯入成功',
-          description: messageLines.join('、'),
-          color: 'green'
-        })
+        $notify.success(messageLines)
       }
 
       // Refresh data
@@ -1822,20 +1796,11 @@ const handleFileImport = async (event) => {
       showImportModal.value = false
       selectedFileName.value = ''
     } else {
-      toast.add({
-        title: '匯入失敗',
-        description: result.message,
-        color: 'red'
-      })
+      $notify.error(`匯入失敗：${result.message}`)
     }
   } catch (error) {
     console.error('Import failed:', error)
-
-    toast.add({
-      title: '匯入失敗',
-      description: error.message,
-      color: 'red'
-    })
+    $notify.error(`匯入失敗：${error.message}`)
   }
 
   // Reset file input
