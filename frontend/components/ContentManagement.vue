@@ -64,9 +64,9 @@
             </div>
           </div>
 
-          <!-- Debug Info Button (hidden per Point 42) -->
+          <!-- Debug Info Button (re-enabled per Point 44) -->
           <button
-            v-if="false && importDebugData"
+            v-if="importDebugData"
             @click="showDebugModal = true"
             class="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200"
             title="查看上次匯入的除錯資訊"
@@ -2053,10 +2053,10 @@ const handleFileImport = async (event) => {
         $notify.success(messageLines)
       }
 
-      // Debug modal disabled per Point 42
-      // if (result.debug) {
-      //   showDebugModal.value = true
-      // }
+      // Debug modal re-enabled per Point 44
+      if (result.debug) {
+        showDebugModal.value = true
+      }
 
       // Refresh data
       emit('refresh-content')

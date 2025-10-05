@@ -1032,9 +1032,20 @@ class TemplateContentController extends BaseController
                 $rowNumber = $index + 2; // +2 because: +1 for 0-index, +1 for header row
 
                 try {
+                    // Clean UTF-8 encoding for all row data to prevent JSON encoding errors
+                    $row = array_map(function($value) {
+                        if (is_string($value)) {
+                            // Remove invalid UTF-8 characters
+                            $value = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+                            // Additional cleanup: remove null bytes and other problematic characters
+                            $value = str_replace("\0", '', $value);
+                        }
+                        return $value;
+                    }, $row);
+
                     // Log raw row data
                     log_message('info', "--- 處理第 {$rowNumber} 行 ---");
-                    log_message('debug', "第 {$rowNumber} 行原始資料: " . json_encode($row, JSON_UNESCAPED_UNICODE));
+                    log_message('debug', "第 {$rowNumber} 行原始資料: " . json_encode($row, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE));
 
                     // Check remark column (column 18 / position 18) - skip if it contains "範例資料"
                     $remark = trim($row[18] ?? '');
@@ -1348,7 +1359,7 @@ class TemplateContentController extends BaseController
                         'has_f1_info' => !empty($row[15]),
                         'has_g1_info' => !empty($row[16]),
                         'has_h1_info' => !empty($row[17])
-                    ], JSON_UNESCAPED_UNICODE));
+                    ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE));
 
                     // Check for duplicate content - compare all important fields
                     $existingContent = $this->contentModel
@@ -1475,7 +1486,7 @@ class TemplateContentController extends BaseController
             log_message('info', "重複跳過: {$skipped} 行");
             log_message('info', "失敗筆數: " . count($errors) . " 行");
             if (!empty($errors)) {
-                log_message('warning', "錯誤列表: " . json_encode($errors, JSON_UNESCAPED_UNICODE));
+                log_message('warning', "錯誤列表: " . json_encode($errors, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE));
             }
 
             // Build response message
