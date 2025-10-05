@@ -62,8 +62,8 @@
                 <span>匯入 Excel</span>
               </button>
               <button
-                v-if="importDebugData"
-                @click="showDebugModal = true"
+                v-if="latestBatchSummary || importDebugData"
+                @click="openImportHistoryModal"
                 class="w-full flex items-center px-4 py-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 rounded-b-lg border-t border-gray-200 dark:border-gray-600"
               >
                 <InformationCircleIcon class="w-5 h-5 mr-3 text-purple-600 dark:text-purple-400" />
@@ -1047,6 +1047,19 @@ const showDebugModal = ref(false)
 const importDebugData = ref(null)
 const expandedRows = ref(new Set())
 const showErrorRecords = ref(false)
+
+// Import history state (Point 46)
+const importHistoryBatches = ref([])
+const importHistoryPagination = ref({
+  page: 1,
+  limit: 20,
+  total: 0,
+  total_pages: 0
+})
+const latestBatchSummary = ref(null)
+const selectedBatchDetails = ref(null)
+const isLoadingHistory = ref(false)
+const showBatchDetails = ref(false)
 
 // Drag and drop state
 const draggedItem = ref(null)
@@ -2221,6 +2234,83 @@ const refreshImportHistory = () => {
   })
 }
 
+// Fetch import history from API (Point 46)
+const fetchImportHistory = async (page = 1) => {
+  if (!props.parentId) return
+
+  isLoadingHistory.value = true
+  try {
+    const response = await $api(`/api/v1/risk-assessment/templates/${props.parentId}/import-history`, {
+      params: {
+        page,
+        limit: importHistoryPagination.value.limit
+      }
+    })
+
+    if (response.success) {
+      importHistoryBatches.value = response.data
+      importHistoryPagination.value = response.pagination
+    }
+  } catch (error) {
+    console.error('Failed to fetch import history:', error)
+  } finally {
+    isLoadingHistory.value = false
+  }
+}
+
+// Fetch latest batch summary (Point 46)
+const fetchLatestBatchSummary = async () => {
+  if (!props.parentId) return
+
+  try {
+    const response = await $api(`/api/v1/risk-assessment/templates/${props.parentId}/import-history/latest`)
+
+    if (response.success && response.has_data) {
+      latestBatchSummary.value = response.summary
+    } else {
+      latestBatchSummary.value = null
+    }
+  } catch (error) {
+    console.error('Failed to fetch latest batch summary:', error)
+    latestBatchSummary.value = null
+  }
+}
+
+// Fetch batch details (Point 46)
+const fetchBatchDetails = async (batchId) => {
+  isLoadingHistory.value = true
+  try {
+    const response = await $api(`/api/v1/risk-assessment/import-history/batch/${batchId}`)
+
+    if (response.success) {
+      selectedBatchDetails.value = response
+      showBatchDetails.value = true
+    }
+  } catch (error) {
+    console.error('Failed to fetch batch details:', error)
+  } finally {
+    isLoadingHistory.value = false
+  }
+}
+
+// Handle page change in DataTable (Point 46)
+const handleHistoryPageChange = (page) => {
+  fetchImportHistory(page)
+}
+
+// Open import history modal and fetch data (Point 46)
+const openImportHistoryModal = async () => {
+  showDebugModal.value = true
+  await fetchLatestBatchSummary()
+  await fetchImportHistory(1)
+}
+
+// Close batch details view
+const closeBatchDetails = () => {
+  showBatchDetails.value = false
+  selectedBatchDetails.value = null
+}
+
 // Legacy frontend import method (kept for reference, can be removed later)
 const handleFileImportLegacy = async (event) => {
   const file = event.target.files[0]
@@ -2317,6 +2407,8 @@ const handleFileImportLegacy = async (event) => {
 // Setup click outside listener for dropdown
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  // Fetch latest batch summary on mount (Point 46)
+  fetchLatestBatchSummary()
 })
 
 // Debug: Watch contentData prop changes
