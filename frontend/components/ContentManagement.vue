@@ -479,12 +479,36 @@
             <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
               匯入紀錄
             </h3>
-            <button
-              @click="showDebugModal = false"
-              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            >
-              <XMarkIcon class="w-6 h-6" />
-            </button>
+            <div class="flex items-center space-x-3">
+              <!-- Error Records Button -->
+              <button
+                @click="showAllErrorRecords = !showAllErrorRecords"
+                :class="[
+                  'flex items-center px-4 py-2 rounded-lg transition-colors duration-200',
+                  showAllErrorRecords
+                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/30'
+                ]"
+              >
+                <ExclamationTriangleIcon class="w-4 h-4 mr-2" />
+                錯誤紀錄
+              </button>
+              <!-- Refresh Button -->
+              <button
+                @click="refreshImportHistory"
+                class="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
+              >
+                <ArrowPathIcon class="w-4 h-4 mr-2" />
+                重新整理
+              </button>
+              <!-- Close Button -->
+              <button
+                @click="showDebugModal = false"
+                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                <XMarkIcon class="w-6 h-6" />
+              </button>
+            </div>
           </div>
 
           <!-- Latest Batch Summary -->
@@ -1083,6 +1107,7 @@ const latestBatchSummary = ref(null)
 const selectedBatchDetails = ref(null)
 const isLoadingHistory = ref(false)
 const showBatchDetails = ref(false)
+const showAllErrorRecords = ref(false)
 
 // Drag and drop state
 const draggedItem = ref(null)
@@ -2269,7 +2294,16 @@ const importHistoryColumns = computed(() => [
 
 // Format batch data for display (Point 46)
 const formattedBatchData = computed(() => {
-  return importHistoryBatches.value.map(batch => ({
+  let batches = importHistoryBatches.value
+
+  // Filter to show only error batches if error records toggle is active
+  if (showAllErrorRecords.value) {
+    batches = batches.filter(batch =>
+      (batch.error_count > 0) || (batch.skipped_count > 0)
+    )
+  }
+
+  return batches.map(batch => ({
     ...batch,
     id: batch.batch_id,
     created_at_formatted: new Date(batch.created_at).toLocaleString('zh-TW', {
@@ -2283,13 +2317,10 @@ const formattedBatchData = computed(() => {
   }))
 })
 
-// Refresh import history (reopen modal to show latest data)
-const refreshImportHistory = () => {
-  // Close and reopen modal to trigger reactivity
-  showDebugModal.value = false
-  nextTick(() => {
-    showDebugModal.value = true
-  })
+// Refresh import history (reload data from API)
+const refreshImportHistory = async () => {
+  await fetchImportHistory(importHistoryPagination.value.page)
+  await fetchLatestBatchSummary()
 }
 
 // Fetch import history from API (Point 46)
