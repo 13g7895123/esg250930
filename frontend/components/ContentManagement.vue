@@ -463,9 +463,9 @@
       </div>
     </div>
 
-    <!-- Import History Modal -->
+    <!-- Import History Modal (Point 46 - DataTable版本) -->
     <div
-      v-if="showDebugModal"
+      v-if="showDebugModal && !showBatchDetails"
       class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
       @click="showDebugModal = false"
     >
@@ -474,12 +474,184 @@
         @click.stop
       >
         <!-- Header -->
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+              匯入紀錄
+            </h3>
+            <button
+              @click="showDebugModal = false"
+              class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              <XMarkIcon class="w-6 h-6" />
+            </button>
+          </div>
+
+          <!-- Latest Batch Summary -->
+          <div v-if="latestBatchSummary" class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+              <p class="text-xs text-green-600 dark:text-green-400 font-medium mb-1">成功匯入</p>
+              <p class="text-2xl font-bold text-green-900 dark:text-green-100">
+                {{ latestBatchSummary.rows_imported || 0 }}
+              </p>
+            </div>
+            <div class="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
+              <p class="text-xs text-orange-600 dark:text-orange-400 font-medium mb-1">重複跳過</p>
+              <p class="text-2xl font-bold text-orange-900 dark:text-orange-100">
+                {{ latestBatchSummary.rows_skipped || 0 }}
+              </p>
+            </div>
+            <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
+              <p class="text-xs text-red-600 dark:text-red-400 font-medium mb-1">失敗筆數</p>
+              <p class="text-2xl font-bold text-red-900 dark:text-red-100">
+                {{ latestBatchSummary.rows_failed || 0 }}
+              </p>
+            </div>
+            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+              <p class="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">Excel 總行數</p>
+              <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                {{ latestBatchSummary.total_rows_in_excel || 0 }}
+              </p>
+            </div>
+            <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+              <p class="text-xs text-purple-600 dark:text-purple-400 font-medium mb-1">實際資料行數</p>
+              <p class="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                {{ latestBatchSummary.data_rows_processed || 0 }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content - Scrollable -->
+        <div class="p-6 overflow-y-auto flex-1">
+          <!-- Loading State -->
+          <div v-if="isLoadingHistory" class="flex justify-center items-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          </div>
+
+          <!-- DataTable -->
+          <div v-else-if="formattedBatchData.length > 0">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    操作
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    時間
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    匯入摘要
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tr v-for="batch in formattedBatchData" :key="batch.batch_id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="relative group">
+                      <button
+                        @click="fetchBatchDetails(batch.batch_id)"
+                        class="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors duration-200"
+                      >
+                        <DocumentTextIcon class="w-5 h-5" />
+                      </button>
+                      <div class="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 px-2 py-1 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                        檢視詳細資料
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                    {{ batch.created_at_formatted }}
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                    <div class="flex items-center space-x-4">
+                      <span class="text-green-600 dark:text-green-400">✓ {{ batch.success_count }}</span>
+                      <span class="text-orange-600 dark:text-orange-400">⊘ {{ batch.skipped_count }}</span>
+                      <span class="text-red-600 dark:text-red-400">✗ {{ batch.error_count }}</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Pagination -->
+            <div v-if="importHistoryPagination.total_pages > 1" class="mt-4 flex items-center justify-between">
+              <div class="text-sm text-gray-700 dark:text-gray-300">
+                顯示第 {{ (importHistoryPagination.page - 1) * importHistoryPagination.limit + 1 }}
+                至 {{ Math.min(importHistoryPagination.page * importHistoryPagination.limit, importHistoryPagination.total) }}
+                筆，共 {{ importHistoryPagination.total }} 筆
+              </div>
+              <div class="flex items-center space-x-2">
+                <button
+                  @click="handleHistoryPageChange(1)"
+                  :disabled="importHistoryPagination.page === 1"
+                  class="px-3 py-1 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  第一頁
+                </button>
+                <button
+                  @click="handleHistoryPageChange(importHistoryPagination.page - 1)"
+                  :disabled="importHistoryPagination.page === 1"
+                  class="px-3 py-1 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  上一頁
+                </button>
+                <span class="text-sm text-gray-700 dark:text-gray-300">
+                  第 {{ importHistoryPagination.page }} / {{ importHistoryPagination.total_pages }} 頁
+                </span>
+                <button
+                  @click="handleHistoryPageChange(importHistoryPagination.page + 1)"
+                  :disabled="importHistoryPagination.page === importHistoryPagination.total_pages"
+                  class="px-3 py-1 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  下一頁
+                </button>
+                <button
+                  @click="handleHistoryPageChange(importHistoryPagination.total_pages)"
+                  :disabled="importHistoryPagination.page === importHistoryPagination.total_pages"
+                  class="px-3 py-1 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  最後一頁
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else class="text-center py-12">
+            <p class="text-gray-500 dark:text-gray-400">暫無匯入記錄</p>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+          <button
+            @click="showDebugModal = false"
+            class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
+          >
+            關閉
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batch Details Modal (Point 46) -->
+    <div
+      v-if="showBatchDetails && selectedBatchDetails"
+      class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+      @click="closeBatchDetails"
+    >
+      <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col"
+        @click.stop
+      >
+        <!-- Header -->
         <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-            匯入紀錄
+            批次詳細資料
           </h3>
           <div class="flex items-center space-x-3">
-            <!-- Error Records Button -->
+            <!-- Error Records Filter -->
             <button
               @click="showErrorRecords = !showErrorRecords"
               :class="[
@@ -490,19 +662,11 @@
               ]"
             >
               <ExclamationTriangleIcon class="w-4 h-4 mr-2" />
-              錯誤紀錄 ({{ getErrorRecords.length }})
-            </button>
-            <!-- Refresh Button -->
-            <button
-              @click="refreshImportHistory"
-              class="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
-            >
-              <ArrowPathIcon class="w-4 h-4 mr-2" />
-              重新整理
+              錯誤紀錄 ({{ selectedBatchDetails.summary.error + selectedBatchDetails.summary.skipped }})
             </button>
             <!-- Close Button -->
             <button
-              @click="showDebugModal = false"
+              @click="closeBatchDetails"
               class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             >
               <XMarkIcon class="w-6 h-6" />
@@ -510,263 +674,122 @@
           </div>
         </div>
 
-        <!-- Content - Scrollable -->
+        <!-- Content -->
         <div class="p-6 overflow-y-auto flex-1">
-          <!-- Summary Stats -->
-          <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          <!-- Summary -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
-              <p class="text-xs text-green-600 dark:text-green-400 font-medium mb-1">成功匯入</p>
+              <p class="text-xs text-green-600 dark:text-green-400 font-medium mb-1">成功</p>
               <p class="text-2xl font-bold text-green-900 dark:text-green-100">
-                {{ importDebugData?.rows_imported || 0 }}
+                {{ selectedBatchDetails.summary.success }}
               </p>
             </div>
             <div class="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-800">
-              <p class="text-xs text-orange-600 dark:text-orange-400 font-medium mb-1">重複跳過</p>
+              <p class="text-xs text-orange-600 dark:text-orange-400 font-medium mb-1">跳過</p>
               <p class="text-2xl font-bold text-orange-900 dark:text-orange-100">
-                {{ importDebugData?.rows_skipped || 0 }}
+                {{ selectedBatchDetails.summary.skipped }}
               </p>
             </div>
             <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
-              <p class="text-xs text-red-600 dark:text-red-400 font-medium mb-1">失敗筆數</p>
+              <p class="text-xs text-red-600 dark:text-red-400 font-medium mb-1">失敗</p>
               <p class="text-2xl font-bold text-red-900 dark:text-red-100">
-                {{ importDebugData?.rows_failed || 0 }}
+                {{ selectedBatchDetails.summary.error }}
               </p>
             </div>
             <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-              <p class="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">Excel 總行數</p>
+              <p class="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">總計</p>
               <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                {{ importDebugData?.total_rows_in_excel || 0 }}
-              </p>
-            </div>
-            <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
-              <p class="text-xs text-purple-600 dark:text-purple-400 font-medium mb-1">實際資料行數</p>
-              <p class="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                {{ importDebugData?.data_rows_processed || 0 }}
+                {{ selectedBatchDetails.summary.total }}
               </p>
             </div>
           </div>
 
-          <!-- Import Records Table -->
-          <div v-if="!showErrorRecords" class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-900">
-                  <tr>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      狀態
-                    </th>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      行號
-                    </th>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      風險類別
-                    </th>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      風險主題
-                    </th>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      風險因子
-                    </th>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      風險因子描述
-                    </th>
-                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      操作
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  <template v-for="(detail, index) in getSuccessRecords" :key="index">
-                    <!-- Main Row -->
-                    <tr :class="isRowExpanded(index) ? 'bg-gray-50 dark:bg-gray-700' : ''">
-                      <td class="px-4 py-3 whitespace-nowrap">
-                        <span :class="[
-                          'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-                          detail.status === 'success'
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                            : detail.status === 'skipped'
-                            ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300'
-                            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
-                        ]">
-                          {{ detail.status === 'success' ? '✓ 成功' : detail.status === 'skipped' ? '⊘ 跳過' : '✗ 失敗' }}
-                        </span>
-                      </td>
-                      <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                        {{ detail.row }}
-                      </td>
-                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                        {{ detail.data?.category || 'N/A' }}
-                      </td>
-                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                        {{ detail.data?.topic || 'N/A' }}
-                      </td>
-                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                        {{ detail.data?.factor || 'N/A' }}
-                      </td>
-                      <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
-                        {{ detail.data?.factor_description || 'N/A' }}
-                      </td>
-                      <td class="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
-                        <button
-                          @click="toggleRowExpansion(index)"
-                          class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
-                        >
-                          {{ isRowExpanded(index) ? '收起' : '檢視詳細資料' }}
-                        </button>
-                      </td>
-                    </tr>
-                    <!-- Expanded Detail Row -->
-                    <tr v-if="isRowExpanded(index)" class="bg-gray-50 dark:bg-gray-700">
-                      <td colspan="7" class="px-4 py-4">
-                        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-                          <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">完整資料內容</h4>
-                          <div class="grid grid-cols-2 gap-4 text-xs">
-                            <div v-if="detail.inserted_id">
-                              <span class="font-medium text-gray-600 dark:text-gray-400">插入ID：</span>
-                              <span class="text-gray-900 dark:text-gray-100">{{ detail.inserted_id }}</span>
-                            </div>
-                            <div v-if="detail.data">
-                              <span class="font-medium text-gray-600 dark:text-gray-400">完整資料：</span>
-                              <pre class="mt-1 text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded overflow-x-auto">{{ JSON.stringify(detail.data, null, 2) }}</pre>
-                            </div>
-                            <div v-if="detail.sql" class="col-span-2">
-                              <span class="font-medium text-gray-600 dark:text-gray-400">SQL語句：</span>
-                              <pre class="mt-1 text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded overflow-x-auto font-mono">{{ detail.sql }}</pre>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  </template>
-                  <tr v-if="!getSuccessRecords || getSuccessRecords.length === 0">
-                    <td colspan="7" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                      暫無成功匯入的記錄
+          <!-- Records Table -->
+          <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    狀態
+                  </th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    行號
+                  </th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    風險類別
+                  </th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    風險主題
+                  </th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    風險因子
+                  </th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    風險因子描述
+                  </th>
+                  <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    備註
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <template v-for="(record, index) in selectedBatchDetails.records" :key="index">
+                  <tr v-if="!showErrorRecords || record.status === 'error' || record.status === 'skipped'">
+                    <td class="px-4 py-3 whitespace-nowrap">
+                      <span :class="[
+                        'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                        record.status === 'success'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                          : record.status === 'skipped'
+                          ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300'
+                          : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+                      ]">
+                        {{ record.status === 'success' ? '✓ 成功' : record.status === 'skipped' ? '⊘ 跳過' : '✗ 失敗' }}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                      {{ record.row_number }}
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                      {{ record.category_name || 'N/A' }}
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                      {{ record.topic_name || 'N/A' }}
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                      {{ record.factor_name || 'N/A' }}
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
+                      {{ record.factor_description || 'N/A' }}
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                      <span v-if="record.status === 'error'" class="text-red-600 dark:text-red-400">
+                        {{ record.error_message || record.reason }}
+                      </span>
+                      <span v-else-if="record.status === 'skipped'" class="text-orange-600 dark:text-orange-400">
+                        {{ record.reason === 'duplicate' ? `重複（ID: ${record.duplicate_id}）` : record.reason }}
+                      </span>
+                      <span v-else class="text-green-600 dark:text-green-400">
+                        ID: {{ record.inserted_id }}
+                      </span>
                     </td>
                   </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Error/Skipped Records Table -->
-          <div v-else class="bg-white dark:bg-gray-800 rounded-lg border border-red-200 dark:border-red-800 overflow-hidden">
-            <div class="bg-red-50 dark:bg-red-900/20 px-4 py-3 border-b border-red-200 dark:border-red-800">
-              <h4 class="text-sm font-semibold text-red-900 dark:text-red-100 flex items-center">
-                <ExclamationTriangleIcon class="w-5 h-5 mr-2" />
-                錯誤與跳過記錄
-              </h4>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-900">
-                  <tr>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      狀態
-                    </th>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      行號
-                    </th>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      風險類別
-                    </th>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      風險主題
-                    </th>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      風險因子
-                    </th>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      錯誤原因
-                    </th>
-                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      操作
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  <template v-for="(detail, index) in getErrorRecords" :key="index">
-                    <!-- Main Row -->
-                    <tr :class="isRowExpanded(index) ? 'bg-red-50 dark:bg-red-900/10' : ''">
-                      <td class="px-4 py-3 whitespace-nowrap">
-                        <span :class="[
-                          'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-                          detail.status === 'skipped'
-                            ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300'
-                            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
-                        ]">
-                          {{ detail.status === 'skipped' ? '⊘ 跳過' : '✗ 失敗' }}
-                        </span>
-                      </td>
-                      <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                        {{ detail.row }}
-                      </td>
-                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                        {{ detail.data?.category || 'N/A' }}
-                      </td>
-                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                        {{ detail.data?.topic || 'N/A' }}
-                      </td>
-                      <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                        {{ detail.data?.factor || 'N/A' }}
-                      </td>
-                      <td class="px-4 py-3 text-sm text-red-600 dark:text-red-400">
-                        <template v-if="detail.status === 'skipped'">
-                          {{ detail.reason === 'duplicate' ? `重複資料（與ID ${detail.duplicate_id} 相同）` : detail.reason }}
-                        </template>
-                        <template v-else-if="detail.error">
-                          {{ typeof detail.error === 'string' ? detail.error : JSON.stringify(detail.error) }}
-                        </template>
-                        <template v-else>
-                          未知錯誤
-                        </template>
-                      </td>
-                      <td class="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
-                        <button
-                          @click="toggleRowExpansion(index)"
-                          class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
-                        >
-                          {{ isRowExpanded(index) ? '收起' : '檢視詳細資料' }}
-                        </button>
-                      </td>
-                    </tr>
-                    <!-- Expanded Detail Row -->
-                    <tr v-if="isRowExpanded(index)" class="bg-red-50 dark:bg-red-900/10">
-                      <td colspan="7" class="px-4 py-4">
-                        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-red-200 dark:border-red-700">
-                          <h4 class="text-sm font-semibold text-red-700 dark:text-red-300 mb-3">錯誤詳細資訊</h4>
-                          <div class="space-y-3 text-xs">
-                            <div v-if="detail.reason">
-                              <span class="font-medium text-gray-600 dark:text-gray-400">原因：</span>
-                              <span class="text-gray-900 dark:text-gray-100">{{ detail.reason }}</span>
-                            </div>
-                            <div v-if="detail.error">
-                              <span class="font-medium text-gray-600 dark:text-gray-400">錯誤訊息：</span>
-                              <pre class="mt-1 text-xs bg-red-100 dark:bg-red-900/20 p-2 rounded overflow-x-auto text-red-800 dark:text-red-200">{{ typeof detail.error === 'object' ? JSON.stringify(detail.error, null, 2) : detail.error }}</pre>
-                            </div>
-                            <div v-if="detail.data">
-                              <span class="font-medium text-gray-600 dark:text-gray-400">資料內容：</span>
-                              <pre class="mt-1 text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded overflow-x-auto">{{ JSON.stringify(detail.data, null, 2) }}</pre>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  </template>
-                  <tr v-if="!getErrorRecords || getErrorRecords.length === 0">
-                    <td colspan="7" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                      暫無錯誤或跳過的記錄
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                </template>
+              </tbody>
+            </table>
           </div>
         </div>
 
         <!-- Footer -->
-        <div class="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+        <div class="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-between">
           <button
-            @click="showDebugModal = false"
+            @click="closeBatchDetails"
+            class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200"
+          >
+            返回列表
+          </button>
+          <button
+            @click="closeBatchDetails"
             class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
           >
             關閉
@@ -2223,6 +2246,41 @@ const getSuccessRecords = computed(() => {
 const getErrorRecords = computed(() => {
   if (!importDebugData.value?.details) return []
   return importDebugData.value.details.filter(d => d.status === 'error' || d.status === 'skipped')
+})
+
+// DataTable columns for import history (Point 46)
+const importHistoryColumns = computed(() => [
+  {
+    key: 'actions',
+    label: '操作',
+    sortable: false
+  },
+  {
+    key: 'created_at',
+    label: '時間',
+    sortable: true
+  },
+  {
+    key: 'summary',
+    label: '匯入摘要',
+    sortable: false
+  }
+])
+
+// Format batch data for display (Point 46)
+const formattedBatchData = computed(() => {
+  return importHistoryBatches.value.map(batch => ({
+    ...batch,
+    id: batch.batch_id,
+    created_at_formatted: new Date(batch.created_at).toLocaleString('zh-TW', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }),
+    summary_text: `成功 ${batch.success_count} / 跳過 ${batch.skipped_count} / 失敗 ${batch.error_count}`
+  }))
 })
 
 // Refresh import history (reopen modal to show latest data)
