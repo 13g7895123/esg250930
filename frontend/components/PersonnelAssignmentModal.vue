@@ -164,15 +164,14 @@
                     <div class="flex items-center gap-2 mb-2">
                       <h5
                         class="font-medium text-gray-900 dark:text-white cursor-help relative group"
-                        :title="stripHtml(getFactorDescription(content.factorId))"
                       >
                         {{ truncateText(getFactorDescription(content.factorId), 10) || content.topic }}
-                        <!-- Tooltip for full content -->
+                        <!-- Tooltip for full content with HTML rendering -->
                         <span
                           v-if="stripHtml(getFactorDescription(content.factorId)).length > 10"
-                          class="absolute left-0 top-full mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-50 min-w-[300px] max-w-[500px] whitespace-normal text-sm font-normal"
+                          class="absolute left-0 top-full mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-50 min-w-[300px] max-w-[500px] whitespace-normal text-sm font-normal prose prose-sm dark:prose-invert max-w-none"
+                          v-html="getFactorDescription(content.factorId)"
                         >
-                          {{ stripHtml(getFactorDescription(content.factorId)) }}
                         </span>
                       </h5>
                       <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
