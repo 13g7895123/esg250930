@@ -29,9 +29,9 @@ export default defineNuxtConfig({
     '~/plugins/apexcharts.client.js',
     '~/plugins/sweetalert.client.js'
   ],
-  // Transpile ApexCharts and SweetAlert2 for better compatibility
+  // Transpile ApexCharts, SweetAlert2 and Heroicons for better compatibility
   build: {
-    transpile: ['vue3-apexcharts', 'sweetalert2']
+    transpile: ['vue3-apexcharts', 'sweetalert2', '@heroicons/vue']
   },
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
@@ -69,10 +69,10 @@ export default defineNuxtConfig({
     storageKey: 'nuxt-color-mode',
     dataValue: 'theme' // This sets data-theme attribute
   },
-  // Build optimization - ensure apexcharts can be imported correctly
+  // Build optimization - ensure apexcharts and heroicons can be imported correctly
     vite: {
     optimizeDeps: {
-      include: ['apexcharts'],
+      include: ['apexcharts', '@heroicons/vue/24/outline', '@heroicons/vue/24/solid', '@heroicons/vue/20/solid'],
       exclude: ['vue3-apexcharts']
     },
     define: {
