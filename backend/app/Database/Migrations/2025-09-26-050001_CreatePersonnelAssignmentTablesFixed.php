@@ -180,10 +180,9 @@ class CreatePersonnelAssignmentTablesFixed extends Migration
                 'comment'    => '評估記錄ID，關聯到 company_assessments 表'
             ],
             'question_content_id' => [
-                'type'       => 'BIGINT',
-                'constraint' => 20,
-                'unsigned'   => true,
-                'comment'    => '題項內容ID，關聯到 question_contents 表'
+                'type'       => 'VARCHAR',
+                'constraint' => 255,
+                'comment'    => '題項內容ID，關聯到 question_contents 表（支援UUID字串格式）'
             ],
             'personnel_id' => [
                 'type'       => 'BIGINT',
@@ -303,9 +302,10 @@ class CreatePersonnelAssignmentTablesFixed extends Migration
             $this->forge->addForeignKey('assessment_id', 'company_assessments', 'id', 'CASCADE', 'CASCADE', 'personnel_assignments');
         }
 
-        if ($this->db->tableExists('question_contents')) {
-            $this->forge->addForeignKey('question_content_id', 'question_contents', 'id', 'CASCADE', 'CASCADE', 'personnel_assignments');
-        }
+        // 註解：question_content_id 使用字串UUID格式，無法建立外鍵約束
+        // if ($this->db->tableExists('question_contents')) {
+        //     $this->forge->addForeignKey('question_content_id', 'question_contents', 'id', 'CASCADE', 'CASCADE', 'personnel_assignments');
+        // }
 
         // personnel_assignments 到 external_personnel 的外鍵約束
         $this->forge->addForeignKey('personnel_id', 'external_personnel', 'id', 'CASCADE', 'CASCADE', 'personnel_assignments');

@@ -50,7 +50,7 @@ class PersonnelAssignmentModel extends Model
         'id' => 'integer',
         'company_id' => 'integer',
         'assessment_id' => 'integer',
-        'question_content_id' => 'integer',
+        'question_content_id' => 'string',  // 支援UUID字串格式
         'personnel_id' => 'integer',
         'assigned_by' => '?integer',
         'assigned_at' => 'datetime',
@@ -64,7 +64,7 @@ class PersonnelAssignmentModel extends Model
     protected $validationRules = [
         'company_id' => 'required|integer',
         'assessment_id' => 'required|integer',
-        'question_content_id' => 'required|integer',
+        'question_content_id' => 'required',  // 支援UUID字串格式
         'personnel_id' => 'required|integer',
         'personnel_name' => 'required|string|max_length[255]',
         'personnel_department' => 'permit_empty|string|max_length[255]',
@@ -82,8 +82,7 @@ class PersonnelAssignmentModel extends Model
             'integer' => '評估記錄ID必須為整數'
         ],
         'question_content_id' => [
-            'required' => '題項內容ID為必填項目',
-            'integer' => '題項內容ID必須為整數'
+            'required' => '題項內容ID為必填項目'
         ],
         'personnel_id' => [
             'required' => '人員ID為必填項目',
@@ -100,7 +99,7 @@ class PersonnelAssignmentModel extends Model
      *
      * @param int $companyId 公司ID
      * @param int $assessmentId 評估記錄ID
-     * @param int $questionContentId 題項內容ID
+     * @param string|int $questionContentId 題項內容ID（支援UUID字串格式）
      * @param array $personnelData 人員資料
      * @param int|null $assignedBy 指派者ID
      * @return bool|int 成功返回指派ID，失敗返回false
@@ -108,7 +107,7 @@ class PersonnelAssignmentModel extends Model
     public function assignPersonnelToContent(
         int $companyId,
         int $assessmentId,
-        int $questionContentId,
+        string|int $questionContentId,
         array $personnelData,
         ?int $assignedBy = null
     ) {
@@ -138,14 +137,14 @@ class PersonnelAssignmentModel extends Model
      *
      * @param int $companyId 公司ID
      * @param int $assessmentId 評估記錄ID
-     * @param int $questionContentId 題項內容ID
+     * @param string|int $questionContentId 題項內容ID（支援UUID字串格式）
      * @param int $personnelId 人員ID
      * @return bool 是否已指派
      */
     public function isPersonnelAssigned(
         int $companyId,
         int $assessmentId,
-        int $questionContentId,
+        string|int $questionContentId,
         int $personnelId
     ): bool {
         return $this->where([
@@ -176,13 +175,13 @@ class PersonnelAssignmentModel extends Model
      *
      * @param int $companyId 公司ID
      * @param int $assessmentId 評估記錄ID
-     * @param int $questionContentId 題項內容ID
+     * @param string|int $questionContentId 題項內容ID（支援UUID字串格式）
      * @return array 指派人員陣列
      */
     public function getAssignmentsByContent(
         int $companyId,
         int $assessmentId,
-        int $questionContentId
+        string|int $questionContentId
     ): array {
         return $this->where([
             'company_id' => $companyId,
@@ -227,14 +226,14 @@ class PersonnelAssignmentModel extends Model
      *
      * @param int $companyId 公司ID
      * @param int $assessmentId 評估記錄ID
-     * @param int $questionContentId 題項內容ID
+     * @param string|int $questionContentId 題項內容ID（支援UUID字串格式）
      * @param int $personnelId 人員ID
      * @return bool 是否成功移除
      */
     public function removeAssignment(
         int $companyId,
         int $assessmentId,
-        int $questionContentId,
+        string|int $questionContentId,
         int $personnelId
     ): bool {
         return $this->where([

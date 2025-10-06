@@ -368,10 +368,10 @@ class PersonnelAssignmentController extends ResourceController
             }
 
             // 驗證並清理 question_content_ids
+            // 支援字串ID（UUID格式）和數字ID
             $validContentIds = array_filter($data['question_content_ids'], function($id) {
-                return !is_null($id) && is_numeric($id) && intval($id) > 0;
+                return !is_null($id) && !empty($id);
             });
-            $validContentIds = array_map('intval', $validContentIds);
 
             if (empty($validContentIds)) {
                 return $this->fail('沒有有效的題項內容ID', 400);
