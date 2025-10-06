@@ -121,6 +121,17 @@
           >
             已指派人員 ({{ assignedPersonnelList.length }})
           </button>
+          <button
+            @click="activeTab = 'history'"
+            :class="[
+              'py-2 px-1 border-b-2 font-medium text-sm',
+              activeTab === 'history'
+                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+            ]"
+          >
+            指派紀錄 ({{ assignmentHistory.length }})
+          </button>
         </nav>
       </div>
 
@@ -265,6 +276,67 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Assignment History Tab -->
+        <div v-else-if="activeTab === 'history'" class="h-full overflow-y-auto p-4">
+          <DataTable
+            :columns="historyColumns"
+            :data="assignmentHistory"
+            :searchable="true"
+            search-placeholder="搜尋人員或題項..."
+            :sortable="true"
+            :initial-sort-field="'assigned_at'"
+            :initial-sort-order="'desc'"
+          >
+            <template #cell-personnel_name="{ row }">
+              <div class="flex items-center space-x-2">
+                <div class="w-6 h-6 bg-primary-100 dark:bg-primary-900/20 rounded-full flex items-center justify-center">
+                  <span class="text-primary-600 dark:text-primary-400 font-medium text-xs">
+                    {{ row.personnel_name.charAt(0) }}
+                  </span>
+                </div>
+                <span class="font-medium text-gray-900 dark:text-white">{{ row.personnel_name }}</span>
+              </div>
+            </template>
+
+            <template #cell-content_description="{ row }">
+              <div>
+                <p class="font-medium text-gray-900 dark:text-white text-sm">
+                  {{ truncateText(getFactorDescription(row.factor_id), 20) || row.content_description }}
+                </p>
+                <div class="flex items-center gap-1 mt-1">
+                  <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    {{ getCategoryName(row.category_id) }}
+                  </span>
+                  <span v-if="getTopicName(row.topic_id)" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                    {{ getTopicName(row.topic_id) }}
+                  </span>
+                  <span v-if="getFactorName(row.factor_id)" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    {{ getFactorName(row.factor_id) }}
+                  </span>
+                </div>
+              </div>
+            </template>
+
+            <template #cell-assignment_status="{ row }">
+              <span :class="[
+                'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
+                row.assignment_status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                row.assignment_status === 'accepted' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                row.assignment_status === 'declined' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+                'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+              ]">
+                {{ getStatusText(row.assignment_status) }}
+              </span>
+            </template>
+
+            <template #cell-assigned_at="{ row }">
+              <span class="text-sm text-gray-600 dark:text-gray-400">
+                {{ formatDateTime(row.assigned_at) }}
+              </span>
+            </template>
+          </DataTable>
         </div>
       </div>
     </div>
@@ -614,6 +686,63 @@ const filteredContentSummary = computed(() => {
   })
 })
 
+// Assignment history data and columns
+const { assignments } = usePersonnelAssignmentApi()
+
+const assignmentHistory = computed(() => {
+  if (!props.questionId) return []
+
+  return assignments.value
+    .filter(a => a.company_id === parseInt(props.companyId) && a.assessment_id === parseInt(props.questionId))
+    .map(assignment => {
+      // Find content details from questionContent
+      const content = props.questionContent.find(c => c.id === assignment.question_content_id)
+
+      return {
+        id: assignment.id,
+        personnel_name: assignment.personnel_name,
+        personnel_department: assignment.personnel_department,
+        personnel_position: assignment.personnel_position,
+        content_description: content?.description || content?.topic || '未命名題目',
+        category_id: content?.category_id || content?.categoryId,
+        topic_id: content?.topic_id || content?.topicId,
+        factor_id: content?.factor_id || content?.factorId || content?.risk_factor_id,
+        assignment_status: assignment.assignment_status,
+        assigned_at: assignment.assigned_at,
+        accepted_at: assignment.accepted_at,
+        completed_at: assignment.completed_at
+      }
+    })
+})
+
+const historyColumns = [
+  {
+    key: 'personnel_name',
+    label: '指派人員',
+    sortable: true
+  },
+  {
+    key: 'personnel_department',
+    label: '部門',
+    sortable: true
+  },
+  {
+    key: 'content_description',
+    label: '題項內容',
+    sortable: false
+  },
+  {
+    key: 'assignment_status',
+    label: '狀態',
+    sortable: true
+  },
+  {
+    key: 'assigned_at',
+    label: '指派時間',
+    sortable: true
+  }
+]
+
 // Debug data for troubleshooting category display issues
 const debugData = computed(() => {
   return {
@@ -800,6 +929,35 @@ const getCategoryOrder = (categoryId) => {
   }
 
   return 999
+}
+
+// Helper methods for assignment history
+const getStatusText = (status) => {
+  const statusMap = {
+    'assigned': '已指派',
+    'accepted': '已接受',
+    'declined': '已拒絕',
+    'completed': '已完成'
+  }
+  return statusMap[status] || status
+}
+
+const formatDateTime = (dateTime) => {
+  if (!dateTime) return ''
+  try {
+    const date = new Date(dateTime)
+    return date.toLocaleString('zh-TW', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    })
+  } catch (error) {
+    return dateTime
+  }
 }
 
 // Lifecycle and watchers for API data loading
