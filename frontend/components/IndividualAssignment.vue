@@ -112,14 +112,23 @@
         <div
           v-for="content in availableContentItems"
           :key="content.contentId"
-          class="border border-gray-200 dark:border-gray-600 rounded-lg p-3"
+          :class="[
+            'border rounded-lg p-3',
+            content.alreadyAssigned
+              ? 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 opacity-60'
+              : 'border-gray-200 dark:border-gray-600'
+          ]"
         >
-          <label class="flex items-start space-x-3 cursor-pointer">
+          <label :class="['flex items-start space-x-3', content.alreadyAssigned ? 'cursor-not-allowed' : 'cursor-pointer']">
             <input
               v-model="selectedContentIds"
               :value="content.contentId"
+              :disabled="content.alreadyAssigned"
               type="checkbox"
-              class="mt-1 form-checkbox h-4 w-4 text-primary-600"
+              :class="[
+                'mt-1 form-checkbox h-4 w-4',
+                content.alreadyAssigned ? 'text-gray-400 cursor-not-allowed' : 'text-primary-600'
+              ]"
             />
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-1">
@@ -152,8 +161,11 @@
                 </span>
               </div>
               <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ content.description }}</p>
-              <div v-if="content.assignmentCount > 0" class="mt-2">
-                <span class="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 rounded-full">
+              <div class="mt-2 flex gap-2">
+                <span v-if="content.alreadyAssigned" class="text-xs px-2 py-1 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-full">
+                  已指派給此人員
+                </span>
+                <span v-else-if="content.assignmentCount > 0" class="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 rounded-full">
                   已有 {{ content.assignmentCount }} 人指派
                 </span>
               </div>
@@ -168,15 +180,6 @@
       <h5 class="font-medium text-blue-900 dark:text-blue-200 mb-2">指派預覽</h5>
       <div class="text-sm text-blue-800 dark:text-blue-300">
         將指派 <strong>{{ selectedUser.name }}</strong> 到 <strong>{{ selectedContentIds.length }}</strong> 個題項內容
-      </div>
-      <div class="mt-2 flex flex-wrap gap-1">
-        <span
-          v-for="contentId in selectedContentIds"
-          :key="contentId"
-          class="inline-block px-2 py-1 bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 text-xs rounded"
-        >
-          {{ getContentById(contentId)?.topic }}
-        </span>
       </div>
     </div>
 
