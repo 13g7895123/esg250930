@@ -4,6 +4,9 @@ export default defineNuxtConfig({
   devServer: {
     port: 3101
   },
+  tailwindcss: {
+    configPath: '~/tailwind.config.js'
+  },
   routeRules: {
     // Client-side only pages that must not be pre-rendered
     '/risk-assessment/**': { ssr: false },
@@ -72,8 +75,17 @@ export default defineNuxtConfig({
   // Build optimization - ensure apexcharts and heroicons can be imported correctly
     vite: {
     optimizeDeps: {
-      include: ['apexcharts', '@heroicons/vue/24/outline', '@heroicons/vue/24/solid', '@heroicons/vue/20/solid'],
+      include: [
+        'apexcharts',
+        '@heroicons/vue/24/outline',
+        '@heroicons/vue/24/solid',
+        '@heroicons/vue/20/solid',
+        '@nuxt/ui'
+      ],
       exclude: ['vue3-apexcharts']
+    },
+    ssr: {
+      noExternal: ['@nuxt/ui']
     },
     define: {
       // Prevent multiple ApexCharts instances

@@ -228,6 +228,8 @@ export const useApi = () => {
       await get(`/question-management/assessment/${assessmentId}/stats`),
 
     // Categories
+    getCategories: async (assessmentId) =>
+      await get(`/question-management/assessment/${assessmentId}/categories`),
     createCategory: async (assessmentId, data) =>
       await post(`/question-management/assessment/${assessmentId}/categories`, data),
     updateCategory: async (categoryId, data) =>
@@ -236,6 +238,13 @@ export const useApi = () => {
       await del(`/question-management/categories/${categoryId}`),
 
     // Topics
+    getTopics: async (assessmentId, params = {}) => {
+      const queryParams = new URLSearchParams(params).toString()
+      const endpoint = queryParams
+        ? `/question-management/assessment/${assessmentId}/topics?${queryParams}`
+        : `/question-management/assessment/${assessmentId}/topics`
+      return await get(endpoint)
+    },
     createTopic: async (assessmentId, data) =>
       await post(`/question-management/assessment/${assessmentId}/topics`, data),
     updateTopic: async (topicId, data) =>
@@ -244,6 +253,13 @@ export const useApi = () => {
       await del(`/question-management/topics/${topicId}`),
 
     // Factors
+    getFactors: async (assessmentId, params = {}) => {
+      const queryParams = new URLSearchParams(params).toString()
+      const endpoint = queryParams
+        ? `/question-management/assessment/${assessmentId}/factors?${queryParams}`
+        : `/question-management/assessment/${assessmentId}/factors`
+      return await get(endpoint)
+    },
     createFactor: async (assessmentId, data) =>
       await post(`/question-management/assessment/${assessmentId}/factors`, data),
     updateFactor: async (factorId, data) =>

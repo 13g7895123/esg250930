@@ -25,6 +25,11 @@ RUN sed -i 's/\r$//' /usr/local/bin/fix-nuxt-ui-paths.sh && \
 # Change ownership of the app directory to the node user
 RUN chown -R node:node /app
 
+# Create cache directory with proper permissions
+RUN mkdir -p /app/node_modules/.cache && \
+    mkdir -p /app/.nuxt && \
+    chown -R node:node /app/node_modules/.cache /app/.nuxt
+
 # Switch to non-root user
 USER node
 

@@ -137,6 +137,8 @@ export const useQuestionStructure = () => {
     } catch (error) {
       console.error('Error fetching categories:', error)
       lastError.value = error.message || '取得風險分類時發生錯誤'
+      // Set categories to empty array on error to prevent undefined issues
+      categories.value = []
       throw error
     }
   }
@@ -266,6 +268,8 @@ export const useQuestionStructure = () => {
     } catch (error) {
       console.error('Error fetching topics:', error)
       lastError.value = error.message || '取得風險主題時發生錯誤'
+      // Set topics to empty array on error to prevent undefined issues
+      topics.value = []
       throw error
     }
   }
@@ -397,6 +401,8 @@ export const useQuestionStructure = () => {
     } catch (error) {
       console.error('Error fetching factors:', error)
       lastError.value = error.message || '取得風險因子時發生錯誤'
+      // Set factors to empty array on error to prevent undefined issues
+      factors.value = []
       throw error
     }
   }

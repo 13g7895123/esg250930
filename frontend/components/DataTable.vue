@@ -510,14 +510,17 @@ const getGroupColspan = (groupName, startIndex) => {
 }
 
 const filteredData = computed(() => {
-  if (!searchQuery.value) return props.data
+  // Handle undefined/null data gracefully
+  const safeData = props.data || []
+
+  if (!searchQuery.value) return safeData
 
   const query = searchQuery.value.toLowerCase()
   const fieldsToSearch = props.searchFields.length > 0
     ? props.searchFields
     : props.columns.map(col => col.key)
 
-  return props.data.filter(item => {
+  return safeData.filter(item => {
     return fieldsToSearch.some(field => {
       const value = getNestedValue(item, field)
       return String(value).toLowerCase().includes(query)
@@ -526,9 +529,12 @@ const filteredData = computed(() => {
 })
 
 const sortedData = computed(() => {
-  if (!sortField.value) return filteredData.value
+  // Ensure filteredData is always an array
+  const data = filteredData.value || []
 
-  return [...filteredData.value].sort((a, b) => {
+  if (!sortField.value) return data
+
+  return [...data].sort((a, b) => {
     const aValue = getNestedValue(a, sortField.value)
     const bValue = getNestedValue(b, sortField.value)
 
@@ -540,13 +546,18 @@ const sortedData = computed(() => {
   })
 })
 
-const totalPages = computed(() => Math.ceil(sortedData.value.length / pageSize.value))
+const totalPages = computed(() => {
+  const data = sortedData.value || []
+  return Math.ceil(data.length / pageSize.value)
+})
 
 const paginatedData = computed(() => {
+  // Ensure sortedData is always an array
+  const data = sortedData.value || []
   const start = (currentPage.value - 1) * pageSize.value
   const end = start + pageSize.value
-  const result = sortedData.value.slice(start, end)
-  console.log(`[DataTable] Paginated data: showing ${result.length} of ${sortedData.value.length} items (page ${currentPage.value}, pageSize ${pageSize.value})`)
+  const result = data.slice(start, end)
+  console.log(`[DataTable] Paginated data: showing ${result.length} of ${data.length} items (page ${currentPage.value}, pageSize ${pageSize.value})`)
   return result
 })
 

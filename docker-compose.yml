@@ -9,6 +9,7 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+      - /app/.nuxt
     environment:
       - NODE_ENV=${NODE_ENV}
       - BACKEND_URL=${BACKEND_URL:-http://backend:80}

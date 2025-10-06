@@ -369,12 +369,14 @@
 
     <!-- Question Structure Management Modal -->
     <StructureManagementModal
-      v-model="showQuestionStructureModal"
-      :title="`架構管理 - ${managingQuestion?.templateVersion} (${managingQuestion?.year}年)`"
-      :item-name="`${managingQuestion?.templateVersion} (${managingQuestion?.year}年)`"
+      v-if="managingQuestion"
+      :model-value="showQuestionStructureModal"
+      :title="`架構管理 - ${managingQuestion?.templateVersion || ''} (${managingQuestion?.year || ''}年)`"
+      :item-name="`${managingQuestion?.templateVersion || ''} (${managingQuestion?.year || ''}年)`"
       :risk-topics-enabled="enableTopicLayer"
       :show-export-import="true"
       management-type="question"
+      @update:model-value="(value) => showQuestionStructureModal = value"
       @close="showQuestionStructureModal = false"
       @toggle-risk-topics="onTopicLayerToggleChange"
       @open-category-management="openQuestionManagementModal('categories')"
@@ -523,13 +525,13 @@
     <!-- Categories Management Modal -->
     <Modal
       :model-value="showCategoriesModal"
-      :title="`風險類別管理 - ${managingQuestion?.templateVersion} (${managingQuestion?.year}年)`"
+      :title="`管理風險類別 - ${managingQuestion?.templateVersion} (${managingQuestion?.year}年)`"
       size="4xl"
       @update:model-value="(value) => showCategoriesModal = value"
       @close="showCategoriesModal = false"
     >
       <DataTable
-        :data="questionCategories"
+        :data="questionCategories || []"
         :columns="questionCategoryColumns"
         search-placeholder="搜尋風險類別..."
         :search-fields="['category_name', 'description']"
@@ -544,7 +546,7 @@
           <div class="flex items-center space-x-3">
             <!-- Refresh Button -->
             <button
-              @click="loadQuestionStructureData(managingQuestion?.id)"
+              @click="refreshStructureData"
               :disabled="structureLoading"
               class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               title="重新整理"
@@ -606,13 +608,13 @@
     <!-- Topics Management Modal -->
     <Modal
       :model-value="showTopicsModal"
-      :title="`風險主題管理 - ${managingQuestion?.templateVersion} (${managingQuestion?.year}年)`"
+      :title="`管理風險主題 - ${managingQuestion?.templateVersion} (${managingQuestion?.year}年)`"
       size="4xl"
       @update:model-value="(value) => showTopicsModal = value"
       @close="showTopicsModal = false"
     >
       <DataTable
-        :data="questionTopics"
+        :data="questionTopics || []"
         :columns="questionTopicColumns"
         search-placeholder="搜尋風險主題..."
         :search-fields="['topic_name', 'category_name', 'description']"
@@ -627,7 +629,7 @@
           <div class="flex items-center space-x-3">
             <!-- Refresh Button -->
             <button
-              @click="loadQuestionStructureData(managingQuestion?.id)"
+              @click="refreshStructureData"
               :disabled="structureLoading"
               class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               title="重新整理"
@@ -690,13 +692,13 @@
     <!-- Factors Management Modal -->
     <Modal
       :model-value="showFactorsModal"
-      :title="`風險因子管理 - ${managingQuestion?.templateVersion} (${managingQuestion?.year}年)`"
+      :title="`管理風險因子 - ${managingQuestion?.templateVersion} (${managingQuestion?.year}年)`"
       size="4xl"
       @update:model-value="(value) => showFactorsModal = value"
       @close="showFactorsModal = false"
     >
       <DataTable
-        :data="questionFactors"
+        :data="questionFactors || []"
         :columns="questionFactorColumns"
         search-placeholder="搜尋風險因子..."
         :search-fields="['factor_name', 'topic_name', 'category_name', 'description']"
@@ -711,7 +713,7 @@
           <div class="flex items-center space-x-3">
             <!-- Refresh Button -->
             <button
-              @click="loadQuestionStructureData(managingQuestion?.id)"
+              @click="refreshStructureData"
               :disabled="structureLoading"
               class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               title="重新整理"
@@ -1023,6 +1025,9 @@ import {
   Cog6ToothIcon,
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
+  ArrowDownIcon,
+  ArrowPathIcon,
+  ExclamationTriangleIcon,
   XMarkIcon
 } from '@heroicons/vue/24/outline'
 
@@ -1619,53 +1624,60 @@ const loadQuestionManagementData = async () => {
 
 // Initialize question management for this company (ensures empty array for new companies)
 onMounted(async () => {
-  // Load company name first
-  await loadCompanyName()
-
-  // Load personnel data for the company
-  if (companyId.value) {
-    try {
-      await loadPersonnel(companyId.value)
-      console.log('Personnel loaded for company:', companyId.value)
-    } catch (error) {
-      console.error('Error loading personnel:', error)
-    }
-  }
-
-  await initializeCompanyQuestionManagement(companyId.value)
-
-  // Load question management data
-  await loadQuestionManagementData()
-
-  // Initialize templates store to fetch templates from database
   try {
-    await templatesStore.initialize()
-    console.log('Templates loaded from database:', templatesStore.templates.length)
-  } catch (error) {
-    console.error('Failed to load templates from database:', error)
-  }
+    // Load company name first
+    await loadCompanyName()
 
-  console.log('=== 頁面載入時的初始資料 ===')
-  console.log('Route Params:', route.params)
-  console.log('Company ID from Route:', companyId.value)
-  console.log('Available Templates on Mount:', availableTemplates.value)
-  console.log('Available Users on Mount:', availableUsers.value)
-  console.log('Available Personnel on Mount:', availablePersonnel.value)
-  console.log('=== 初始資料結束 ===')
+    // Load personnel data for the company
+    if (companyId.value) {
+      try {
+        await loadPersonnel(companyId.value)
+        console.log('Personnel loaded for company:', companyId.value)
+      } catch (error) {
+        console.error('Error loading personnel:', error)
+      }
+    }
+
+    await initializeCompanyQuestionManagement(companyId.value)
+
+    // Load question management data
+    await loadQuestionManagementData()
+
+    // Initialize templates store to fetch templates from database
+    try {
+      await templatesStore.initialize()
+      console.log('Templates loaded from database:', templatesStore.templates.length)
+    } catch (error) {
+      console.error('Failed to load templates from database:', error)
+    }
+
+    console.log('=== 頁面載入時的初始資料 ===')
+    console.log('Route Params:', route.params)
+    console.log('Company ID from Route:', companyId.value)
+    console.log('Available Templates on Mount:', availableTemplates.value)
+    console.log('Available Users on Mount:', availableUsers.value)
+    console.log('Available Personnel on Mount:', availablePersonnel.value)
+    console.log('=== 初始資料結束 ===')
+  } catch (error) {
+    console.error('Error during component mount:', error)
+    // Set safe defaults to prevent render errors
+    questionManagement.value = []
+    isLoadingQuestionManagement.value = false
+  }
 })
 
-// Watch for changes in question management data
-watch(questionManagement, (newData, oldData) => {
-  console.log('=== 題項管理資料變更 ===')
-  console.log('舊資料:', oldData)
-  console.log('新資料:', newData)
-  console.log('資料筆數:', newData?.length || 0)
-  if (newData && newData.length > 0) {
-    console.log('第一筆資料結構:', newData[0])
-    console.log('所有資料詳細內容:', JSON.stringify(newData, null, 2))
-  }
-  console.log('=== 資料變更結束 ===')
-}, { deep: true, immediate: true })
+// Watch for changes in question management data (disabled to prevent performance issues)
+// watch(questionManagement, (newData, oldData) => {
+//   console.log('=== 題項管理資料變更 ===')
+//   console.log('舊資料:', oldData)
+//   console.log('新資料:', newData)
+//   console.log('資料筆數:', newData?.length || 0)
+//   if (newData && newData.length > 0) {
+//     console.log('第一筆資料結構:', newData[0])
+//     console.log('所有資料詳細內容:', JSON.stringify(newData, null, 2))
+//   }
+//   console.log('=== 資料變更結束 ===')
+// }, { deep: true, immediate: true })
 
 // Watch for changes in company ID (route parameter changes)
 watch(companyId, async (newId, oldId) => {
@@ -1687,13 +1699,13 @@ watch(companyId, async (newId, oldId) => {
   }
 })
 
-// Watch for changes in company name
-watch(companyName, (newName, oldName) => {
-  console.log('=== 公司名稱變更 ===')
-  console.log('舊名稱:', oldName)
-  console.log('新名稱:', newName)
-  console.log('=== 名稱變更結束 ===')
-}, { immediate: true })
+// Watch for changes in company name (disabled to prevent unnecessary logging)
+// watch(companyName, (newName, oldName) => {
+//   console.log('=== 公司名稱變更 ===')
+//   console.log('舊名稱:', oldName)
+//   console.log('新名稱:', newName)
+//   console.log('=== 名稱變更結束 ===')
+// }, { immediate: true })
 
 // Auto-focus template select when form modal opens
 watch(showFormModal, (newValue) => {
@@ -2051,7 +2063,13 @@ const manageQuestionStructure = async (item) => {
 
   // Load question structure data (categories, topics, factors)
   if (item.id) {
-    await loadQuestionStructureData(item.id)
+    try {
+      await loadQuestionStructureData(item.id)
+    } catch (error) {
+      console.error('Error loading structure data:', error)
+      await showError('載入失敗', '無法載入架構資料，請稍後再試')
+      return
+    }
   }
 
   showQuestionStructureModal.value = true
@@ -2069,6 +2087,7 @@ const getTemplateVersionName = (templateId) => {
 const openQuestionManagementModal = async (type) => {
   if (!managingQuestion.value) {
     console.error('No question selected for management')
+    await showError('錯誤', '請先選擇一個題項管理記錄')
     return
   }
 
@@ -2077,7 +2096,20 @@ const openQuestionManagementModal = async (type) => {
 
   // 使用評估記錄 ID 載入題項架構資料（獨立於範本）
   if (managingQuestion.value.id) {
-    await loadQuestionStructureData(managingQuestion.value.id)
+    try {
+      await loadQuestionStructureData(managingQuestion.value.id)
+
+      // Ensure data is loaded properly
+      console.log('Structure data loaded:', {
+        categories: questionCategories.value?.length || 0,
+        topics: questionTopics.value?.length || 0,
+        factors: questionFactors.value?.length || 0
+      })
+    } catch (error) {
+      console.error('Error loading question structure data:', error)
+      await showError('載入失敗', '無法載入架構資料，請稍後再試')
+      return
+    }
   }
 
   // Show appropriate modal
@@ -2107,22 +2139,51 @@ const loadQuestionStructureData = async (assessmentId) => {
     console.log('Loading question structure data for assessment:', assessmentId)
 
     // 載入分類、主題、因子資料
-    await Promise.all([
+    const results = await Promise.allSettled([
       getCategories(assessmentId),
       getTopics(assessmentId),
       getFactors(assessmentId)
     ])
 
+    // Check each result individually
+    results.forEach((result, index) => {
+      const types = ['categories', 'topics', 'factors']
+      if (result.status === 'rejected') {
+        console.error(`Error loading ${types[index]}:`, result.reason)
+      }
+    })
+
     console.log('Loaded question structure data:', {
       assessmentId,
-      categories: questionCategories.value.length,
-      topics: questionTopics.value.length,
-      factors: questionFactors.value.length
+      categories: questionCategories.value?.length || 0,
+      topics: questionTopics.value?.length || 0,
+      factors: questionFactors.value?.length || 0
     })
   } catch (error) {
     console.error('Error loading question structure data:', error)
     // 如果載入失敗，可能是還沒有架構資料，這是正常的
     console.log('No structure data found - this might be expected for new assessments')
+
+    // Ensure data is always an array
+    if (!questionCategories.value) questionCategories.value = []
+    if (!questionTopics.value) questionTopics.value = []
+    if (!questionFactors.value) questionFactors.value = []
+  }
+}
+
+// Refresh structure data with error handling
+const refreshStructureData = async () => {
+  if (!managingQuestion.value?.id) {
+    console.error('No assessment ID for refresh')
+    return
+  }
+
+  try {
+    await loadQuestionStructureData(managingQuestion.value.id)
+    await showSuccess('重新整理成功', '架構資料已更新')
+  } catch (error) {
+    console.error('Error refreshing structure data:', error)
+    await showError('重新整理失敗', '無法載入架構資料，請稍後再試')
   }
 }
 
