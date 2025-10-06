@@ -2051,6 +2051,11 @@ const loadQuestionContentForAssignment = async (questionItem) => {
           description: item.description || '',
           categoryId: item.category_id,
           category_id: item.category_id,
+          topicId: item.topic_id,
+          topic_id: item.topic_id,
+          factorId: item.factor_id,
+          factor_id: item.factor_id,
+          risk_factor_id: item.factor_id, // Alternative field name
           assignmentCount: 0 // Will be updated by assignment API
         }))
 
