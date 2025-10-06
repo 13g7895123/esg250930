@@ -290,6 +290,8 @@ export const usePersonnelAssignmentApi = () => {
         topic: content.topic || '',
         description: content.description || '',
         categoryId: content.categoryId || content.category_id,
+        topicId: content.topicId || content.topic_id,
+        factorId: content.factorId || content.risk_factor_id || content.factor_id,
         assignedUsers: contentAssignments.map(assignment => ({
           userId: assignment.personnel_id,
           personnelName: assignment.personnel_name,
