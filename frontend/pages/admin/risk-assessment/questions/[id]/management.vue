@@ -769,6 +769,29 @@
             </button>
           </div>
         </template>
+
+        <!-- Custom Description Cell with HTML rendering and truncation -->
+        <template #cell-description="{ item }">
+          <div class="relative group">
+            <div
+              v-if="item.description"
+              class="text-gray-600 dark:text-gray-400"
+              v-html="truncateHtml(item.description, 20)"
+            ></div>
+            <div v-else class="text-gray-400 dark:text-gray-500 italic">無描述</div>
+
+            <!-- Tooltip for full content on hover -->
+            <div
+              v-if="item.description && stripHtml(item.description).length > 20"
+              class="absolute left-0 top-full mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-[300px] max-w-[500px]"
+            >
+              <div
+                class="text-sm text-gray-700 dark:text-gray-300 break-words"
+                v-html="item.description"
+              ></div>
+            </div>
+          </div>
+        </template>
       </DataTable>
     </Modal>
 
@@ -2217,6 +2240,47 @@ const goToQuestionContent = (questionId) => {
     showQuestionStructureModal.value = false
     navigateTo(`/admin/risk-assessment/questions/${companyId.value}/management/${questionId}/content`)
   }
+}
+
+// HTML Helper Functions for Description Display
+
+/**
+ * Strip HTML tags from string to get plain text
+ * @param {string} html - HTML string
+ * @returns {string} Plain text without HTML tags
+ */
+const stripHtml = (html) => {
+  if (!html) return ''
+  const tmp = document.createElement('div')
+  tmp.innerHTML = html
+  return tmp.textContent || tmp.innerText || ''
+}
+
+/**
+ * Truncate HTML content to specified character limit
+ * @param {string} html - HTML string
+ * @param {number} maxLength - Maximum character length
+ * @returns {string} Truncated HTML with ellipsis if needed
+ */
+const truncateHtml = (html, maxLength = 20) => {
+  if (!html) return ''
+
+  const plainText = stripHtml(html)
+
+  // If text is shorter than max length, return original HTML
+  if (plainText.length <= maxLength) {
+    return html
+  }
+
+  // Truncate plain text and add ellipsis
+  const truncated = plainText.substring(0, maxLength) + '...'
+
+  // Return truncated text wrapped in same HTML structure if original had tags
+  if (html.includes('<')) {
+    return `<span>${truncated}</span>`
+  }
+
+  return truncated
 }
 
 // Import/Export Functions
