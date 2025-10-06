@@ -90,9 +90,33 @@
             />
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-1">
-                <p class="font-medium text-gray-900 dark:text-white">{{ content.topic }}</p>
+                <p
+                  class="font-medium text-gray-900 dark:text-white cursor-help relative group"
+                  :title="stripHtml(getFactorDescription(content.factorId))"
+                >
+                  {{ truncateText(getFactorDescription(content.factorId), 10) || content.topic }}
+                  <!-- Tooltip for full content -->
+                  <span
+                    v-if="stripHtml(getFactorDescription(content.factorId)).length > 10"
+                    class="absolute left-0 top-full mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-50 min-w-[300px] max-w-[500px] whitespace-normal text-sm font-normal"
+                  >
+                    {{ stripHtml(getFactorDescription(content.factorId)) }}
+                  </span>
+                </p>
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                   {{ getCategoryName(content.categoryId || content.category_id) }}
+                </span>
+                <span
+                  v-if="getTopicName(content.topicId)"
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                >
+                  {{ getTopicName(content.topicId) }}
+                </span>
+                <span
+                  v-if="getFactorName(content.factorId)"
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                >
+                  {{ getFactorName(content.factorId) }}
                 </span>
               </div>
               <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ content.description }}</p>
@@ -174,10 +198,14 @@ const emit = defineEmits(['assignment-completed', 'close'])
 // Assignment composable (using API instead of local storage)
 const { batchAssignPersonnel, isLoading, isPersonnelAssignedToContent } = usePersonnelAssignmentApi()
 
-// Question structure management for categories
+// Question structure management for categories, topics, and factors
 const {
   categories: questionCategories,
-  getCategories
+  topics: questionTopics,
+  factors: questionFactors,
+  getCategories,
+  getTopics,
+  getFactors
 } = useQuestionStructure()
 
 // Reactive data
@@ -295,6 +323,47 @@ const getCategoryName = (categoryId) => {
   return '未分類'
 }
 
+const getTopicName = (topicId) => {
+  if (!topicId) return ''
+  if (questionTopics.value && questionTopics.value.length > 0) {
+    const topic = questionTopics.value.find(t => t.id === topicId)
+    return topic ? topic.topic_name : ''
+  }
+  return ''
+}
+
+const getFactorName = (factorId) => {
+  if (!factorId) return ''
+  if (questionFactors.value && questionFactors.value.length > 0) {
+    const factor = questionFactors.value.find(f => f.id === factorId)
+    return factor ? factor.factor_name : ''
+  }
+  return ''
+}
+
+const getFactorDescription = (factorId) => {
+  if (!factorId) return ''
+  if (questionFactors.value && questionFactors.value.length > 0) {
+    const factor = questionFactors.value.find(f => f.id === factorId)
+    return factor ? (factor.description || '') : ''
+  }
+  return ''
+}
+
+const stripHtml = (html) => {
+  if (!html) return ''
+  const tmp = document.createElement('div')
+  tmp.innerHTML = html
+  return tmp.textContent || tmp.innerText || ''
+}
+
+const truncateText = (text, maxLength = 10) => {
+  if (!text) return ''
+  const plainText = stripHtml(text)
+  if (plainText.length <= maxLength) return plainText
+  return plainText.substring(0, maxLength) + '...'
+}
+
 // Helper method to get category order (index in the categories array)
 const getCategoryOrder = (categoryId) => {
   if (!categoryId) return 999 // Put uncategorized items at the end
@@ -311,12 +380,16 @@ const getCategoryOrder = (categoryId) => {
 // Load question structure data when component mounts
 onMounted(async () => {
   try {
-    // Load categories for the assessment
+    // Load structure data (categories, topics, factors) for the assessment
     if (props.questionId) {
-      await getCategories(props.questionId)
+      await Promise.all([
+        getCategories(props.questionId),
+        getTopics(props.questionId),
+        getFactors(props.questionId)
+      ])
     }
   } catch (error) {
-    console.error('Error loading category data in IndividualAssignment:', error)
+    console.error('Error loading structure data in IndividualAssignment:', error)
   }
 })
 </script>

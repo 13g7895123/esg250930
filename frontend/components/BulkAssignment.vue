@@ -103,9 +103,33 @@
             />
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
-                <p class="font-medium text-gray-900 dark:text-white">{{ content.topic }}</p>
+                <p
+                  class="font-medium text-gray-900 dark:text-white cursor-help relative group"
+                  :title="stripHtml(getFactorDescription(content.factorId))"
+                >
+                  {{ truncateText(getFactorDescription(content.factorId), 10) || content.topic }}
+                  <!-- Tooltip for full content -->
+                  <span
+                    v-if="stripHtml(getFactorDescription(content.factorId)).length > 10"
+                    class="absolute left-0 top-full mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-50 min-w-[300px] max-w-[500px] whitespace-normal text-sm font-normal"
+                  >
+                    {{ stripHtml(getFactorDescription(content.factorId)) }}
+                  </span>
+                </p>
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                   {{ getCategoryName(content.categoryId) }}
+                </span>
+                <span
+                  v-if="getTopicName(content.topicId)"
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                >
+                  {{ getTopicName(content.topicId) }}
+                </span>
+                <span
+                  v-if="getFactorName(content.factorId)"
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                >
+                  {{ getFactorName(content.factorId) }}
                 </span>
               </div>
               <p class="text-sm text-gray-600 dark:text-gray-400">{{ content.description }}</p>
@@ -177,6 +201,16 @@ const emit = defineEmits(['assignment-completed', 'close'])
 
 // Assignment composable
 const { assignUserToContent } = useQuestionAssignments()
+
+// Question structure management for categories, topics, and factors
+const {
+  categories: questionCategories,
+  topics: questionTopics,
+  factors: questionFactors,
+  getCategories,
+  getTopics,
+  getFactors
+} = useQuestionStructure()
 
 // Reactive data
 const userSearchQuery = ref('')
@@ -281,48 +315,81 @@ const performBulkAssignment = () => {
 
 // Helper method to get category name
 const getCategoryName = (categoryId) => {
-  if (!categoryId || !props.questionId) return '未分類'
-  
-  // Try to load categories from question content context
-  if (process.client) {
-    try {
-      const contentKey = `question_${props.companyId}_${props.questionId}`
-      const questionCategoriesKey = `esg-question-categories-${contentKey}`
-      const storedCategories = localStorage.getItem(questionCategoriesKey)
-      
-      if (storedCategories) {
-        const categories = JSON.parse(storedCategories)
-        const category = categories.find(cat => cat.id === categoryId)
-        return category ? category.category : '未知類別'
-      }
-    } catch (error) {
-      console.error('Error loading categories for bulk assignment:', error)
-    }
+  if (!categoryId) return '未分類'
+
+  if (questionCategories.value && questionCategories.value.length > 0) {
+    const category = questionCategories.value.find(cat => cat.id === categoryId)
+    return category ? category.category_name : '未知類別'
   }
-  
+
   return '未分類'
+}
+
+const getTopicName = (topicId) => {
+  if (!topicId) return ''
+  if (questionTopics.value && questionTopics.value.length > 0) {
+    const topic = questionTopics.value.find(t => t.id === topicId)
+    return topic ? topic.topic_name : ''
+  }
+  return ''
+}
+
+const getFactorName = (factorId) => {
+  if (!factorId) return ''
+  if (questionFactors.value && questionFactors.value.length > 0) {
+    const factor = questionFactors.value.find(f => f.id === factorId)
+    return factor ? factor.factor_name : ''
+  }
+  return ''
+}
+
+const getFactorDescription = (factorId) => {
+  if (!factorId) return ''
+  if (questionFactors.value && questionFactors.value.length > 0) {
+    const factor = questionFactors.value.find(f => f.id === factorId)
+    return factor ? (factor.description || '') : ''
+  }
+  return ''
+}
+
+const stripHtml = (html) => {
+  if (!html) return ''
+  const tmp = document.createElement('div')
+  tmp.innerHTML = html
+  return tmp.textContent || tmp.innerText || ''
+}
+
+const truncateText = (text, maxLength = 10) => {
+  if (!text) return ''
+  const plainText = stripHtml(text)
+  if (plainText.length <= maxLength) return plainText
+  return plainText.substring(0, maxLength) + '...'
 }
 
 // Helper method to get category order (index in the categories array)
 const getCategoryOrder = (categoryId) => {
-  if (!categoryId || !props.questionId) return 999 // Put uncategorized items at the end
-  
-  if (process.client) {
-    try {
-      const contentKey = `question_${props.companyId}_${props.questionId}`
-      const questionCategoriesKey = `esg-question-categories-${contentKey}`
-      const storedCategories = localStorage.getItem(questionCategoriesKey)
-      
-      if (storedCategories) {
-        const categories = JSON.parse(storedCategories)
-        const categoryIndex = categories.findIndex(cat => cat.id === categoryId)
-        return categoryIndex !== -1 ? categoryIndex : 999
-      }
-    } catch (error) {
-      console.error('Error loading categories for bulk assignment:', error)
-    }
+  if (!categoryId) return 999
+
+  if (questionCategories.value && questionCategories.value.length > 0) {
+    const categoryIndex = questionCategories.value.findIndex(cat => cat.id === categoryId)
+    return categoryIndex !== -1 ? categoryIndex : 999
   }
-  
+
   return 999
 }
+
+// Load question structure data when component mounts
+onMounted(async () => {
+  try {
+    if (props.questionId) {
+      await Promise.all([
+        getCategories(props.questionId),
+        getTopics(props.questionId),
+        getFactors(props.questionId)
+      ])
+    }
+  } catch (error) {
+    console.error('Error loading structure data in BulkAssignment:', error)
+  }
+})
 </script>
