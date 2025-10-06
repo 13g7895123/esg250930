@@ -835,9 +835,20 @@ const manageContentAssignment = (content) => {
   console.log('Manage assignment for content:', content)
 }
 
-const onAssignmentCompleted = () => {
+const onAssignmentCompleted = async () => {
   showIndividualAssignment.value = false
   showBulkAssignment.value = false
+
+  // Reload assignment summary to get updated data
+  if (props.questionId) {
+    try {
+      await loadAssignmentSummary(props.companyId, props.questionId)
+      console.log('Assignment summary reloaded successfully')
+    } catch (error) {
+      console.error('Error reloading assignment summary:', error)
+    }
+  }
+
   emit('assignment-updated')
 }
 

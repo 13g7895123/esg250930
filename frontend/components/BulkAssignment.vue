@@ -92,14 +92,18 @@
         <div
           v-for="content in sortedContentSummary"
           :key="content.contentId"
-          class="border border-gray-200 dark:border-gray-600 rounded-lg p-3"
+          :class="[
+            'border border-gray-200 dark:border-gray-600 rounded-lg p-3',
+            content.isFullyAssigned ? 'opacity-50 bg-gray-50 dark:bg-gray-700/50' : ''
+          ]"
         >
-          <label class="flex items-start space-x-3 cursor-pointer">
+          <label :class="['flex items-start space-x-3', content.isFullyAssigned ? 'cursor-not-allowed' : 'cursor-pointer']">
             <input
               v-model="selectedContentIds"
               :value="content.contentId"
               type="checkbox"
-              class="mt-1 form-checkbox h-4 w-4 text-primary-600"
+              :disabled="content.isFullyAssigned"
+              class="mt-1 form-checkbox h-4 w-4 text-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
             />
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
@@ -132,9 +136,12 @@
                 </span>
               </div>
               <p class="text-sm text-gray-600 dark:text-gray-400">{{ content.description }}</p>
-              <div v-if="content.assignmentCount > 0" class="mt-1">
-                <span class="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 rounded-full">
+              <div class="mt-1 flex items-center gap-2">
+                <span v-if="content.assignmentCount > 0" class="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 rounded-full">
                   已有 {{ content.assignmentCount }} 人指派
+                </span>
+                <span v-if="content.isFullyAssigned" class="text-xs px-2 py-1 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-full">
+                  所有選中人員已指派此題目
                 </span>
               </div>
             </div>
@@ -237,6 +244,17 @@ const sortedContentSummary = computed(() => {
     const orderA = getCategoryOrder(a.categoryId)
     const orderB = getCategoryOrder(b.categoryId)
     return orderA - orderB
+  }).map(content => {
+    // Check if ALL selected users are already assigned to this content
+    const allUsersAssigned = selectedUserIds.value.length > 0 &&
+      selectedUserIds.value.every(userId =>
+        content.assignedUsers?.some(assignedUser => assignedUser.userId === userId)
+      )
+
+    return {
+      ...content,
+      isFullyAssigned: allUsersAssigned
+    }
   })
 })
 
@@ -288,24 +306,72 @@ const deselectAllContent = () => {
 const performBulkAssignment = async () => {
   if (!canPerformBulkAssignment.value) return
 
+  const { $notify, $swal } = useNuxtApp()
+
+  // Show loading with SweetAlert
+  $swal.fire({
+    title: '批量指派中',
+    html: '正在處理指派，請稍候...',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    didOpen: () => {
+      $swal.showLoading()
+    }
+  })
+
   try {
-    // Prepare batch assignment data
-    const batchData = {
-      company_id: props.companyId,
-      assessment_id: props.questionId,
-      assignments: previewAssignments.value.map(assignment => ({
-        question_content_id: assignment.content.contentId,
-        personnel_id: assignment.user.id
-      }))
+    let totalAssigned = 0
+    let totalSkipped = 0
+    const errors = []
+
+    // Group assignments by personnel (each user gets multiple contents)
+    const assignmentsByPersonnel = {}
+    previewAssignments.value.forEach(assignment => {
+      const userId = assignment.user.id
+      if (!assignmentsByPersonnel[userId]) {
+        assignmentsByPersonnel[userId] = {
+          user: assignment.user,
+          contentIds: []
+        }
+      }
+      assignmentsByPersonnel[userId].contentIds.push(assignment.content.contentId)
+    })
+
+    // Execute batch assignments for each personnel
+    for (const [userId, data] of Object.entries(assignmentsByPersonnel)) {
+      try {
+        const batchData = {
+          company_id: parseInt(props.companyId),
+          assessment_id: parseInt(props.questionId),
+          personnel_id: parseInt(userId),
+          question_content_ids: data.contentIds
+        }
+
+        const result = await batchAssignPersonnel(batchData)
+
+        if (result && result.assigned_count) {
+          totalAssigned += result.assigned_count
+          totalSkipped += result.skipped_count || 0
+        }
+      } catch (error) {
+        console.error(`Error assigning to user ${userId}:`, error)
+        errors.push({
+          user: data.user.name,
+          error: error.message
+        })
+      }
     }
 
-    // Call API to create batch assignments
-    const result = await batchAssignPersonnel(batchData)
+    // Close loading and show result
+    $swal.close()
 
-    if (result) {
-      // Show success message
-      const { $notify } = useNuxtApp()
-      $notify.success(`成功指派 ${previewAssignments.value.length} 筆`)
+    if (errors.length === 0) {
+      await $swal.fire({
+        icon: 'success',
+        title: '批量指派完成',
+        html: `成功指派 <strong>${totalAssigned}</strong> 筆${totalSkipped > 0 ? `<br>跳過 ${totalSkipped} 筆（已存在）` : ''}`,
+        confirmButtonText: '確定'
+      })
 
       // Reset form
       selectedUserIds.value = []
@@ -315,11 +381,27 @@ const performBulkAssignment = async () => {
       // Notify parent to refresh data
       emit('assignment-completed')
       emit('close')
+    } else {
+      await $swal.fire({
+        icon: 'warning',
+        title: '部分指派失敗',
+        html: `成功: ${totalAssigned} 筆<br>失敗: ${errors.length} 筆<br><br>${errors.map(e => `• ${e.user}: ${e.error}`).join('<br>')}`,
+        confirmButtonText: '確定'
+      })
+
+      // Still refresh data even if partial failure
+      emit('assignment-completed')
     }
+
   } catch (error) {
     console.error('Bulk assignment error:', error)
-    const { $notify } = useNuxtApp()
-    $notify.error('批量指派失敗，請稍後再試')
+    $swal.close()
+    await $swal.fire({
+      icon: 'error',
+      title: '批量指派失敗',
+      text: '批量指派時發生錯誤，請稍後再試',
+      confirmButtonText: '確定'
+    })
   }
 }
 
