@@ -303,7 +303,7 @@
   <Modal
     :model-value="showBulkAssignment"
     title="批量人員指派"
-    size="lg"
+    size="3xl"
     @update:model-value="showBulkAssignment = $event"
     @close="showBulkAssignment = false"
   >
