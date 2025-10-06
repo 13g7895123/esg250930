@@ -546,6 +546,20 @@
           </button>
         </template>
 
+        <!-- Custom Description Cell with HTML Rendering and Truncation -->
+        <template #cell-description="{ item }">
+          <div
+            class="relative"
+            @mouseenter="showTooltip($event, item)"
+            @mouseleave="hideTooltip"
+          >
+            <div
+              v-html="item.description"
+              class="text-base text-gray-500 dark:text-gray-400 line-clamp-2 overflow-hidden cursor-pointer"
+            ></div>
+          </div>
+        </template>
+
         <!-- Custom Actions Cell -->
         <template #cell-actions="{ item }">
           <div class="flex items-center space-x-2">
@@ -863,6 +877,28 @@
       @close="showDeleteRiskTopicModal = false"
       @confirm="confirmDeleteRiskTopic"
     />
+
+    <!-- Tooltip for Risk Factor Description (rendered at body level to avoid overflow issues) -->
+    <Teleport to="body">
+      <div
+        v-if="tooltipData.visible && tooltipData.content"
+        :style="{
+          position: 'fixed',
+          left: tooltipData.x + 'px',
+          top: tooltipData.y + 'px',
+          zIndex: 9999
+        }"
+        class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl p-4 max-w-2xl w-96 max-h-96 overflow-y-auto"
+        @mouseenter="keepTooltipOpen"
+        @mouseleave="hideTooltip"
+      >
+        <div
+          class="text-sm text-gray-700 dark:text-gray-300 prose prose-sm dark:prose-invert max-w-none"
+          v-html="tooltipData.content"
+        ></div>
+        <div class="absolute -top-2 left-4 w-4 h-4 bg-white dark:bg-gray-800 border-l border-t border-gray-200 dark:border-gray-700 transform rotate-45"></div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -971,6 +1007,15 @@ const formData = ref({
 
 // Template refs for focus management
 const versionNameInput = ref(null)
+
+// Tooltip state for risk factor description
+const tooltipData = ref({
+  visible: false,
+  content: '',
+  x: 0,
+  y: 0
+})
+let tooltipTimeout = null
 
 // Notification system using SweetAlert
 const { showSuccess, showError, showLoading, closeAll } = useNotification()
@@ -1117,6 +1162,42 @@ const formatDate = (date) => {
     hour: '2-digit',
     minute: '2-digit'
   }).format(dateObj)
+}
+
+// Tooltip methods for risk factor description
+const showTooltip = (event, item) => {
+  const content = item.description
+  if (!content) return
+
+  // Clear any existing timeout
+  if (tooltipTimeout) {
+    clearTimeout(tooltipTimeout)
+  }
+
+  // Get the element's position
+  const rect = event.target.getBoundingClientRect()
+
+  // Position tooltip below the element
+  tooltipData.value = {
+    visible: true,
+    content: content,
+    x: rect.left,
+    y: rect.bottom + 8 // 8px gap below the element
+  }
+}
+
+const hideTooltip = () => {
+  // Add a small delay to allow mouse to move to tooltip
+  tooltipTimeout = setTimeout(() => {
+    tooltipData.value.visible = false
+  }, 100)
+}
+
+const keepTooltipOpen = () => {
+  // Cancel hide timeout when mouse enters tooltip
+  if (tooltipTimeout) {
+    clearTimeout(tooltipTimeout)
+  }
 }
 
 const editTemplate = (template) => {

@@ -6,10 +6,11 @@
         <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 px-2 py-1 rounded text-base font-medium flex items-center">H-1</span>
         <div
           class="relative group w-5 h-5 ml-2 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-serif font-bold cursor-pointer hover:scale-110 transition-transform duration-200"
+          @click="$emit('edit-info', 'H1')"
         >
           <span class="italic">i</span>
-          <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20">
-            對外正面影響說明：企業對外部環境可能產生的正面影響
+          <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20 max-w-xs">
+            {{ infoText || '對外正面影響說明：企業對外部環境可能產生的正面影響' }}
             <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800 dark:border-t-gray-700"></div>
           </div>
         </div>
@@ -54,11 +55,16 @@ defineProps({
   disabled: {
     type: Boolean,
     default: false
+  },
+  infoText: {
+    type: String,
+    default: ''
   }
 })
 
 defineEmits([
   'update:h1PositiveImpactLevel',
-  'update:h1PositiveImpactDescription'
+  'update:h1PositiveImpactDescription',
+  'edit-info'
 ])
 </script>

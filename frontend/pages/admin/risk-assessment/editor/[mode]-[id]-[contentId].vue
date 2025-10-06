@@ -141,6 +141,8 @@
               :probability-options="probabilityScaleOptions"
               :impact-options="impactScaleOptions"
               :disabled="computedFeatures.readonly"
+              :info-text="formData.hoverTexts?.E1"
+              @edit-info="editHoverText"
             />
 
             <OpportunitySection
@@ -151,6 +153,8 @@
               :probability-options="probabilityScaleOptions"
               :impact-options="impactScaleOptions"
               :disabled="computedFeatures.readonly"
+              :info-text="formData.hoverTexts?.F1"
+              @edit-info="editHoverText"
             />
           </div>
 
@@ -167,12 +171,16 @@
               v-model:g1-negative-impact-level="formData.negativeImpact.level"
               v-model:g1-negative-impact-description="formData.negativeImpact.description"
               :disabled="computedFeatures.readonly"
+              :info-text="formData.hoverTexts?.G1"
+              @edit-info="editHoverText"
             />
 
             <PositiveImpactSection
               v-model:h1-positive-impact-level="formData.positiveImpact.level"
               v-model:h1-positive-impact-description="formData.positiveImpact.description"
               :disabled="computedFeatures.readonly"
+              :info-text="formData.hoverTexts?.H1"
+              @edit-info="editHoverText"
             />
           </div>
         </div>
