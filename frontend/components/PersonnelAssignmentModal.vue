@@ -169,7 +169,7 @@
                         <!-- Tooltip for full content with HTML rendering -->
                         <span
                           v-if="stripHtml(getFactorDescription(content.factorId)).length > 10"
-                          class="absolute left-0 top-full mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-50 min-w-[300px] max-w-[500px] whitespace-normal text-sm font-normal prose prose-sm dark:prose-invert max-w-none"
+                          class="absolute left-0 top-full mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-[9999] min-w-[300px] max-w-[500px] whitespace-normal text-sm font-normal prose prose-sm dark:prose-invert max-w-none"
                           v-html="getFactorDescription(content.factorId)"
                         >
                         </span>
@@ -285,7 +285,7 @@
   <Modal
     :model-value="showIndividualAssignment"
     title="指派人員到題項內容"
-    size="lg"
+    size="3xl"
     @update:model-value="showIndividualAssignment = $event"
     @close="showIndividualAssignment = false"
   >
