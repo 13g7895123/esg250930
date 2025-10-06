@@ -196,10 +196,9 @@
           @mouseenter="showTooltip($event, item)"
           @mouseleave="hideTooltip"
         >
-          <div
-            v-html="item.factor_description || item.a_content || item.aContent || ''"
-            class="text-base text-gray-500 dark:text-gray-400 line-clamp-2 overflow-hidden cursor-pointer"
-          ></div>
+          <div class="text-base text-gray-500 dark:text-gray-400 cursor-pointer truncate">
+            {{ stripHtmlTags(item.factor_description || item.a_content || item.aContent || '', 20) }}
+          </div>
         </div>
       </template>
 
