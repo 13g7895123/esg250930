@@ -15,6 +15,9 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-configure intl \
     && docker-php-ext-install pdo_mysql mysqli mbstring exif pcntl bcmath gd zip intl
 
+# Set PHP timezone
+RUN echo "date.timezone = Asia/Taipei" > /usr/local/etc/php/conf.d/timezone.ini
+
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 

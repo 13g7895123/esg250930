@@ -12,6 +12,7 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV}
       - BACKEND_URL=${BACKEND_URL:-http://backend:80}
+      - TZ=Asia/Taipei
     depends_on:
       - backend
     networks:
@@ -33,6 +34,7 @@ services:
       - DB_USERNAME=${MYSQL_USER}
       - DB_PASSWORD=${MYSQL_PASSWORD}
       - DB_DATABASE=${MYSQL_DATABASE}
+      - TZ=Asia/Taipei
     depends_on:
       - mysql
     networks:
