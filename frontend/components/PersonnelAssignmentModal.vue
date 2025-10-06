@@ -692,9 +692,15 @@ const { assignments } = usePersonnelAssignmentApi()
 const assignmentHistory = computed(() => {
   if (!props.questionId) return []
 
-  return assignments.value
+  console.log('Computing assignmentHistory, total assignments:', assignments.value.length)
+  console.log('Filtering for companyId:', props.companyId, 'questionId:', props.questionId)
+
+  const filtered = assignments.value
     .filter(a => a.company_id === parseInt(props.companyId) && a.assessment_id === parseInt(props.questionId))
-    .map(assignment => {
+
+  console.log('Filtered assignments count:', filtered.length)
+
+  return filtered.map(assignment => {
       // Find content details from questionContent
       const content = props.questionContent.find(c => c.id === assignment.question_content_id)
 
@@ -842,8 +848,10 @@ const onAssignmentCompleted = async () => {
   // Reload assignment summary to get updated data
   if (props.questionId) {
     try {
-      await loadAssignmentSummary(props.companyId, props.questionId)
-      console.log('Assignment summary reloaded successfully')
+      console.log('Reloading assignment summary for:', { companyId: props.companyId, questionId: props.questionId })
+      const result = await loadAssignmentSummary(props.companyId, props.questionId)
+      console.log('Assignment summary reloaded successfully, assignments count:', assignments.value.length)
+      console.log('Assignment history count:', assignmentHistory.value.length)
     } catch (error) {
       console.error('Error reloading assignment summary:', error)
     }

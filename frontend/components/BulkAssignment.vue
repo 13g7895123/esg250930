@@ -310,8 +310,8 @@ const performBulkAssignment = async () => {
 
   // Show loading with SweetAlert
   $swal.fire({
-    title: '批量指派中',
-    html: '正在處理指派，請稍候...',
+    title: '系統提示',
+    html: '正在處理批量指派，請稍候...',
     allowOutsideClick: false,
     allowEscapeKey: false,
     didOpen: () => {
@@ -469,6 +469,20 @@ const getCategoryOrder = (categoryId) => {
 
   return 999
 }
+
+// Watch for changes in selected users to automatically unselect fully assigned content
+watch(selectedUserIds, () => {
+  // Remove content IDs that are now fully assigned
+  const fullyAssignedContentIds = sortedContentSummary.value
+    .filter(content => content.isFullyAssigned)
+    .map(content => content.contentId)
+
+  if (fullyAssignedContentIds.length > 0) {
+    selectedContentIds.value = selectedContentIds.value.filter(
+      id => !fullyAssignedContentIds.includes(id)
+    )
+  }
+})
 
 // Load question structure data when component mounts
 onMounted(async () => {
