@@ -197,7 +197,7 @@
           @mouseleave="hideTooltip"
         >
           <div class="text-base text-gray-500 dark:text-gray-400 cursor-pointer truncate">
-            {{ stripHtmlTags(item.factor_description || item.a_content || item.aContent || '', 20) }}
+            {{ stripHtmlTags(getRiskFactorDescription(item.risk_factor_id) || item.factor_description || item.a_content || item.aContent || '', 20) }}
           </div>
         </div>
       </template>
@@ -1159,6 +1159,11 @@ const getRiskFactorName = (riskFactorId) => {
   return factor ? factor.factor_name : '未設定'
 }
 
+const getRiskFactorDescription = (riskFactorId) => {
+  const factor = props.riskFactors.find(f => f.id === riskFactorId)
+  return factor ? factor.description : ''
+}
+
 // Helper method to strip HTML tags and truncate text
 const stripHtmlTags = (html, maxLength = 100) => {
   if (!html) return ''
@@ -1244,7 +1249,8 @@ const textToHtml = (text) => {
 
 // Tooltip methods for a_content display
 const showTooltip = (event, item) => {
-  const content = item.factor_description || item.a_content || item.aContent
+  // Get description from question_factors table via risk_factor_id
+  const content = getRiskFactorDescription(item.risk_factor_id) || item.factor_description || item.a_content || item.aContent
   if (!content) return
 
   // Clear any existing timeout
