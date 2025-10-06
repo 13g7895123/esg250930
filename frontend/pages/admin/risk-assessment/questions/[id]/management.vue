@@ -544,20 +544,6 @@
         <!-- Actions Slot -->
         <template #actions>
           <div class="flex items-center space-x-3">
-            <!-- Refresh Button -->
-            <button
-              @click="refreshStructureData"
-              :disabled="structureLoading"
-              class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-              title="重新整理"
-            >
-              <ArrowPathIcon
-                class="w-4 h-4 mr-2"
-                :class="{ 'animate-spin': structureLoading }"
-              />
-              重新整理
-            </button>
-
             <!-- Sync from Template Button -->
             <button
               @click="syncFromTemplate"
@@ -578,6 +564,20 @@
             >
               <PlusIcon class="w-4 h-4 mr-2" />
               新增類別
+            </button>
+
+            <!-- Refresh Button -->
+            <button
+              @click="refreshStructureData"
+              :disabled="structureLoading"
+              class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              title="重新整理"
+            >
+              <ArrowPathIcon
+                class="w-4 h-4 mr-2"
+                :class="{ 'animate-spin': structureLoading }"
+              />
+              重新整理
             </button>
           </div>
         </template>
@@ -627,20 +627,6 @@
         <!-- Actions Slot -->
         <template #actions>
           <div class="flex items-center space-x-3">
-            <!-- Refresh Button -->
-            <button
-              @click="refreshStructureData"
-              :disabled="structureLoading"
-              class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-              title="重新整理"
-            >
-              <ArrowPathIcon
-                class="w-4 h-4 mr-2"
-                :class="{ 'animate-spin': structureLoading }"
-              />
-              重新整理
-            </button>
-
             <!-- Sync from Template Button -->
             <button
               @click="syncFromTemplate"
@@ -662,6 +648,20 @@
             >
               <PlusIcon class="w-4 h-4 mr-2" />
               新增主題
+            </button>
+
+            <!-- Refresh Button -->
+            <button
+              @click="refreshStructureData"
+              :disabled="structureLoading"
+              class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              title="重新整理"
+            >
+              <ArrowPathIcon
+                class="w-4 h-4 mr-2"
+                :class="{ 'animate-spin': structureLoading }"
+              />
+              重新整理
             </button>
           </div>
         </template>
@@ -711,20 +711,6 @@
         <!-- Actions Slot -->
         <template #actions>
           <div class="flex items-center space-x-3">
-            <!-- Refresh Button -->
-            <button
-              @click="refreshStructureData"
-              :disabled="structureLoading"
-              class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-              title="重新整理"
-            >
-              <ArrowPathIcon
-                class="w-4 h-4 mr-2"
-                :class="{ 'animate-spin': structureLoading }"
-              />
-              重新整理
-            </button>
-
             <!-- Sync from Template Button -->
             <button
               @click="syncFromTemplate"
@@ -745,6 +731,20 @@
             >
               <PlusIcon class="w-4 h-4 mr-2" />
               新增因子
+            </button>
+
+            <!-- Refresh Button -->
+            <button
+              @click="refreshStructureData"
+              :disabled="structureLoading"
+              class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              title="重新整理"
+            >
+              <ArrowPathIcon
+                class="w-4 h-4 mr-2"
+                :class="{ 'animate-spin': structureLoading }"
+              />
+              重新整理
             </button>
           </div>
         </template>
@@ -1183,6 +1183,11 @@ const loadTopicLayerSetting = (questionId) => {
 // DataTable columns for question structure management
 const questionCategoryColumns = [
   {
+    key: 'actions',
+    label: '功能',
+    class: 'text-center w-32'
+  },
+  {
     key: 'category_name',
     label: '類別名稱',
     sortable: true,
@@ -1192,15 +1197,15 @@ const questionCategoryColumns = [
     key: 'description',
     label: '描述',
     class: 'text-gray-600 dark:text-gray-400'
-  },
-  {
-    key: 'actions',
-    label: '操作',
-    class: 'text-center w-32'
   }
 ]
 
 const questionTopicColumns = [
+  {
+    key: 'actions',
+    label: '功能',
+    class: 'text-center w-32'
+  },
   {
     key: 'topic_name',
     label: '主題名稱',
@@ -1216,15 +1221,15 @@ const questionTopicColumns = [
     key: 'description',
     label: '描述',
     class: 'text-gray-600 dark:text-gray-400'
-  },
-  {
-    key: 'actions',
-    label: '操作',
-    class: 'text-center w-32'
   }
 ]
 
 const questionFactorColumns = [
+  {
+    key: 'actions',
+    label: '功能',
+    class: 'text-center w-32'
+  },
   {
     key: 'factor_name',
     label: '因子名稱',
@@ -1245,11 +1250,6 @@ const questionFactorColumns = [
     key: 'description',
     label: '描述',
     class: 'text-gray-600 dark:text-gray-400'
-  },
-  {
-    key: 'actions',
-    label: '操作',
-    class: 'text-center w-32'
   }
 ]
 
