@@ -116,13 +116,21 @@ export const useQuestionStructure = () => {
       // Use the dedicated categories endpoint
       const result = await api.questionManagement.getCategories(assessmentId)
 
+      console.log('[useQuestionStructure] getCategories result:', result)
+
       // Handle the API response structure
+      // useApi wraps the backend response, so result.data contains the backend response
       if (!result.success) {
         throw new Error(result.error?.message || '取得風險分類失敗')
       }
 
-      // Extract categories from the response
-      const categoriesData = result.data || []
+      // The backend returns { success: true, data: [...] }
+      // useApi wraps it as { success: true, data: { success: true, data: [...] } }
+      // So we need to access result.data.data
+      const backendResponse = result.data
+      const categoriesData = backendResponse?.data || backendResponse || []
+
+      console.log('[useQuestionStructure] categoriesData:', categoriesData)
 
       // Apply search filter if provided
       const filteredCategories = search
@@ -255,13 +263,20 @@ export const useQuestionStructure = () => {
 
       const result = await api.questionManagement.getTopics(assessmentId, params)
 
+      console.log('[useQuestionStructure] getTopics result:', result)
+
       // Handle the API response structure
       if (!result.success) {
         throw new Error(result.error?.message || '取得風險主題失敗')
       }
 
       // Extract topics from the response
-      const topicsData = result.data || []
+      // Backend returns { success: true, data: [...] }
+      // useApi wraps it as { success: true, data: { success: true, data: [...] } }
+      const backendResponse = result.data
+      const topicsData = backendResponse?.data || backendResponse || []
+
+      console.log('[useQuestionStructure] topicsData:', topicsData)
 
       topics.value = topicsData
       return topicsData
@@ -388,13 +403,20 @@ export const useQuestionStructure = () => {
 
       const result = await api.questionManagement.getFactors(assessmentId, params)
 
+      console.log('[useQuestionStructure] getFactors result:', result)
+
       // Handle the API response structure
       if (!result.success) {
         throw new Error(result.error?.message || '取得風險因子失敗')
       }
 
       // Extract factors from the response
-      const factorsData = result.data || []
+      // Backend returns { success: true, data: [...] }
+      // useApi wraps it as { success: true, data: { success: true, data: [...] } }
+      const backendResponse = result.data
+      const factorsData = backendResponse?.data || backendResponse || []
+
+      console.log('[useQuestionStructure] factorsData:', factorsData)
 
       factors.value = factorsData
       return factorsData
