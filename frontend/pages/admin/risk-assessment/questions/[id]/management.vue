@@ -2043,11 +2043,16 @@ const manageQuestionContent = async (item) => {
 }
 
 // Question structure management functions
-const manageQuestionStructure = (item) => {
+const manageQuestionStructure = async (item) => {
   managingQuestion.value = item
 
   // Load topic layer setting for this question
   loadTopicLayerSetting(item.id)
+
+  // Load question structure data (categories, topics, factors)
+  if (item.id) {
+    await loadQuestionStructureData(item.id)
+  }
 
   showQuestionStructureModal.value = true
 }
