@@ -13,6 +13,12 @@ import { $fetch } from 'ofetch'
 
 const API_BASE_URL = '/api/v1/personnel'
 
+// In-memory storage for mock API data
+const mockStorage = {
+  assignments: [],
+  nextAssignmentId: 1
+}
+
 /**
  * API請求封裝函數
  */
@@ -45,7 +51,7 @@ const apiRequest = async (endpoint, options = {}) => {
  * Mock response for development when API fails
  */
 const getMockResponse = (endpoint, options) => {
-  console.log('Generating mock response for:', endpoint)
+  console.log('Generating mock response for:', endpoint, 'method:', options.method || 'GET')
 
   // Mock personnel data
   if (endpoint.includes('/personnel-assignments')) {
@@ -102,25 +108,144 @@ const getMockResponse = (endpoint, options) => {
     }
   }
 
-  // Mock assignment summary
-  if (endpoint.includes('/assignments')) {
+  // Mock batch create assignments - POST /assignments/batch
+  if (endpoint.includes('/assignments/batch') && options.method === 'POST') {
+    const batchData = options.body
+    const createdAssignments = []
+
+    // Create assignment records for each content ID
+    batchData.question_content_ids.forEach(contentId => {
+      const newAssignment = {
+        id: mockStorage.nextAssignmentId++,
+        company_id: batchData.company_id,
+        assessment_id: batchData.assessment_id,
+        question_content_id: contentId,
+        personnel_id: batchData.personnel_id,
+        personnel_name: `人員 ${batchData.personnel_id}`,
+        personnel_department: '測試部門',
+        personnel_position: '測試職位',
+        assignment_status: 'assigned',
+        assigned_at: new Date().toISOString(),
+        accepted_at: null,
+        completed_at: null
+      }
+
+      // Check if assignment already exists
+      const exists = mockStorage.assignments.some(a =>
+        a.company_id === newAssignment.company_id &&
+        a.assessment_id === newAssignment.assessment_id &&
+        a.question_content_id === newAssignment.question_content_id &&
+        a.personnel_id === newAssignment.personnel_id
+      )
+
+      if (!exists) {
+        mockStorage.assignments.push(newAssignment)
+        createdAssignments.push(newAssignment)
+      }
+    })
+
+    console.log('Mock: Created', createdAssignments.length, 'assignments, skipped', batchData.question_content_ids.length - createdAssignments.length)
+    console.log('Mock: Total assignments in storage:', mockStorage.assignments.length)
+
+    return {
+      success: true,
+      message: '批量指派成功 (模擬)',
+      data: {
+        assigned_count: createdAssignments.length,
+        skipped_count: batchData.question_content_ids.length - createdAssignments.length,
+        assignments: createdAssignments
+      }
+    }
+  }
+
+  // Mock assignment summary - GET /assignments
+  if (endpoint.includes('/assignments') && (!options.method || options.method === 'GET')) {
+    // Extract companyId and assessmentId from endpoint
+    // Format: /companies/{companyId}/assessments/{assessmentId}/assignments
+    const match = endpoint.match(/\/companies\/(\d+)\/assessments\/(\d+)\/assignments/)
+
+    let filteredAssignments = mockStorage.assignments
+
+    if (match) {
+      const companyId = parseInt(match[1])
+      const assessmentId = parseInt(match[2])
+
+      filteredAssignments = mockStorage.assignments.filter(a =>
+        a.company_id === companyId && a.assessment_id === assessmentId
+      )
+
+      console.log('Mock: Filtering assignments for company', companyId, 'assessment', assessmentId)
+      console.log('Mock: Found', filteredAssignments.length, 'assignments')
+    }
+
     return {
       success: true,
       message: '成功取得指派摘要 (模擬)',
       data: {
-        assignments: [],
+        assignments: filteredAssignments,
         personnel_summary: [],
         statistics: {
-          total_assignments: 0,
+          total_assignments: filteredAssignments.length,
           unique_personnel: 0,
           unique_contents: 0,
           status_counts: {
-            assigned: 0,
+            assigned: filteredAssignments.filter(a => a.assignment_status === 'assigned').length,
             accepted: 0,
             declined: 0,
             completed: 0
           }
         }
+      }
+    }
+  }
+
+  // Mock remove assignment - DELETE /assignments
+  if (endpoint.includes('/assignments') && options.method === 'DELETE') {
+    const removeData = options.body
+
+    // Remove assignment from storage
+    const beforeCount = mockStorage.assignments.length
+    mockStorage.assignments = mockStorage.assignments.filter(a =>
+      !(a.company_id === removeData.company_id &&
+        a.assessment_id === removeData.assessment_id &&
+        a.question_content_id === removeData.question_content_id &&
+        a.personnel_id === removeData.personnel_id)
+    )
+    const removedCount = beforeCount - mockStorage.assignments.length
+
+    console.log('Mock: Removed', removedCount, 'assignment(s)')
+
+    return {
+      success: true,
+      message: '移除指派成功 (模擬)',
+      data: {
+        removed_count: removedCount
+      }
+    }
+  }
+
+  // Mock remove personnel from assessment - DELETE /companies/{companyId}/assessments/{assessmentId}/personnel/{personnelId}
+  if (endpoint.match(/\/companies\/\d+\/assessments\/\d+\/personnel\/\d+/) && options.method === 'DELETE') {
+    const match = endpoint.match(/\/companies\/(\d+)\/assessments\/(\d+)\/personnel\/(\d+)/)
+    const companyId = parseInt(match[1])
+    const assessmentId = parseInt(match[2])
+    const personnelId = parseInt(match[3])
+
+    const beforeCount = mockStorage.assignments.length
+    mockStorage.assignments = mockStorage.assignments.filter(a =>
+      !(a.company_id === companyId &&
+        a.assessment_id === assessmentId &&
+        a.personnel_id === personnelId)
+    )
+    const removedCount = beforeCount - mockStorage.assignments.length
+
+    console.log('Mock: Removed all assignments for personnel', personnelId, '- removed', removedCount, 'assignment(s)')
+
+    return {
+      success: true,
+      message: '移除人員所有指派成功 (模擬)',
+      data: {
+        removed_count: removedCount
       }
     }
   }

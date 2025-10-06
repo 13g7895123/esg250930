@@ -2,21 +2,53 @@
   <div class="space-y-4">
     <!-- Step 1: Select User -->
     <div>
-      <h4 class="font-medium text-gray-900 dark:text-white mb-3">選擇要指派的人員</h4>
-      
-      <!-- User Search -->
-      <div class="relative mb-3">
-        <input
-          v-model="userSearchQuery"
-          type="text"
-          placeholder="搜尋人員姓名、部門或職位..."
-          class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-        />
-        <MagnifyingGlassIcon class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="font-medium text-gray-900 dark:text-white">選擇要指派的人員</h4>
+        <div v-if="selectedUser" class="text-sm text-gray-600 dark:text-gray-400">
+          已選擇：{{ selectedUser.name }}
+        </div>
       </div>
 
-      <!-- Available Users -->
-      <div class="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg">
+      <!-- Collapsed view when user is selected -->
+      <div v-if="selectedUser && isUserSectionCollapsed" class="border border-gray-200 dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-700">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-primary-100 dark:bg-primary-900/20 rounded-full flex items-center justify-center">
+              <span class="text-primary-600 dark:text-primary-400 font-medium text-sm">
+                {{ selectedUser.name.charAt(0) }}
+              </span>
+            </div>
+            <div>
+              <p class="font-medium text-gray-900 dark:text-white">{{ selectedUser.name }}</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ selectedUser.department }} - {{ selectedUser.position }}
+              </p>
+            </div>
+          </div>
+          <button
+            @click="isUserSectionCollapsed = false"
+            class="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400"
+          >
+            變更
+          </button>
+        </div>
+      </div>
+
+      <!-- Expanded view -->
+      <div v-else>
+        <!-- User Search -->
+        <div class="relative mb-3">
+          <input
+            v-model="userSearchQuery"
+            type="text"
+            placeholder="搜尋人員姓名、部門或職位..."
+            class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+          />
+          <MagnifyingGlassIcon class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+        </div>
+
+        <!-- Available Users -->
+        <div class="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg">
         <div v-if="filteredAvailableUsers.length === 0" class="p-4 text-center text-gray-500 dark:text-gray-400">
           <p>沒有找到符合條件的人員</p>
         </div>
@@ -47,10 +79,11 @@
           </div>
         </div>
       </div>
+      </div>
     </div>
 
     <!-- Step 2: Select Content Items -->
-    <div v-if="selectedUser">
+    <div v-if="selectedUser" :class="isUserSectionCollapsed ? 'flex-1' : ''">
       <h4 class="font-medium text-gray-900 dark:text-white mb-3">
         選擇要指派給 {{ selectedUser.name }} 的題項內容
       </h4>
@@ -75,7 +108,7 @@
       </div>
 
       <!-- Content Items -->
-      <div class="max-h-64 overflow-y-auto space-y-2">
+      <div :class="['overflow-y-auto space-y-2', isUserSectionCollapsed ? 'max-h-96' : 'max-h-64']">
         <div
           v-for="content in availableContentItems"
           :key="content.contentId"
@@ -211,6 +244,7 @@ const {
 const userSearchQuery = ref('')
 const selectedUser = ref(null)
 const selectedContentIds = ref([])
+const isUserSectionCollapsed = ref(false)
 
 // Computed properties
 const filteredAvailableUsers = computed(() => {
@@ -251,6 +285,17 @@ const availableContentItems = computed(() => {
 const canAssign = computed(() => 
   selectedUser.value && selectedContentIds.value.length > 0
 )
+
+// Watch for user selection to auto-collapse
+watch(selectedUser, (newUser) => {
+  if (newUser) {
+    // Auto-collapse when user is selected
+    isUserSectionCollapsed.value = true
+  } else {
+    // Expand when user is cleared
+    isUserSectionCollapsed.value = false
+  }
+})
 
 // Methods
 const selectUser = (user) => {

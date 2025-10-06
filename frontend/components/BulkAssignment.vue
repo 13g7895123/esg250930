@@ -2,10 +2,36 @@
   <div class="space-y-4">
     <!-- Personnel Selection -->
     <div>
-      <h4 class="font-medium text-gray-900 dark:text-white mb-3">選擇參與指派的人員</h4>
-      
-      <!-- Search -->
-      <div class="relative mb-3">
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="font-medium text-gray-900 dark:text-white">選擇參與指派的人員</h4>
+        <button
+          v-if="selectedUserIds.length > 0"
+          @click="isUserSectionCollapsed = !isUserSectionCollapsed"
+          class="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 flex items-center gap-1"
+        >
+          <span>{{ isUserSectionCollapsed ? '展開' : '收折' }}</span>
+          <svg
+            :class="['w-4 h-4 transition-transform', isUserSectionCollapsed ? 'rotate-180' : '']"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Collapsed view -->
+      <div v-if="isUserSectionCollapsed && selectedUserIds.length > 0" class="border border-gray-200 dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-700">
+        <div class="text-sm text-gray-900 dark:text-white">
+          已選擇 <strong>{{ selectedUserIds.length }}</strong> 位人員
+        </div>
+      </div>
+
+      <!-- Expanded view -->
+      <div v-else>
+        <!-- Search -->
+        <div class="relative mb-3">
         <input
           v-model="userSearchQuery"
           type="text"
@@ -62,10 +88,11 @@
           </label>
         </div>
       </div>
+      </div>
     </div>
 
     <!-- Content Selection -->
-    <div>
+    <div :class="isUserSectionCollapsed ? 'flex-1' : ''">
       <h4 class="font-medium text-gray-900 dark:text-white mb-3">選擇要指派的題項內容</h4>
       
       <!-- Select All/None -->
@@ -88,7 +115,7 @@
       </div>
 
       <!-- Content List -->
-      <div class="max-h-48 overflow-y-auto space-y-2">
+      <div :class="['overflow-y-auto space-y-2', isUserSectionCollapsed ? 'max-h-96' : 'max-h-48']">
         <div
           v-for="content in sortedContentSummary"
           :key="content.contentId"
@@ -222,6 +249,7 @@ const {
 const userSearchQuery = ref('')
 const selectedUserIds = ref([])
 const selectedContentIds = ref([])
+const isUserSectionCollapsed = ref(false)
 
 // Computed properties
 const filteredAvailableUsers = computed(() => {
