@@ -23,8 +23,29 @@
 
       <!-- Collapsed view -->
       <div v-if="isUserSectionCollapsed && selectedUserIds.length > 0" class="border border-gray-200 dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-700">
-        <div class="text-sm text-gray-900 dark:text-white">
+        <div class="text-sm font-medium text-gray-900 dark:text-white mb-2">
           已選擇 <strong>{{ selectedUserIds.length }}</strong> 位人員
+        </div>
+        <div class="flex flex-wrap gap-2 mt-2">
+          <div
+            v-for="user in selectedUsers"
+            :key="user.id"
+            class="inline-flex items-center px-3 py-1.5 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg text-sm"
+          >
+            <div class="flex items-center space-x-2">
+              <div class="w-6 h-6 bg-primary-100 dark:bg-primary-900/20 rounded-full flex items-center justify-center">
+                <span class="text-primary-600 dark:text-primary-400 font-medium text-xs">
+                  {{ user.name.charAt(0) }}
+                </span>
+              </div>
+              <div class="flex flex-col">
+                <span class="font-medium text-gray-900 dark:text-white">{{ user.name }}</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ user.department }} - {{ user.position }}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
