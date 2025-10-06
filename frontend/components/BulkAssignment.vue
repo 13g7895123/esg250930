@@ -198,8 +198,8 @@ const props = defineProps({
 
 const emit = defineEmits(['assignment-completed', 'close'])
 
-// Assignment composable
-const { assignUserToContent } = useQuestionAssignments()
+// Assignment API composable
+const { batchAssignPersonnel, isLoading } = usePersonnelAssignmentApi()
 
 // Question structure management for categories, topics, and factors
 const {
@@ -285,30 +285,41 @@ const deselectAllContent = () => {
   selectedContentIds.value = []
 }
 
-const performBulkAssignment = () => {
+const performBulkAssignment = async () => {
   if (!canPerformBulkAssignment.value) return
-  
-  let assignedCount = 0
-  
-  previewAssignments.value.forEach(assignment => {
-    if (assignUserToContent(
-      props.companyId,
-      props.questionId,
-      assignment.content.contentId,
-      assignment.user
-    )) {
-      assignedCount++
+
+  try {
+    // Prepare batch assignment data
+    const batchData = {
+      company_id: props.companyId,
+      assessment_id: props.questionId,
+      assignments: previewAssignments.value.map(assignment => ({
+        question_content_id: assignment.content.contentId,
+        personnel_id: assignment.user.id
+      }))
     }
-  })
-  
-  if (assignedCount > 0) {
-    // Reset form
-    selectedUserIds.value = []
-    selectedContentIds.value = []
-    userSearchQuery.value = ''
-    
-    // Notify parent
-    emit('assignment-completed')
+
+    // Call API to create batch assignments
+    const result = await batchAssignPersonnel(batchData)
+
+    if (result) {
+      // Show success message
+      const { $notify } = useNuxtApp()
+      $notify.success(`成功指派 ${previewAssignments.value.length} 筆`)
+
+      // Reset form
+      selectedUserIds.value = []
+      selectedContentIds.value = []
+      userSearchQuery.value = ''
+
+      // Notify parent to refresh data
+      emit('assignment-completed')
+      emit('close')
+    }
+  } catch (error) {
+    console.error('Bulk assignment error:', error)
+    const { $notify } = useNuxtApp()
+    $notify.error('批量指派失敗，請稍後再試')
   }
 }
 
