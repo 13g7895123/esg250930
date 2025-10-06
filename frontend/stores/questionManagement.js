@@ -120,7 +120,10 @@ export const useQuestionManagementStore = defineStore('questionManagement', () =
           e1_info: item.e1_info || '',
           f1_info: item.f1_info || '',
           g1_info: item.g1_info || '',
-          h1_info: item.h1_info || ''
+          h1_info: item.h1_info || '',
+          // 時間戳記欄位
+          created_at: item.created_at || null,
+          updated_at: item.updated_at || null
         }))
         return response.data
       } else {
