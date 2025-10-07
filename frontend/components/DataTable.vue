@@ -178,10 +178,15 @@
               <div v-if="$slots[`cell-${column.key}`]">
                 <slot :name="`cell-${column.key}`" :item="item" :value="getNestedValue(item, column.key)" />
               </div>
-              
-              <!-- Default Cell Content -->
-              <div v-else :class="column.cellClass || 'text-lg text-gray-900 dark:text-white'">
-                {{ formatCellValue(item, column) }}
+
+              <!-- Default Cell Content with Tooltip -->
+              <div
+                v-else
+                :class="column.cellClass || 'text-lg text-gray-900 dark:text-white'"
+                :title="column.tooltip && typeof column.tooltip === 'function' ? column.tooltip(item) : ''"
+              >
+                <span v-if="column.isHtml" v-html="formatCellValue(item, column)"></span>
+                <span v-else>{{ formatCellValue(item, column) }}</span>
               </div>
             </td>
           </tr>
@@ -664,9 +669,30 @@ const handlePageSizeChange = () => {
   emit('page-change', 1)
 }
 
-// Watch for data changes
-watch(() => props.data, () => {
-  currentPage.value = 1
-  selectedRows.value = []
+// Watch for data changes - only reset page when data length changes
+watch(() => props.data, (newData, oldData) => {
+  // 只有當資料長度改變時才重置頁面（新增/刪除資料）
+  // 如果只是內容變化（編輯）則保持當前頁面
+  const newLength = newData?.length || 0
+  const oldLength = oldData?.length || 0
+
+  if (newLength !== oldLength) {
+    currentPage.value = 1
+    selectedRows.value = []
+  } else {
+    // 資料長度相同，只清除選取狀態
+    selectedRows.value = []
+  }
 }, { deep: true })
+
+// Expose methods and state for parent components
+defineExpose({
+  getCurrentPage: () => currentPage.value,
+  setCurrentPage: (page) => {
+    if (page >= 1 && page <= totalPages.value) {
+      currentPage.value = page
+    }
+  },
+  currentPage
+})
 </script>

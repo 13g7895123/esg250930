@@ -84,11 +84,26 @@ export const useTemplatesStore = defineStore('templates', () => {
           ? response.data
           : (response.data.templates || [])
 
-        // Ensure all templates have risk_topics_enabled field (default to true)
-        const templatesWithDefaults = templatesArray.map(template => ({
-          ...template,
-          risk_topics_enabled: template.risk_topics_enabled ?? true
-        }))
+        // Ensure all templates have risk_topics_enabled field (default to false)
+        // Convert database 1/0 to boolean true/false
+        const templatesWithDefaults = templatesArray.map(template => {
+          const rawValue = template.risk_topics_enabled
+          let riskTopicsEnabled = false
+
+          // Check for truthy values: 1, true, "1", "true"
+          if (rawValue === 1 || rawValue === true || rawValue === '1' || rawValue === 'true') {
+            riskTopicsEnabled = true
+          }
+          // Check for falsy values: 0, false, "0", "false", null, undefined
+          else if (rawValue === 0 || rawValue === false || rawValue === '0' || rawValue === 'false' || rawValue === null || rawValue === undefined) {
+            riskTopicsEnabled = false
+          }
+
+          return {
+            ...template,
+            risk_topics_enabled: riskTopicsEnabled
+          }
+        })
         templates.value = templatesWithDefaults
         return response.data
       } else {
@@ -187,9 +202,25 @@ export const useTemplatesStore = defineStore('templates', () => {
       })
       
       if (response.success && response.data) {
-        // Update with server response
-        Object.assign(template, response.data)
-        return response.data
+        // Update with server response, ensuring boolean conversion for risk_topics_enabled
+        const rawValue = response.data.risk_topics_enabled
+        let riskTopicsEnabled = false
+
+        // Check for truthy values: 1, true, "1", "true"
+        if (rawValue === 1 || rawValue === true || rawValue === '1' || rawValue === 'true') {
+          riskTopicsEnabled = true
+        }
+        // Check for falsy values: 0, false, "0", "false"
+        else if (rawValue === 0 || rawValue === false || rawValue === '0' || rawValue === 'false') {
+          riskTopicsEnabled = false
+        }
+
+        const updatedData = {
+          ...response.data,
+          risk_topics_enabled: riskTopicsEnabled
+        }
+        Object.assign(template, updatedData)
+        return updatedData
       } else {
         throw new Error('Failed to update template')
       }
@@ -260,14 +291,29 @@ export const useTemplatesStore = defineStore('templates', () => {
       })
       
       if (response.success && response.data) {
+        // Convert risk_topics_enabled to boolean
+        const rawValue = response.data.risk_topics_enabled
+        let riskTopicsEnabled = false
+
+        if (rawValue === 1 || rawValue === true || rawValue === '1' || rawValue === 'true') {
+          riskTopicsEnabled = true
+        } else if (rawValue === 0 || rawValue === false || rawValue === '0' || rawValue === 'false') {
+          riskTopicsEnabled = false
+        }
+
+        const copiedTemplate = {
+          ...response.data,
+          risk_topics_enabled: riskTopicsEnabled
+        }
+
         // Add new template to the list
-        templates.value.unshift(response.data)
+        templates.value.unshift(copiedTemplate)
 
         // Initialize empty content and categories for new template
-        templateContent.value[response.data.id] = []
-        riskCategories.value[response.data.id] = []
+        templateContent.value[copiedTemplate.id] = []
+        riskCategories.value[copiedTemplate.id] = []
 
-        return response.data
+        return copiedTemplate
       } else {
         // Extract API error message
         const apiMessage = response.message || response.error?.message || 'Failed to copy template'
@@ -648,20 +694,82 @@ export const useTemplatesStore = defineStore('templates', () => {
   }
 
   // Toggle risk topics for a template
-  const toggleRiskTopics = (templateId) => {
+  const toggleRiskTopics = async (templateId) => {
     const template = templates.value.find(t => t.id === templateId)
-    if (template) {
-      // Toggle the risk_topics_enabled field (default to true if not set)
-      template.risk_topics_enabled = !(template.risk_topics_enabled ?? true)
+    if (!template) {
+      throw new Error('Template not found')
+    }
 
-      // Save to localStorage for persistence
-      const templatesData = templates.value.map(t => ({
-        id: t.id,
-        risk_topics_enabled: t.risk_topics_enabled ?? true
-      }))
-      localStorage.setItem('templateRiskTopicsSettings', JSON.stringify(templatesData))
+    // Store original value for rollback (ensure boolean)
+    const originalValue = template.risk_topics_enabled === true || template.risk_topics_enabled === 1
+    console.log(`[Toggle] Original value:`, originalValue, `(raw: ${template.risk_topics_enabled})`)
 
-      console.log(`Template ${templateId} risk topics enabled:`, template.risk_topics_enabled)
+    // Optimistic update - toggle the boolean
+    const newValue = !originalValue
+    const index = templates.value.findIndex(t => t.id === templateId)
+    if (index !== -1) {
+      templates.value[index] = {
+        ...templates.value[index],
+        risk_topics_enabled: newValue
+      }
+    }
+    console.log(`[Toggle] New value (optimistic):`, newValue)
+
+    try {
+      // Call API to persist the change
+      console.log(`[Toggle] Sending to API:`, {
+        version_name: template.version_name,
+        risk_topics_enabled: newValue
+      })
+
+      const response = await apiClient.templates.update(templateId, {
+        version_name: template.version_name,
+        description: template.description,
+        status: template.status,
+        risk_topics_enabled: newValue
+      })
+
+      console.log(`[Toggle] API Response:`, response.data)
+
+      if (response.success && response.data) {
+        // Convert server response (1/0/string) to boolean (true/false)
+        const rawValue = response.data.risk_topics_enabled
+        let serverValue = false
+
+        // Check for truthy values: 1, true, "1", "true"
+        if (rawValue === 1 || rawValue === true || rawValue === '1' || rawValue === 'true') {
+          serverValue = true
+        }
+        // Check for falsy values: 0, false, "0", "false"
+        else if (rawValue === 0 || rawValue === false || rawValue === '0' || rawValue === 'false') {
+          serverValue = false
+        }
+
+        // Force update by finding the template again and reassigning
+        const index = templates.value.findIndex(t => t.id === templateId)
+        if (index !== -1) {
+          templates.value[index] = {
+            ...templates.value[index],
+            risk_topics_enabled: serverValue
+          }
+        }
+        console.log(`[Toggle] Final value from server:`, serverValue, `(raw: ${rawValue}, type: ${typeof rawValue})`)
+        console.log(`[Toggle] Updated template in store:`, templates.value[index])
+      } else {
+        throw new Error('Failed to update risk topics setting')
+      }
+    } catch (err) {
+      // Rollback on error
+      console.log(`[Toggle] Error, rolling back to:`, originalValue)
+      const index = templates.value.findIndex(t => t.id === templateId)
+      if (index !== -1) {
+        templates.value[index] = {
+          ...templates.value[index],
+          risk_topics_enabled: originalValue
+        }
+      }
+      handleError(err, 'Failed to toggle risk topics')
+      throw err
     }
   }
 
@@ -669,22 +777,6 @@ export const useTemplatesStore = defineStore('templates', () => {
   const initialize = async () => {
     try {
       await fetchTemplates()
-
-      // Load saved risk topics settings from localStorage
-      try {
-        const savedSettings = localStorage.getItem('templateRiskTopicsSettings')
-        if (savedSettings) {
-          const settings = JSON.parse(savedSettings)
-          settings.forEach(setting => {
-            const template = templates.value.find(t => t.id === setting.id)
-            if (template) {
-              template.risk_topics_enabled = setting.risk_topics_enabled
-            }
-          })
-        }
-      } catch (err) {
-        console.warn('Failed to load template risk topics settings:', err)
-      }
     } catch (err) {
       console.warn('Failed to initialize templates store:', err)
     }

@@ -56,16 +56,17 @@ class HtmlToRichTextConverter
         libxml_use_internal_errors(true);
 
         // 載入 HTML，使用 UTF-8 編碼
-        $dom->loadHTML('<?xml encoding="UTF-8">' . $html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        // 使用完整的 HTML 包裝以確保多段落能正確解析
+        $wrappedHtml = '<?xml encoding="UTF-8"><html><body>' . $html . '</body></html>';
+        $dom->loadHTML($wrappedHtml, LIBXML_HTML_NODEFDTD);
 
         libxml_clear_errors();
 
-        // 處理 body 節點（如果存在）
+        // 處理 body 節點
         $body = $dom->getElementsByTagName('body')->item(0);
-        $rootNode = $body ? $body : $dom->documentElement;
 
-        if ($rootNode) {
-            $this->processNode($rootNode, $richText);
+        if ($body) {
+            $this->processNode($body, $richText);
         }
     }
 
@@ -83,7 +84,11 @@ class HtmlToRichTextConverter
                 // 文字節點
                 $text = $child->nodeValue;
 
+                // 保留文字內容，但移除前後的純空白（不包括有實際內容的空白）
                 if (!empty(trim($text))) {
+                    // 只處理空白符號，不影響文字內容
+                    // 保留文字原樣，僅清理連續空白（但不是換行符）
+                    $text = preg_replace('/[ \t]+/', ' ', $text);
                     $this->addTextRun($richText, $text, $inheritedStyle);
                 }
             } elseif ($child->nodeType === XML_ELEMENT_NODE) {
@@ -97,13 +102,26 @@ class HtmlToRichTextConverter
                         break;
 
                     case 'p':
-                    case 'div':
-                        // 段落元素，添加換行
+                        // 段落元素：如果不是第一個元素，在前面加換行
                         if ($richText->getRichTextElements()) {
                             $this->addTextRun($richText, "\n", $inheritedStyle);
                         }
+                        // 處理段落內容
                         $this->processNode($child, $richText, $currentStyle);
-                        $this->addTextRun($richText, "\n", $inheritedStyle);
+                        // 段落結束後不需要額外加換行，因為下一個段落會自己加前導換行
+                        break;
+
+                    case 'div':
+                        // div 元素：處理方式與 p 類似但可能包含其他塊級元素
+                        if ($richText->getRichTextElements()) {
+                            // 檢查前一個元素是否需要換行
+                            $elements = $richText->getRichTextElements();
+                            $lastElement = end($elements);
+                            if ($lastElement && $lastElement->getText() && !str_ends_with($lastElement->getText(), "\n")) {
+                                $this->addTextRun($richText, "\n", $inheritedStyle);
+                            }
+                        }
+                        $this->processNode($child, $richText, $currentStyle);
                         break;
 
                     case 'ul':

@@ -308,6 +308,11 @@ class TemplateController extends ResourceController
                 'copied_from' => $id
             ];
 
+            // Copy risk_topics_enabled if it exists in the original template
+            if (array_key_exists('risk_topics_enabled', $originalTemplate)) {
+                $data['risk_topics_enabled'] = $originalTemplate['risk_topics_enabled'];
+            }
+
             // Create the new template
             $newTemplateId = $this->model->insert($data);
 
@@ -363,23 +368,37 @@ class TemplateController extends ResourceController
             }
 
             // 5. Copy risk factors with updated topic_id and category_id mapping
-            foreach ($topicMapping as $oldTopicId => $newTopicId) {
-                // Get the old and new category_id for this topic
-                $oldTopic = array_values(array_filter($oldTopics, function($t) use ($oldTopicId) {
-                    return $t['id'] == $oldTopicId;
-                }))[0] ?? null;
+            // Check if template has topic layer enabled
+            if (!empty($topicMapping)) {
+                // Template has topic layer - copy factors with topics
+                foreach ($topicMapping as $oldTopicId => $newTopicId) {
+                    // Get the old and new category_id for this topic
+                    $oldTopic = array_values(array_filter($oldTopics, function($t) use ($oldTopicId) {
+                        return $t['id'] == $oldTopicId;
+                    }))[0] ?? null;
 
-                $newTopic = array_values(array_filter($newTopics, function($t) use ($newTopicId) {
-                    return $t['id'] == $newTopicId;
-                }))[0] ?? null;
+                    $newTopic = array_values(array_filter($newTopics, function($t) use ($newTopicId) {
+                        return $t['id'] == $newTopicId;
+                    }))[0] ?? null;
 
-                if ($oldTopic && $newTopic) {
+                    if ($oldTopic && $newTopic) {
+                        $db->query("
+                            INSERT INTO risk_factors (template_id, topic_id, category_id, factor_name, description, status, created_at, updated_at)
+                            SELECT ?, ?, ?, factor_name, description, status, NOW(), NOW()
+                            FROM risk_factors
+                            WHERE template_id = ? AND topic_id = ? AND category_id = ?
+                        ", [$newTemplateId, $newTopicId, $newTopic['category_id'], $id, $oldTopicId, $oldTopic['category_id']]);
+                    }
+                }
+            } else {
+                // Template doesn't have topic layer - copy factors directly under categories
+                foreach ($categoryMapping as $oldCategoryId => $newCategoryId) {
                     $db->query("
-                        INSERT INTO risk_factors (template_id, topic_id, category_id, factor_name, description, status, created_at, updated_at)
-                        SELECT ?, ?, ?, factor_name, description, status, NOW(), NOW()
+                        INSERT INTO risk_factors (template_id, category_id, factor_name, description, status, created_at, updated_at)
+                        SELECT ?, ?, factor_name, description, status, NOW(), NOW()
                         FROM risk_factors
-                        WHERE template_id = ? AND topic_id = ? AND category_id = ?
-                    ", [$newTemplateId, $newTopicId, $newTopic['category_id'], $id, $oldTopicId, $oldTopic['category_id']]);
+                        WHERE template_id = ? AND category_id = ? AND (topic_id IS NULL OR topic_id = 0)
+                    ", [$newTemplateId, $newCategoryId, $id, $oldCategoryId]);
                 }
             }
 
@@ -634,17 +653,35 @@ class TemplateController extends ResourceController
      * Import template structure from Excel with RichText support
      * POST /api/v1/risk-assessment/templates/{templateId}/import-structure
      */
-    public function importStructure()
+    public function importStructure($templateId = null)
     {
         try {
-            $templateId = $this->request->uri->getSegment(5);
+            // If templateId not provided as parameter, try to get from URI segment
+            if (!$templateId) {
+                $templateId = $this->request->uri->getSegment(5);
+            }
+
+            // Validate templateId
+            if (!$templateId || empty($templateId) || $templateId === 'undefined' || $templateId === 'null') {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '無效的範本 ID',
+                    'debug' => [
+                        'received_id' => $templateId,
+                        'uri_path' => $this->request->uri->getPath()
+                    ]
+                ]);
+            }
 
             // Check if template exists
             $template = $this->model->find($templateId);
             if (!$template) {
                 return $this->response->setStatusCode(404)->setJSON([
                     'success' => false,
-                    'message' => '範本不存在'
+                    'message' => '範本不存在',
+                    'debug' => [
+                        'template_id' => $templateId
+                    ]
                 ]);
             }
 
@@ -695,22 +732,17 @@ class TemplateController extends ResourceController
                     if ($hasTopicLayer) {
                         // Three-layer structure: Category, Topic, Factor
                         $categoryName = trim($row[0] ?? '');
-                        $categoryDescHtml = '';
+                        $categoryDesc = trim($row[1] ?? ''); // Plain text, no HTML conversion
                         $topicName = trim($row[2] ?? '');
                         $topicDescHtml = '';
                         $factorName = trim($row[4] ?? '');
                         $factorDescHtml = '';
 
-                        // Convert RichText descriptions to HTML
-                        // Category Description (Column B)
-                        $cellB = $sheet->getCell('B' . $rowIndex);
-                        $categoryDescHtml = $this->convertCellToHtml($cellB, $richTextToHtml);
-
-                        // Topic Description (Column D)
+                        // Topic Description (Column D) - Convert RichText to HTML
                         $cellD = $sheet->getCell('D' . $rowIndex);
                         $topicDescHtml = $this->convertCellToHtml($cellD, $richTextToHtml);
 
-                        // Factor Description (Column F)
+                        // Factor Description (Column F) - Convert RichText to HTML
                         $cellF = $sheet->getCell('F' . $rowIndex);
                         $factorDescHtml = $this->convertCellToHtml($cellF, $richTextToHtml);
 
@@ -734,15 +766,15 @@ class TemplateController extends ResourceController
                             $categoryId = $categoryModel->insert([
                                 'template_id' => $templateId,
                                 'category_name' => $categoryName,
-                                'description' => !empty($categoryDescHtml) ? $categoryDescHtml : null,
+                                'description' => !empty($categoryDesc) ? $categoryDesc : null,
                                 'sort_order' => $nextSort
                             ]);
                         } else {
                             $categoryId = $category['id'];
                             // Update description if provided
-                            if (!empty($categoryDescHtml)) {
+                            if (!empty($categoryDesc)) {
                                 $categoryModel->update($categoryId, [
-                                    'description' => $categoryDescHtml
+                                    'description' => $categoryDesc
                                 ]);
                             }
                         }
@@ -811,16 +843,11 @@ class TemplateController extends ResourceController
                     } else {
                         // Two-layer structure: Category, Factor (no Topic)
                         $categoryName = trim($row[0] ?? '');
-                        $categoryDescHtml = '';
+                        $categoryDesc = trim($row[1] ?? ''); // Plain text, no HTML conversion
                         $factorName = trim($row[2] ?? '');
                         $factorDescHtml = '';
 
-                        // Convert RichText descriptions to HTML
-                        // Category Description (Column B)
-                        $cellB = $sheet->getCell('B' . $rowIndex);
-                        $categoryDescHtml = $this->convertCellToHtml($cellB, $richTextToHtml);
-
-                        // Factor Description (Column D)
+                        // Factor Description (Column D) - Convert RichText to HTML
                         $cellD = $sheet->getCell('D' . $rowIndex);
                         $factorDescHtml = $this->convertCellToHtml($cellD, $richTextToHtml);
 
@@ -844,15 +871,15 @@ class TemplateController extends ResourceController
                             $categoryId = $categoryModel->insert([
                                 'template_id' => $templateId,
                                 'category_name' => $categoryName,
-                                'description' => !empty($categoryDescHtml) ? $categoryDescHtml : null,
+                                'description' => !empty($categoryDesc) ? $categoryDesc : null,
                                 'sort_order' => $nextSort
                             ]);
                         } else {
                             $categoryId = $category['id'];
                             // Update description if provided
-                            if (!empty($categoryDescHtml)) {
+                            if (!empty($categoryDesc)) {
                                 $categoryModel->update($categoryId, [
-                                    'description' => $categoryDescHtml
+                                    'description' => $categoryDesc
                                 ]);
                             }
                         }

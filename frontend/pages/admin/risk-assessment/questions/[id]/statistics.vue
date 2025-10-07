@@ -5,6 +5,7 @@
       title="評估表統計結果"
       :description="assessmentInfo ? `${assessmentInfo.template_version} - ${assessmentInfo.year}年` : ''"
       :show-back-button="true"
+      :back-path="assessmentInfo ? `/admin/risk-assessment/questions/${assessmentInfo.company_id}/management` : '/admin/risk-assessment/questions'"
     />
 
     <!-- Loading State -->

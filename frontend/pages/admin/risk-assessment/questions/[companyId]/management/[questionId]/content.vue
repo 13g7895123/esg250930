@@ -3,6 +3,7 @@
     :title="`題項內容管理 - ${questionInfo?.year || new Date().getFullYear()}年度`"
     description="管理風險評估題項的主題內容"
     :show-back-button="true"
+    :back-path="`/admin/risk-assessment/questions/${companyId}/management`"
     :content-data="questionContent"
     :risk-categories="questionCategories"
     :risk-topics="questionTopics"
@@ -84,64 +85,68 @@ watch(() => questionInfo.value?.year, () => {
 
 // Content management methods using store
 const addQuestionContent = async (contentData) => {
+  const { showSuccess, showError } = useNotification()
+
+  // 保存當前滾動位置
+  const scrollPosition = window.scrollY || document.documentElement.scrollTop
+
   try {
     await questionManagementStore.addQuestionContent(questionId, contentData)
 
-    // Show success notification
-    const toast = useToast()
-    toast.add({
-      title: '新增成功',
-      description: '題目已成功新增',
-      color: 'green'
-    })
+    // 重新載入資料
+    await questionManagementStore.refreshAssessment(questionId)
+
+    await showSuccess('新增成功', '題目已成功新增')
+
+    // 等待 DOM 更新後恢復滾動位置
+    await nextTick()
+    window.scrollTo({ top: scrollPosition, behavior: 'instant' })
   } catch (error) {
     console.error('Failed to add question content:', error)
-    const toast = useToast()
-    toast.add({
-      title: '新增失敗',
-      description: '無法新增題目，請稍後再試',
-      color: 'red'
-    })
+    await showError('新增失敗', error?.message || '無法新增題目，請稍後再試')
   }
 }
 
 const updateQuestionContent = async (contentId, contentData) => {
+  console.log('[Content Page] updateQuestionContent called with contentId:', contentId)
+  console.log('[Content Page] contentData received:', contentData)
+  console.log('[Content Page] contentData.factorDescription:', contentData.factorDescription)
+
+  const { showSuccess, showError } = useNotification()
+
+  // 保存當前滾動位置
+  const scrollPosition = window.scrollY || document.documentElement.scrollTop
+
   try {
     await questionManagementStore.updateQuestionContent(questionId, contentId, contentData)
 
-    // Show success notification
-    const toast = useToast()
-    toast.add({
-      title: '更新成功',
-      description: '題目已成功更新',
-      color: 'green'
-    })
+    // 重新載入資料
+    await questionManagementStore.refreshAssessment(questionId)
+
+    await showSuccess('更新成功', '題目已成功更新')
+
+    // 等待 DOM 更新後恢復滾動位置
+    await nextTick()
+    window.scrollTo({ top: scrollPosition, behavior: 'instant' })
   } catch (error) {
     console.error('Failed to update question content:', error)
-    const toast = useToast()
-    toast.add({
-      title: '更新失敗',
-      description: '無法更新題目，請稍後再試',
-      color: 'red'
-    })
+    await showError('更新失敗', error?.message || '無法更新題目，請稍後再試')
   }
 }
 
 const deleteQuestionContent = async (contentId) => {
-  const { $notify } = useNuxtApp()
+  const { showSuccess, showError } = useNotification()
 
   try {
     await questionManagementStore.deleteQuestionContent(questionId, contentId)
 
-    // 關閉載入對話框並顯示成功通知
-    $notify.close()
-    $notify.success('題目已成功刪除')
+    // 重新載入資料
+    await questionManagementStore.refreshAssessment(questionId)
+
+    await showSuccess('刪除成功', '題目已成功刪除')
   } catch (error) {
     console.error('Failed to delete question content:', error)
-
-    // 關閉載入對話框並顯示錯誤通知
-    $notify.close()
-    $notify.error('無法刪除題目，請稍後再試')
+    await showError('刪除失敗', error?.message || '無法刪除題目，請稍後再試')
   }
 }
 
@@ -175,25 +180,16 @@ const handleRefreshContent = async () => {
   if (isRefreshing.value) return
 
   isRefreshing.value = true
+  const { showSuccess, showError } = useNotification()
 
   try {
     await questionManagementStore.refreshAssessment(questionId)
 
     // Show success notification
-    const toast = useToast()
-    toast.add({
-      title: '重新整理完成',
-      description: '內容資料已更新',
-      color: 'green'
-    })
+    await showSuccess('內容資料已更新')
   } catch (error) {
     console.error('Refresh content error:', error)
-    const toast = useToast()
-    toast.add({
-      title: '重新整理失敗',
-      description: '無法更新內容資料，請稍後再試',
-      color: 'red'
-    })
+    await showError('無法更新內容資料，請稍後再試')
   } finally {
     isRefreshing.value = false
   }

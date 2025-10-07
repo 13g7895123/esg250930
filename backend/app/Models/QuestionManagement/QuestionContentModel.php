@@ -56,8 +56,8 @@ class QuestionContentModel extends Model
         'category_id',
         'topic_id',
         'factor_id',
-        'title',
-        'description',
+        // 'title', // REMOVED: question_contents table doesn't have this column
+        // 'description', // REMOVED: question_contents table doesn't have this column
         'assessment_criteria',
         'scoring_method',
         'weight',
@@ -72,12 +72,14 @@ class QuestionContentModel extends Model
         'e2_select_1',
         'e2_select_2',
         'e2_placeholder',
-        'f1_placeholder_1',
+        'f1_placeholder_1',  // F 機會描述
         'f2_select_1',
         'f2_select_2',
         'f2_placeholder',
-        'g1_placeholder_1',
-        'h1_placeholder_1',
+        'g1_placeholder_1',  // G 對外負面衝擊評分說明
+        'g1_select',         // G 對外負面衝擊評分
+        'h1_placeholder_1',  // H 對外正面影響評分說明
+        'h1_select',         // H 對外正面影響評分
         'e1_info',
         'f1_info',
         'g1_info',
@@ -219,6 +221,7 @@ class QuestionContentModel extends Model
                     question_categories.category_name,
                     question_topics.topic_name,
                     question_factors.factor_name,
+                    question_factors.description as factor_description,
                     personnel_assignments.personnel_id,
                     personnel_assignments.assignment_status,
                     (SELECT COUNT(*) FROM question_responses WHERE question_content_id = question_contents.id) as response_count
@@ -233,6 +236,7 @@ class QuestionContentModel extends Model
                     question_categories.category_name,
                     question_topics.topic_name,
                     question_factors.factor_name,
+                    question_factors.description as factor_description,
                     (SELECT COUNT(*) FROM question_responses WHERE question_content_id = question_contents.id) as response_count
                 ')
                 ->join('question_categories', 'question_categories.id = question_contents.category_id', 'left')

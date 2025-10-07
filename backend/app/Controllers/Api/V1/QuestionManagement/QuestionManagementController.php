@@ -150,7 +150,12 @@ class QuestionManagementController extends BaseController
             $db = \Config\Database::connect();
             $db->transStart();
 
+            // 明確刪除現有的題項內容（確保舊內容被清除）
+            error_log('[syncFromTemplate] Deleting existing contents...');
+            $this->contentModel->where('assessment_id', $assessmentId)->delete();
+
             // 清除現有的題項架構（由於有 CASCADE 設定，會連帶刪除相關資料）
+            error_log('[syncFromTemplate] Deleting existing structure (categories/topics/factors)...');
             $this->categoryModel->deleteAllByAssessment($assessmentId);
 
             // 載入範本架構資料
@@ -159,11 +164,31 @@ class QuestionManagementController extends BaseController
             $riskFactorModel = new \App\Models\RiskAssessment\RiskFactorModel();
             $templateContentModel = new \App\Models\RiskAssessment\TemplateContentModel();
 
+            // 載入範本量表資料
+            $probabilityScaleModel = new \App\Models\RiskAssessment\ProbabilityScaleModel();
+            $probabilityScaleRowModel = new \App\Models\RiskAssessment\ProbabilityScaleRowModel();
+            $probabilityScaleColumnModel = new \App\Models\RiskAssessment\ProbabilityScaleColumnModel();
+            $impactScaleModel = new \App\Models\RiskAssessment\ImpactScaleModel();
+            $impactScaleRowModel = new \App\Models\RiskAssessment\ImpactScaleRowModel();
+            $impactScaleColumnModel = new \App\Models\RiskAssessment\ImpactScaleColumnModel();
+
+            // 載入題項量表資料模型
+            $questionProbabilityScaleModel = new \App\Models\QuestionManagement\QuestionProbabilityScaleModel();
+            $questionProbabilityScaleRowModel = new \App\Models\QuestionManagement\QuestionProbabilityScaleRowModel();
+            $questionProbabilityScaleColumnModel = new \App\Models\QuestionManagement\QuestionProbabilityScaleColumnModel();
+            $questionImpactScaleModel = new \App\Models\QuestionManagement\QuestionImpactScaleModel();
+            $questionImpactScaleRowModel = new \App\Models\QuestionManagement\QuestionImpactScaleRowModel();
+            $questionImpactScaleColumnModel = new \App\Models\QuestionManagement\QuestionImpactScaleColumnModel();
+
             // 取得範本架構資料
             $templateCategories = $riskCategoryModel->where('template_id', $templateId)->findAll();
             $templateTopics = $riskTopicModel->where('template_id', $templateId)->findAll();
             $templateFactors = $riskFactorModel->where('template_id', $templateId)->findAll();
             $templateContents = $templateContentModel->where('template_id', $templateId)->findAll();
+
+            // 取得範本量表資料
+            $templateProbabilityScale = $probabilityScaleModel->where('template_id', $templateId)->first();
+            $templateImpactScale = $impactScaleModel->where('template_id', $templateId)->first();
 
             // 複製架構到題項管理
             error_log('[syncFromTemplate] Starting to copy categories. Template categories count: ' . count($templateCategories));
@@ -182,6 +207,76 @@ class QuestionManagementController extends BaseController
             $contentIdMapping = $this->contentModel->copyFromTemplateContents($assessmentId, $templateContents, $categoryIdMapping, $topicIdMapping, $factorIdMapping);
             error_log('[syncFromTemplate] Contents copied: ' . count($contentIdMapping));
 
+            // 複製可能性量表
+            $probabilityScalesCopied = 0;
+            $probabilityScaleRowsCopied = 0;
+            $probabilityScaleColumnsCopied = 0;
+            if ($templateProbabilityScale) {
+                error_log('[syncFromTemplate] Starting to copy probability scale. Template has probability scale: ' . ($templateProbabilityScale ? 'Yes' : 'No'));
+
+                // 先刪除現有的可能性量表
+                $questionProbabilityScaleModel->deleteByAssessment($assessmentId);
+
+                // 複製量表主資料
+                $newProbabilityScaleId = $questionProbabilityScaleModel->copyFromTemplateScale($assessmentId, $templateProbabilityScale);
+
+                if ($newProbabilityScaleId) {
+                    $probabilityScalesCopied = 1;
+                    error_log('[syncFromTemplate] Probability scale created with ID: ' . $newProbabilityScaleId);
+
+                    // 複製量表欄位
+                    $templateProbabilityColumns = $probabilityScaleColumnModel->where('scale_id', $templateProbabilityScale['id'])->findAll();
+                    if (!empty($templateProbabilityColumns)) {
+                        $questionProbabilityScaleColumnModel->copyFromTemplateColumns($newProbabilityScaleId, $templateProbabilityColumns);
+                        $probabilityScaleColumnsCopied = count($templateProbabilityColumns);
+                        error_log('[syncFromTemplate] Probability scale columns copied: ' . $probabilityScaleColumnsCopied);
+                    }
+
+                    // 複製量表列
+                    $templateProbabilityRows = $probabilityScaleRowModel->where('scale_id', $templateProbabilityScale['id'])->findAll();
+                    if (!empty($templateProbabilityRows)) {
+                        $questionProbabilityScaleRowModel->copyFromTemplateRows($newProbabilityScaleId, $templateProbabilityRows);
+                        $probabilityScaleRowsCopied = count($templateProbabilityRows);
+                        error_log('[syncFromTemplate] Probability scale rows copied: ' . $probabilityScaleRowsCopied);
+                    }
+                }
+            }
+
+            // 複製影響量表
+            $impactScalesCopied = 0;
+            $impactScaleRowsCopied = 0;
+            $impactScaleColumnsCopied = 0;
+            if ($templateImpactScale) {
+                error_log('[syncFromTemplate] Starting to copy impact scale. Template has impact scale: ' . ($templateImpactScale ? 'Yes' : 'No'));
+
+                // 先刪除現有的影響量表
+                $questionImpactScaleModel->deleteByAssessment($assessmentId);
+
+                // 複製量表主資料
+                $newImpactScaleId = $questionImpactScaleModel->copyFromTemplateScale($assessmentId, $templateImpactScale);
+
+                if ($newImpactScaleId) {
+                    $impactScalesCopied = 1;
+                    error_log('[syncFromTemplate] Impact scale created with ID: ' . $newImpactScaleId);
+
+                    // 複製量表欄位
+                    $templateImpactColumns = $impactScaleColumnModel->where('scale_id', $templateImpactScale['id'])->findAll();
+                    if (!empty($templateImpactColumns)) {
+                        $questionImpactScaleColumnModel->copyFromTemplateColumns($newImpactScaleId, $templateImpactColumns);
+                        $impactScaleColumnsCopied = count($templateImpactColumns);
+                        error_log('[syncFromTemplate] Impact scale columns copied: ' . $impactScaleColumnsCopied);
+                    }
+
+                    // 複製量表列
+                    $templateImpactRows = $impactScaleRowModel->where('scale_id', $templateImpactScale['id'])->findAll();
+                    if (!empty($templateImpactRows)) {
+                        $questionImpactScaleRowModel->copyFromTemplateRows($newImpactScaleId, $templateImpactRows);
+                        $impactScaleRowsCopied = count($templateImpactRows);
+                        error_log('[syncFromTemplate] Impact scale rows copied: ' . $impactScaleRowsCopied);
+                    }
+                }
+            }
+
             $db->transComplete();
 
             if ($db->transStatus() === false) {
@@ -199,12 +294,18 @@ class QuestionManagementController extends BaseController
 
             return $this->response->setJSON([
                 'success' => true,
-                'message' => '成功從範本同步架構',
+                'message' => '成功從範本同步架構與量表',
                 'data' => [
                     'categories_copied' => count($categoryIdMapping),
                     'topics_copied' => count($topicIdMapping),
                     'factors_copied' => count($factorIdMapping),
-                    'contents_copied' => count($contentIdMapping)
+                    'contents_copied' => count($contentIdMapping),
+                    'probability_scales_copied' => $probabilityScalesCopied,
+                    'probability_scale_rows_copied' => $probabilityScaleRowsCopied,
+                    'probability_scale_columns_copied' => $probabilityScaleColumnsCopied,
+                    'impact_scales_copied' => $impactScalesCopied,
+                    'impact_scale_rows_copied' => $impactScaleRowsCopied,
+                    'impact_scale_columns_copied' => $impactScaleColumnsCopied
                 ]
             ]);
 
@@ -277,6 +378,23 @@ class QuestionManagementController extends BaseController
             );
 
             log_message('info', "Model returned " . count($contents) . " contents");
+
+            // Sort contents by category > topic > factor (same as frontend display)
+            // Use Collator for proper Chinese locale sorting (matches frontend localeCompare)
+            $collator = new \Collator('zh_TW');
+            usort($contents, function($a, $b) use ($collator) {
+                // First, sort by category name
+                $categoryCompare = $collator->compare($a['category_name'] ?? '', $b['category_name'] ?? '');
+                if ($categoryCompare !== 0) return $categoryCompare;
+
+                // If categories are the same, sort by topic name
+                $topicCompare = $collator->compare($a['topic_name'] ?? '', $b['topic_name'] ?? '');
+                if ($topicCompare !== 0) return $topicCompare;
+
+                // If topics are the same, sort by factor name
+                return $collator->compare($a['factor_name'] ?? '', $b['factor_name'] ?? '');
+            });
+
             log_message('info', "=== getAssessmentContents API Request Completed Successfully ===");
 
             return $this->response->setJSON([
@@ -1226,13 +1344,12 @@ class QuestionManagementController extends BaseController
                 ]);
             }
 
-            // 準備資料
+            // 準備資料（不包含 description，因為 question_contents 表沒有這個欄位）
             $data = [
                 'assessment_id' => $assessmentId,
                 'category_id' => $input['category_id'] ?? null,
                 'topic_id' => $input['topic_id'] ?? null,
                 'factor_id' => $input['factor_id'] ?? null,
-                'description' => $input['description'] ?? '',
                 'sort_order' => $input['sort_order'] ?? $this->contentModel->getNextSortOrder($assessmentId)
             ];
 
@@ -1242,6 +1359,7 @@ class QuestionManagementController extends BaseController
             }
 
             $contentId = $this->contentModel->insert($data);
+
             if (!$contentId) {
                 return $this->response->setStatusCode(500)->setJSON([
                     'success' => false,
@@ -1250,20 +1368,71 @@ class QuestionManagementController extends BaseController
                 ]);
             }
 
+            // 處理風險因子描述更新 (如果有提供)
+            $debugInfo = [];
+            // 支援 camelCase 和 snake_case 兩種格式
+            $factorDescription = $input['factorDescription'] ?? $input['factor_description'] ?? null;
+            if ($factorDescription !== null && isset($input['factor_id'])) {
+                $questionFactorId = $input['factor_id'];
+
+                // 載入 QuestionFactorModel
+                $factorModel = new \App\Models\QuestionManagement\QuestionFactorModel();
+
+                // 準備 SQL 資訊用於除錯（使用 db() helper 取得資料庫實例）
+                $db = \Config\Database::connect();
+                $debugInfo['sql'] = sprintf(
+                    "UPDATE question_factors SET description = %s, updated_at = NOW() WHERE id = %d",
+                    $db->escape($factorDescription),
+                    $questionFactorId
+                );
+                $debugInfo['target_table'] = 'question_factors';
+                $debugInfo['factor_id'] = $questionFactorId;
+                $debugInfo['content_id'] = $contentId;
+                $debugInfo['description_length'] = strlen($factorDescription);
+
+                // 更新 question_factors 表的 description 欄位
+                $factorUpdateSuccess = $factorModel->update($questionFactorId, [
+                    'description' => $factorDescription
+                ]);
+
+                if ($factorUpdateSuccess) {
+                    $debugInfo['update_success'] = true;
+                } else {
+                    $debugInfo['update_success'] = false;
+                    $debugInfo['errors'] = $factorModel->errors();
+                    log_message('error', 'QuestionManagementController::createContent - Failed to update factor description for factor ID: ' . $questionFactorId);
+                }
+            }
+
             // 取得建立的內容
             $newContent = $this->contentModel->getContentWithDetails($contentId);
 
-            return $this->response->setStatusCode(201)->setJSON([
+            $responseData = [
                 'success' => true,
                 'message' => '成功建立題項內容',
                 'data' => $newContent
-            ]);
+            ];
+
+            // 加入除錯資訊（如果有更新 factor description）
+            if (!empty($debugInfo)) {
+                $responseData['debug'] = $debugInfo;
+            }
+
+            return $this->response->setStatusCode(201)->setJSON($responseData);
 
         } catch (\Exception $e) {
             log_message('error', 'QuestionManagementController::createContent - ' . $e->getMessage());
+            log_message('error', 'QuestionManagementController::createContent - Stack trace: ' . $e->getTraceAsString());
             return $this->response->setStatusCode(500)->setJSON([
                 'success' => false,
-                'message' => '建立題項內容時發生錯誤'
+                'message' => '建立題項內容時發生錯誤',
+                'error' => [
+                    'type' => get_class($e),
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => explode("\n", $e->getTraceAsString())
+                ]
             ]);
         }
     }
@@ -1295,6 +1464,10 @@ class QuestionManagementController extends BaseController
             }
 
             $input = $this->request->getJSON(true);
+
+            // Log 接收到的請求資料用於除錯
+            log_message('info', 'QuestionManagementController::updateContent - Received input: ' . json_encode($input));
+
             if (empty($input)) {
                 return $this->response->setStatusCode(400)->setJSON([
                     'success' => false,
@@ -1302,23 +1475,138 @@ class QuestionManagementController extends BaseController
                 ]);
             }
 
-            // 準備更新資料
+            // 準備更新資料（包含所有 Section B-H 的欄位）
             $data = [];
+            $requestDebug = [
+                'received_fields' => array_keys($input),
+                'has_factorDescription' => isset($input['factorDescription']),
+                'has_factor_description' => isset($input['factor_description']),
+                'has_b_content' => isset($input['b_content']),
+                'has_reference_text' => isset($input['reference_text']),
+                'factorDescription_value' => $input['factorDescription'] ?? null,
+                'factor_description_value' => $input['factor_description'] ?? null,
+                'b_content_value' => $input['b_content'] ?? null,
+                'raw_input' => $input
+            ];
+
+            // 結構欄位
             if (isset($input['category_id'])) $data['category_id'] = $input['category_id'];
             if (isset($input['topic_id'])) $data['topic_id'] = $input['topic_id'];
             if (isset($input['factor_id'])) $data['factor_id'] = $input['factor_id'];
-            if (isset($input['description'])) $data['description'] = $input['description'];
             if (isset($input['is_required'])) $data['is_required'] = $input['is_required'] ? 1 : 0;
             if (isset($input['sort_order'])) $data['sort_order'] = $input['sort_order'];
 
-            if (empty($data)) {
+            // Section B: 參考文字（支援雙重命名）
+            if (isset($input['b_content'])) $data['b_content'] = $input['b_content'];
+            elseif (isset($input['reference_text'])) $data['b_content'] = $input['reference_text'];
+
+            // Section C: 風險事件
+            if (isset($input['c_placeholder'])) $data['c_placeholder'] = $input['c_placeholder'];
+            elseif (isset($input['risk_event_description'])) $data['c_placeholder'] = $input['risk_event_description'];
+
+            // Section D: 對應作為
+            if (isset($input['d_placeholder_1'])) $data['d_placeholder_1'] = $input['d_placeholder_1'];
+            elseif (isset($input['counter_action_description'])) $data['d_placeholder_1'] = $input['counter_action_description'];
+            if (isset($input['d_placeholder_2'])) $data['d_placeholder_2'] = $input['d_placeholder_2'];
+            elseif (isset($input['counter_action_cost'])) $data['d_placeholder_2'] = $input['counter_action_cost'];
+
+            // Section E: 風險評估
+            if (isset($input['e1_placeholder_1'])) $data['e1_placeholder_1'] = $input['e1_placeholder_1'];
+            elseif (isset($input['risk_description'])) $data['e1_placeholder_1'] = $input['risk_description'];
+            if (isset($input['e2_select_1'])) $data['e2_select_1'] = $input['e2_select_1'];
+            elseif (isset($input['risk_probability'])) $data['e2_select_1'] = (string)$input['risk_probability'];
+            if (isset($input['e2_select_2'])) $data['e2_select_2'] = $input['e2_select_2'];
+            elseif (isset($input['risk_impact_level'])) $data['e2_select_2'] = (string)$input['risk_impact_level'];
+            if (isset($input['e2_placeholder'])) $data['e2_placeholder'] = $input['e2_placeholder'];
+            elseif (isset($input['risk_calculation'])) $data['e2_placeholder'] = $input['risk_calculation'];
+
+            // Section F: 機會評估
+            if (isset($input['f1_placeholder_1'])) $data['f1_placeholder_1'] = $input['f1_placeholder_1'];
+            elseif (isset($input['opportunity_description'])) $data['f1_placeholder_1'] = $input['opportunity_description'];
+            if (isset($input['f2_select_1'])) $data['f2_select_1'] = $input['f2_select_1'];
+            elseif (isset($input['opportunity_probability'])) $data['f2_select_1'] = (string)$input['opportunity_probability'];
+            if (isset($input['f2_select_2'])) $data['f2_select_2'] = $input['f2_select_2'];
+            elseif (isset($input['opportunity_impact_level'])) $data['f2_select_2'] = (string)$input['opportunity_impact_level'];
+            if (isset($input['f2_placeholder'])) $data['f2_placeholder'] = $input['f2_placeholder'];
+            elseif (isset($input['opportunity_calculation'])) $data['f2_placeholder'] = $input['opportunity_calculation'];
+
+            // Section G: 對外負面衝擊
+            if (isset($input['g1_select'])) $data['g1_select'] = $input['g1_select'];
+            elseif (isset($input['negative_impact_level'])) $data['g1_select'] = $input['negative_impact_level'];
+            if (isset($input['g1_placeholder_1'])) $data['g1_placeholder_1'] = $input['g1_placeholder_1'];
+            elseif (isset($input['negative_impact_description'])) $data['g1_placeholder_1'] = $input['negative_impact_description'];
+
+            // Section H: 對外正面影響
+            if (isset($input['h1_select'])) $data['h1_select'] = $input['h1_select'];
+            elseif (isset($input['positive_impact_level'])) $data['h1_select'] = $input['positive_impact_level'];
+            if (isset($input['h1_placeholder_1'])) $data['h1_placeholder_1'] = $input['h1_placeholder_1'];
+            elseif (isset($input['positive_impact_description'])) $data['h1_placeholder_1'] = $input['positive_impact_description'];
+
+            // Hover 文字資訊
+            if (isset($input['e1_info'])) $data['e1_info'] = $input['e1_info'];
+            if (isset($input['f1_info'])) $data['f1_info'] = $input['f1_info'];
+            if (isset($input['g1_info'])) $data['g1_info'] = $input['g1_info'];
+            if (isset($input['h1_info'])) $data['h1_info'] = $input['h1_info'];
+
+            // 處理風險因子描述更新 (Section A)
+            $factorDescriptionUpdated = false;
+            $debugInfo = [];
+            // 支援 camelCase 和 snake_case 兩種格式
+            $factorDescription = $input['factorDescription'] ?? $input['factor_description'] ?? null;
+            if ($factorDescription !== null) {
+
+                // 先取得該 content 的 factor_id (這是題項的 factor，不是範本的)
+                $content = $this->contentModel->find($contentId);
+                if ($content && isset($content['factor_id'])) {
+                    $questionFactorId = $content['factor_id'];
+
+                    // 載入 QuestionFactorModel
+                    $factorModel = new \App\Models\QuestionManagement\QuestionFactorModel();
+
+                    // 準備 SQL 資訊用於除錯（使用 db() helper 取得資料庫實例）
+                    $db = \Config\Database::connect();
+                    $debugInfo['sql'] = sprintf(
+                        "UPDATE question_factors SET description = %s, updated_at = NOW() WHERE id = %d",
+                        $db->escape($factorDescription),
+                        $questionFactorId
+                    );
+                    $debugInfo['target_table'] = 'question_factors';
+                    $debugInfo['factor_id'] = $questionFactorId;
+                    $debugInfo['content_id'] = $contentId;
+                    $debugInfo['description_length'] = strlen($factorDescription);
+
+                    // 更新 question_factors 表的 description 欄位（題項的因子，非範本）
+                    $factorUpdateSuccess = $factorModel->update($questionFactorId, [
+                        'description' => $factorDescription
+                    ]);
+
+                    if ($factorUpdateSuccess) {
+                        $factorDescriptionUpdated = true;
+                        $debugInfo['update_success'] = true;
+                        log_message('info', "QuestionManagementController::updateContent - Updated question factor description for factor ID: {$questionFactorId}");
+                    } else {
+                        $debugInfo['update_success'] = false;
+                        $debugInfo['errors'] = $factorModel->errors();
+                        log_message('error', 'QuestionManagementController::updateContent - Failed to update question factor description');
+                    }
+                } else {
+                    $debugInfo['error'] = "Content {$contentId} has no factor_id";
+                    log_message('error', "QuestionManagementController::updateContent - Content {$contentId} has no factor_id");
+                }
+            }
+
+            if (empty($data) && !$factorDescriptionUpdated) {
                 return $this->response->setStatusCode(400)->setJSON([
                     'success' => false,
                     'message' => '沒有提供任何要更新的資料'
                 ]);
             }
 
-            $success = $this->contentModel->update($contentId, $data);
+            // 更新題項內容（如果有資料要更新）
+            $success = true;
+            if (!empty($data)) {
+                $success = $this->contentModel->update($contentId, $data);
+            }
             if (!$success) {
                 return $this->response->setStatusCode(500)->setJSON([
                     'success' => false,
@@ -1330,17 +1618,28 @@ class QuestionManagementController extends BaseController
             // 取得更新後的內容
             $updatedContent = $this->contentModel->getContentWithDetails($contentId);
 
-            return $this->response->setJSON([
+            $responseData = [
                 'success' => true,
                 'message' => '成功更新題項內容',
-                'data' => $updatedContent
-            ]);
+                'data' => $updatedContent,
+                'debug' => array_merge($requestDebug, $debugInfo)
+            ];
+
+            return $this->response->setJSON($responseData);
 
         } catch (\Exception $e) {
             log_message('error', 'QuestionManagementController::updateContent - ' . $e->getMessage());
+            log_message('error', 'QuestionManagementController::updateContent - Stack trace: ' . $e->getTraceAsString());
             return $this->response->setStatusCode(500)->setJSON([
                 'success' => false,
-                'message' => '更新題項內容時發生錯誤'
+                'message' => '更新題項內容時發生錯誤',
+                'error' => [
+                    'type' => get_class($e),
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => explode("\n", $e->getTraceAsString())
+                ]
             ]);
         }
     }
@@ -1659,34 +1958,26 @@ class QuestionManagementController extends BaseController
                 ]);
             }
 
-            $templateId = $assessment['template_id'];
-            if (!$templateId) {
-                return $this->response->setStatusCode(400)->setJSON([
-                    'success' => false,
-                    'message' => '評估記錄未指定範本ID'
-                ]);
-            }
+            // 只從題項量表載入資料，不從範本載入（題項與範本完全分離）
+            $questionProbabilityScaleModel = new \App\Models\QuestionManagement\QuestionProbabilityScaleModel();
+            $questionProbabilityColumnModel = new \App\Models\QuestionManagement\QuestionProbabilityScaleColumnModel();
+            $questionProbabilityRowModel = new \App\Models\QuestionManagement\QuestionProbabilityScaleRowModel();
 
-            // 從範本載入量表資料
-            $probabilityScaleModel = new \App\Models\RiskAssessment\ProbabilityScaleModel();
-            $probabilityColumnModel = new \App\Models\RiskAssessment\ProbabilityScaleColumnModel();
-            $probabilityRowModel = new \App\Models\RiskAssessment\ProbabilityScaleRowModel();
+            $questionImpactScaleModel = new \App\Models\QuestionManagement\QuestionImpactScaleModel();
+            $questionImpactColumnModel = new \App\Models\QuestionManagement\QuestionImpactScaleColumnModel();
+            $questionImpactRowModel = new \App\Models\QuestionManagement\QuestionImpactScaleRowModel();
 
-            $impactScaleModel = new \App\Models\RiskAssessment\ImpactScaleModel();
-            $impactColumnModel = new \App\Models\RiskAssessment\ImpactScaleColumnModel();
-            $impactRowModel = new \App\Models\RiskAssessment\ImpactScaleRowModel();
-
-            // 取得可能性量表
-            $probabilityScale = $probabilityScaleModel->where('template_id', $templateId)->first();
+            // 取得可能性量表（只讀取題項的量表）
+            $probabilityScale = $questionProbabilityScaleModel->where('assessment_id', $assessmentId)->first();
             $probabilityData = null;
 
             if ($probabilityScale) {
-                $probabilityColumns = $probabilityColumnModel
+                $probabilityColumns = $questionProbabilityColumnModel
                     ->where('scale_id', $probabilityScale['id'])
                     ->orderBy('sort_order', 'ASC')
                     ->findAll();
 
-                $probabilityRows = $probabilityRowModel
+                $probabilityRows = $questionProbabilityRowModel
                     ->where('scale_id', $probabilityScale['id'])
                     ->orderBy('sort_order', 'ASC')
                     ->findAll();
@@ -1704,17 +1995,17 @@ class QuestionManagementController extends BaseController
                 ];
             }
 
-            // 取得財務衝擊量表
-            $impactScale = $impactScaleModel->where('template_id', $templateId)->first();
+            // 取得財務衝擊量表（只讀取題項的量表）
+            $impactScale = $questionImpactScaleModel->where('assessment_id', $assessmentId)->first();
             $impactData = null;
 
             if ($impactScale) {
-                $impactColumns = $impactColumnModel
+                $impactColumns = $questionImpactColumnModel
                     ->where('scale_id', $impactScale['id'])
                     ->orderBy('sort_order', 'ASC')
                     ->findAll();
 
-                $impactRows = $impactRowModel
+                $impactRows = $questionImpactRowModel
                     ->where('scale_id', $impactScale['id'])
                     ->orderBy('sort_order', 'ASC')
                     ->findAll();
@@ -2194,5 +2485,681 @@ class QuestionManagementController extends BaseController
         // 輸出到 php://output
         $writer->save('php://output');
         exit;
+    }
+
+    /**
+     * 儲存題項評估的可能性量表
+     * POST /api/v1/question-management/assessment/{assessmentId}/scales/probability
+     *
+     * @param int $assessmentId 評估記錄ID
+     * @return ResponseInterface
+     */
+    public function saveAssessmentProbabilityScale($assessmentId)
+    {
+        try {
+            $data = $this->request->getJSON(true);
+
+            // 驗證評估記錄是否存在
+            $assessment = $this->assessmentModel->find($assessmentId);
+            if (!$assessment) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '找不到指定的評估記錄'
+                ]);
+            }
+
+            // 開始交易
+            $db = \Config\Database::connect();
+            $db->transStart();
+
+            // 載入量表相關 Models
+            $probabilityScaleModel = new \App\Models\QuestionManagement\QuestionProbabilityScaleModel();
+            $probabilityColumnModel = new \App\Models\QuestionManagement\QuestionProbabilityScaleColumnModel();
+            $probabilityRowModel = new \App\Models\QuestionManagement\QuestionProbabilityScaleRowModel();
+
+            // 1. 儲存或更新主表
+            $scaleData = [
+                'assessment_id' => $assessmentId,
+                'description_text' => $data['descriptionText'] ?? null,
+                'show_description' => $data['showDescriptionText'] ?? 0,
+                'selected_display_column' => $data['selectedDisplayColumn'] ?? 'probability'
+            ];
+
+            // 檢查是否已存在
+            $existingScale = $probabilityScaleModel
+                ->where('assessment_id', $assessmentId)
+                ->first();
+
+            if ($existingScale) {
+                $scaleId = $existingScale['id'];
+                $probabilityScaleModel->update($scaleId, $scaleData);
+
+                // 刪除舊的欄位和資料列
+                $probabilityColumnModel->where('scale_id', $scaleId)->delete();
+                $probabilityRowModel->where('scale_id', $scaleId)->delete();
+            } else {
+                $scaleId = $probabilityScaleModel->insert($scaleData);
+            }
+
+            // 2. 儲存欄位定義
+            $columns = $data['columns'] ?? [];
+            foreach ($columns as $index => $column) {
+                $columnData = [
+                    'scale_id' => $scaleId,
+                    'column_id' => $column['id'],
+                    'name' => $column['name'],
+                    'removable' => $column['removable'] ?? 1,
+                    'sort_order' => $index
+                ];
+                $probabilityColumnModel->insert($columnData);
+            }
+
+            // 3. 儲存資料列
+            $rows = $data['rows'] ?? [];
+            foreach ($rows as $index => $row) {
+                $rowData = [
+                    'scale_id' => $scaleId,
+                    'probability' => $row['probability'] ?? null,
+                    'score_range' => $row['scoreRange'] ?? null,
+                    'dynamic_fields' => json_encode($row['dynamicFields'] ?? []),
+                    'sort_order' => $index
+                ];
+                $probabilityRowModel->insert($rowData);
+            }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'message' => '儲存失敗'
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => '可能性量表儲存成功',
+                'data' => ['scale_id' => $scaleId]
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', '儲存題項可能性量表失敗: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '儲存失敗: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * 儲存題項評估的財務衝擊量表
+     * POST /api/v1/question-management/assessment/{assessmentId}/scales/impact
+     *
+     * @param int $assessmentId 評估記錄ID
+     * @return ResponseInterface
+     */
+    public function saveAssessmentImpactScale($assessmentId)
+    {
+        try {
+            $data = $this->request->getJSON(true);
+
+            // 驗證評估記錄是否存在
+            $assessment = $this->assessmentModel->find($assessmentId);
+            if (!$assessment) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '找不到指定的評估記錄'
+                ]);
+            }
+
+            // 開始交易
+            $db = \Config\Database::connect();
+            $db->transStart();
+
+            // 載入量表相關 Models
+            $impactScaleModel = new \App\Models\QuestionManagement\QuestionImpactScaleModel();
+            $impactColumnModel = new \App\Models\QuestionManagement\QuestionImpactScaleColumnModel();
+            $impactRowModel = new \App\Models\QuestionManagement\QuestionImpactScaleRowModel();
+
+            // 1. 儲存或更新主表
+            $scaleData = [
+                'assessment_id' => $assessmentId,
+                'description_text' => $data['descriptionText'] ?? null,
+                'show_description' => $data['showDescriptionText'] ?? 0,
+                'selected_display_column' => $data['selectedDisplayColumn'] ?? 'impact'
+            ];
+
+            // 檢查是否已存在
+            $existingScale = $impactScaleModel
+                ->where('assessment_id', $assessmentId)
+                ->first();
+
+            if ($existingScale) {
+                $scaleId = $existingScale['id'];
+                $impactScaleModel->update($scaleId, $scaleData);
+
+                // 刪除舊的欄位和資料列
+                $impactColumnModel->where('scale_id', $scaleId)->delete();
+                $impactRowModel->where('scale_id', $scaleId)->delete();
+            } else {
+                $scaleId = $impactScaleModel->insert($scaleData);
+            }
+
+            // 2. 儲存欄位定義
+            $columns = $data['columns'] ?? [];
+            foreach ($columns as $index => $column) {
+                $columnData = [
+                    'scale_id' => $scaleId,
+                    'column_id' => $column['id'],
+                    'name' => $column['name'],
+                    'removable' => $column['removable'] ?? 1,
+                    'sort_order' => $index
+                ];
+                $impactColumnModel->insert($columnData);
+            }
+
+            // 3. 儲存資料列
+            $rows = $data['rows'] ?? [];
+            foreach ($rows as $index => $row) {
+                $rowData = [
+                    'scale_id' => $scaleId,
+                    'impact' => $row['impact'] ?? null,
+                    'financial_impact' => $row['financialImpact'] ?? null,
+                    'dynamic_fields' => json_encode($row['dynamicFields'] ?? []),
+                    'sort_order' => $index
+                ];
+                $impactRowModel->insert($rowData);
+            }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                return $this->response->setStatusCode(500)->setJSON([
+                    'success' => false,
+                    'message' => '儲存失敗'
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => '財務衝擊量表儲存成功',
+                'data' => ['scale_id' => $scaleId]
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', '儲存題項財務衝擊量表失敗: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '儲存失敗: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Export question contents to Excel with RichText support
+     * POST /api/v1/question-management/assessment/{assessmentId}/export-excel
+     */
+    public function exportExcel($assessmentId = null)
+    {
+        try {
+            if (!$assessmentId) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '評估記錄ID為必填項目'
+                ]);
+            }
+
+            // Check if assessment exists
+            $assessment = $this->assessmentModel->find($assessmentId);
+            if (!$assessment) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '評估記錄不存在'
+                ]);
+            }
+
+            // Get question contents with category, topic, and factor information
+            $contents = $this->contentModel->getContentsByAssessment($assessmentId);
+
+            // Sort contents by category > topic > factor (same as frontend display)
+            // Use Collator for proper Chinese locale sorting (matches frontend localeCompare)
+            $collator = new \Collator('zh_TW');
+            usort($contents, function($a, $b) use ($collator) {
+                // First, sort by category name
+                $categoryCompare = $collator->compare($a['category_name'] ?? '', $b['category_name'] ?? '');
+                if ($categoryCompare !== 0) return $categoryCompare;
+
+                // If categories are the same, sort by topic name
+                $topicCompare = $collator->compare($a['topic_name'] ?? '', $b['topic_name'] ?? '');
+                if ($topicCompare !== 0) return $topicCompare;
+
+                // If topics are the same, sort by factor name
+                return $collator->compare($a['factor_name'] ?? '', $b['factor_name'] ?? '');
+            });
+
+            // Create Excel file
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setTitle('題項內容');
+
+            // Initialize converters
+            $htmlToRichText = new \App\Libraries\HtmlToRichTextConverter();
+
+            // Set headers (same as template format with A column for factor description)
+            $headers = [
+                'A' => '風險類別',
+                'B' => '風險主題',
+                'C' => '風險因子',
+                'D' => 'A風險因子描述',
+                'E' => 'B參考文字',
+                'F' => 'C風險事件描述',
+                'G' => 'D對應作為描述',
+                'H' => 'D對應作為費用',
+                'I' => 'E風險描述',
+                'J' => 'E風險計算說明',
+                'K' => 'F機會描述',
+                'L' => 'F機會計算說明',
+                'M' => 'G對外負面衝擊評分說明',
+                'N' => 'H對外正面影響評分說明',
+                'O' => 'E1資訊提示',
+                'P' => 'F1資訊提示',
+                'Q' => 'G1資訊提示',
+                'R' => 'H1資訊提示',
+                'S' => '備註'
+            ];
+
+            // Apply header styling
+            foreach ($headers as $col => $header) {
+                $cell = $sheet->getCell($col . '1');
+                $cell->setValue($header);
+
+                $cell->getStyle()->applyFromArray([
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => '4472C4']
+                    ],
+                    'font' => [
+                        'bold' => true,
+                        'color' => ['rgb' => 'FFFFFF'],
+                        'size' => 12
+                    ],
+                    'alignment' => [
+                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                        'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                        'wrapText' => true
+                    ]
+                ]);
+            }
+
+            // Set column widths
+            $sheet->getColumnDimension('A')->setWidth(15); // 風險類別
+            $sheet->getColumnDimension('B')->setWidth(15); // 風險主題
+            $sheet->getColumnDimension('C')->setWidth(15); // 風險因子
+            $sheet->getColumnDimension('D')->setWidth(50); // A風險因子描述
+            $sheet->getColumnDimension('E')->setWidth(50); // B參考文字
+            $sheet->getColumnDimension('F')->setWidth(40); // C風險事件描述
+            $sheet->getColumnDimension('G')->setWidth(40); // D對應作為描述
+            $sheet->getColumnDimension('H')->setWidth(20); // D對應作為費用
+            $sheet->getColumnDimension('I')->setWidth(40); // E風險描述
+            $sheet->getColumnDimension('J')->setWidth(30); // E風險計算說明
+            $sheet->getColumnDimension('K')->setWidth(40); // F機會描述
+            $sheet->getColumnDimension('L')->setWidth(30); // F機會計算說明
+            $sheet->getColumnDimension('M')->setWidth(40); // G對外負面衝擊評分說明
+            $sheet->getColumnDimension('N')->setWidth(40); // H對外正面影響評分說明
+            $sheet->getColumnDimension('O')->setWidth(30); // E1資訊提示
+            $sheet->getColumnDimension('P')->setWidth(30); // F1資訊提示
+            $sheet->getColumnDimension('Q')->setWidth(30); // G1資訊提示
+            $sheet->getColumnDimension('R')->setWidth(30); // H1資訊提示
+            $sheet->getColumnDimension('S')->setWidth(15); // 備註
+
+            // Fill data rows
+            $row = 2;
+            foreach ($contents as $content) {
+                $sheet->setCellValue('A' . $row, $content['category_name'] ?? '');
+                $sheet->setCellValue('B' . $row, $content['topic_name'] ?? '');
+                $sheet->setCellValue('C' . $row, $content['factor_name'] ?? '');
+
+                // Convert HTML to RichText for factor_description (column D - A欄位)
+                if (!empty($content['factor_description'])) {
+                    $richText = $htmlToRichText->convert($content['factor_description']);
+                    $sheet->setCellValue('D' . $row, $richText);
+                } else {
+                    $sheet->setCellValue('D' . $row, '');
+                }
+
+                // Convert HTML to RichText for b_content (column E - B欄位)
+                if (!empty($content['b_content'])) {
+                    $richText = $htmlToRichText->convert($content['b_content']);
+                    $sheet->setCellValue('E' . $row, $richText);
+                } else {
+                    $sheet->setCellValue('E' . $row, '');
+                }
+
+                $sheet->setCellValue('F' . $row, $content['c_placeholder'] ?? '');
+                $sheet->setCellValue('G' . $row, $content['d_placeholder_1'] ?? '');
+                $sheet->setCellValue('H' . $row, $content['d_placeholder_2'] ?? '');
+                $sheet->setCellValue('I' . $row, $content['e1_placeholder_1'] ?? '');
+                $sheet->setCellValue('J' . $row, $content['e2_placeholder'] ?? '');
+                $sheet->setCellValue('K' . $row, $content['f1_placeholder_1'] ?? '');
+                $sheet->setCellValue('L' . $row, $content['f2_placeholder'] ?? '');
+                $sheet->setCellValue('M' . $row, $content['g1_placeholder_1'] ?? '');
+                $sheet->setCellValue('N' . $row, $content['h1_placeholder_1'] ?? '');
+                $sheet->setCellValue('O' . $row, $content['e1_info'] ?? '');
+                $sheet->setCellValue('P' . $row, $content['f1_info'] ?? '');
+                $sheet->setCellValue('Q' . $row, $content['g1_info'] ?? '');
+                $sheet->setCellValue('R' . $row, $content['h1_info'] ?? '');
+                $sheet->setCellValue('S' . $row, '');
+
+                // Apply row styling
+                $rowStyle = [
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => $row % 2 === 0 ? 'FFFFFF' : 'F2F2F2']
+                    ],
+                    'alignment' => [
+                        'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP,
+                        'wrapText' => true
+                    ],
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            'color' => ['rgb' => 'D0D0D0']
+                        ]
+                    ]
+                ];
+
+                $sheet->getStyle('A' . $row . ':S' . $row)->applyFromArray($rowStyle);
+                $row++;
+            }
+
+            // Create help sheet
+            $helpSheet = $spreadsheet->createSheet();
+            $helpSheet->setTitle('填寫說明');
+
+            $helpData = [
+                ['欄位名稱', '說明', '範例'],
+                ['風險類別', '必填。風險所屬的分類', '財務風險'],
+                ['風險主題', '選填。更細緻的風險分類', '市場風險'],
+                ['風險因子', '必填。具體的風險因子', '匯率波動'],
+                ['A風險因子描述', '選填。風險因子議題描述（支援富文本格式）', '企業營運高度依賴【自然資源】的_風險評估_...'],
+                ['B參考文字', '選填。參考資訊（支援富文本格式）', '請參考【最近一年】的_財報資料_...'],
+                ['C風險事件描述', '選填。風險事件的詳細描述', '請描述可能發生的風險事件'],
+                ['D對應作為描述', '選填。對應措施的詳細說明', '請說明對應的處理措施'],
+                ['D對應作為費用', '選填。對應措施所需費用', '預估所需費用'],
+                ['E風險描述', '選填。風險情境描述', '描述風險情境'],
+                ['E風險計算說明', '選填。風險計算方式說明', '風險值 = 可能性 × 衝擊'],
+                ['F機會描述', '選填。機會情境描述', '描述機會情境'],
+                ['F機會計算說明', '選填。機會計算方式說明', '機會值 = 可能性 × 效益'],
+                ['G對外負面衝擊評分說明', '選填。負面衝擊詳細描述', '負面影響描述'],
+                ['H對外正面影響評分說明', '選填。正面影響詳細描述', '正面影響描述'],
+                ['E1資訊提示', '選填。E1區塊資訊提示文字', '風險評估說明'],
+                ['F1資訊提示', '選填。F1區塊資訊提示文字', '機會評估說明'],
+                ['G1資訊提示', '選填。G1區塊資訊提示文字', '負面影響說明'],
+                ['H1資訊提示', '選填。H1區塊資訊提示文字', '正面影響說明'],
+                ['備註', '系統欄位。第一行範例資料標記為「範例資料」，匯入時自動跳過', '範例資料'],
+                ['', '', ''],
+                ['注意事項', '', ''],
+                ['1. 備註欄位若為「範例資料」，該行會自動跳過不匯入', '', ''],
+                ['2. 風險類別和風險因子為必填欄位', '', ''],
+                ['3. A、B欄位支援富文本格式：【文字】=粗體、_文字_=斜體', '', ''],
+                ['4. 如果類別、主題、因子不存在，系統會自動建立', '', ''],
+                ['5. 匯出時HTML格式會轉換為Excel富文本格式，匯入時自動還原為HTML', '', '']
+            ];
+
+            foreach ($helpData as $rowIndex => $rowData) {
+                $helpSheet->fromArray($rowData, null, 'A' . ($rowIndex + 1));
+            }
+
+            // Output Excel file
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $filename = '題項內容_' . $assessmentId . '_' . time() . '.xlsx';
+            $tempFile = WRITEPATH . 'uploads/' . $filename;
+            $writer->save($tempFile);
+            $fileContent = file_get_contents($tempFile);
+            unlink($tempFile);
+
+            return $this->response
+                ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                ->setHeader('Content-Disposition', 'attachment;filename="' . $filename . '"')
+                ->setHeader('Cache-Control', 'max-age=0')
+                ->setBody($fileContent);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Question content export Excel error: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '匯出失敗：' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Import question contents from Excel with RichText support
+     * POST /api/v1/question-management/assessment/{assessmentId}/import-excel
+     */
+    public function importExcel($assessmentId = null)
+    {
+        try {
+            if (!$assessmentId) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '評估記錄ID為必填項目'
+                ]);
+            }
+
+            $assessment = $this->assessmentModel->find($assessmentId);
+            if (!$assessment) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '評估記錄不存在'
+                ]);
+            }
+
+            $file = $this->request->getFile('file');
+            if (!$file || !$file->isValid()) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '請上傳有效的 Excel 檔案'
+                ]);
+            }
+
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getTempName());
+            $sheet = $spreadsheet->getActiveSheet();
+            $richTextToHtml = new \App\Libraries\RichTextToHtmlConverter();
+
+            $rows = $sheet->toArray();
+            log_message('info', "=== 題項內容 Excel 匯入開始 ===");
+            log_message('info', "Excel 檔案總行數: " . count($rows));
+
+            array_shift($rows);
+            if (empty($rows)) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => 'Excel 檔案中沒有資料'
+                ]);
+            }
+
+            $imported = 0;
+            $skipped = 0;
+            $errors = [];
+
+            foreach ($rows as $index => $row) {
+                $rowNumber = $index + 2;
+
+                try {
+                    $row = array_map(function($value) {
+                        if (is_string($value)) {
+                            $value = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+                            $value = str_replace("\0", '', $value);
+                        }
+                        return $value;
+                    }, $row);
+
+                    $remark = trim($row[17] ?? '');
+                    if ($remark === '範例資料') {
+                        log_message('info', "第 {$rowNumber} 行：範例資料，跳過");
+                        continue;
+                    }
+
+                    $categoryName = trim($row[0] ?? '');
+                    $topicName = trim($row[1] ?? '');
+                    $factorName = trim($row[2] ?? '');
+
+                    if (empty($categoryName) && empty($factorName) && empty($topicName)) {
+                        continue;
+                    }
+
+                    if (empty($categoryName) || empty($factorName)) {
+                        $missing = [];
+                        if (empty($categoryName)) $missing[] = '風險類別';
+                        if (empty($factorName)) $missing[] = '風險因子';
+                        $errors[] = "第 {$rowNumber} 行：缺少必填欄位（" . implode('、', $missing) . "）";
+                        continue;
+                    }
+
+                    // Find or create category
+                    $category = $this->categoryModel->where('assessment_id', $assessmentId)
+                        ->where('category_name', $categoryName)
+                        ->first();
+
+                    if (!$category) {
+                        $maxSort = $this->categoryModel->where('assessment_id', $assessmentId)
+                            ->selectMax('sort_order')
+                            ->first();
+                        $nextSort = ($maxSort['sort_order'] ?? 0) + 1;
+                        $categoryId = $this->categoryModel->insert([
+                            'assessment_id' => $assessmentId,
+                            'category_name' => $categoryName,
+                            'sort_order' => $nextSort
+                        ]);
+                    } else {
+                        $categoryId = $category['id'];
+                    }
+
+                    // Find or create topic
+                    $topicId = null;
+                    if (!empty($topicName)) {
+                        $topic = $this->topicModel->where('assessment_id', $assessmentId)
+                            ->where('topic_name', $topicName)
+                            ->where('category_id', $categoryId)
+                            ->first();
+
+                        if (!$topic) {
+                            $maxSort = $this->topicModel->where('assessment_id', $assessmentId)
+                                ->where('category_id', $categoryId)
+                                ->selectMax('sort_order')
+                                ->first();
+                            $nextSort = ($maxSort['sort_order'] ?? 0) + 1;
+                            $topicId = $this->topicModel->insert([
+                                'assessment_id' => $assessmentId,
+                                'category_id' => $categoryId,
+                                'topic_name' => $topicName,
+                                'sort_order' => $nextSort
+                            ]);
+                        } else {
+                            $topicId = $topic['id'];
+                        }
+                    }
+
+                    // Find or create factor
+                    $factor = $this->factorModel->where('assessment_id', $assessmentId)
+                        ->where('factor_name', $factorName)
+                        ->first();
+
+                    if (!$factor) {
+                        $factorId = $this->factorModel->insert([
+                            'assessment_id' => $assessmentId,
+                            'category_id' => $categoryId,
+                            'topic_id' => $topicId,
+                            'factor_name' => $factorName
+                        ]);
+                    } else {
+                        $factorId = $factor['id'];
+                    }
+
+                    // Convert RichText to HTML for b_content
+                    $bContentHtml = '';
+                    $cellD = $sheet->getCell('D' . $rowNumber);
+
+                    try {
+                        $cellValue = $cellD->getValue();
+
+                        if ($cellValue instanceof \PhpOffice\PhpSpreadsheet\RichText\RichText) {
+                            $bContentHtml = $richTextToHtml->convert($cellValue);
+                        } elseif (!empty($cellValue)) {
+                            $bContentHtml = '<p>' . htmlspecialchars($cellValue) . '</p>';
+                        }
+                    } catch (\Exception $e) {
+                        if (!empty($cellD->getValue())) {
+                            $bContentHtml = '<p>' . htmlspecialchars($cellD->getValue()) . '</p>';
+                        }
+                    }
+
+                    // Check if content already exists
+                    $existingContent = $this->contentModel
+                        ->where('assessment_id', $assessmentId)
+                        ->where('category_id', $categoryId)
+                        ->where('factor_id', $factorId)
+                        ->where('topic_id', $topicId)
+                        ->first();
+
+                    if ($existingContent) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    $maxSort = $this->contentModel->where('assessment_id', $assessmentId)
+                        ->selectMax('sort_order')
+                        ->first();
+                    $sortOrder = ($maxSort['sort_order'] ?? 0) + 1;
+
+                    $contentData = [
+                        'assessment_id' => $assessmentId,
+                        'category_id' => $categoryId,
+                        'topic_id' => $topicId,
+                        'factor_id' => $factorId,
+                        'sort_order' => $sortOrder,
+                        'is_required' => 1,
+                        'b_content' => $bContentHtml,
+                        'c_placeholder' => $row[4] ?? null,
+                        'd_placeholder_1' => $row[5] ?? null,
+                        'd_placeholder_2' => $row[6] ?? null,
+                        'e1_placeholder_1' => $row[7] ?? null,
+                        'e2_placeholder' => $row[8] ?? null,
+                        'f1_placeholder_1' => $row[9] ?? null,
+                        'f2_placeholder' => $row[10] ?? null,
+                        'g1_placeholder_1' => $row[11] ?? null,
+                        'h1_placeholder_1' => $row[12] ?? null,
+                        'e1_info' => $row[13] ?? null,
+                        'f1_info' => $row[14] ?? null,
+                        'g1_info' => $row[15] ?? null,
+                        'h1_info' => $row[16] ?? null
+                    ];
+
+                    $this->contentModel->insert($contentData);
+                    $imported++;
+
+                } catch (\Exception $e) {
+                    $errors[] = "第 {$rowNumber} 行：" . $e->getMessage();
+                }
+            }
+
+            log_message('info', "=== 匯入完成：成功 {$imported} 筆, 跳過 {$skipped} 筆, 錯誤 " . count($errors) . " 筆 ===");
+
+            return $this->response->setJSON([
+                'success' => true,
+                'imported' => $imported,
+                'skipped' => $skipped,
+                'errors' => $errors,
+                'message' => "成功匯入 {$imported} 筆資料"
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Question content import Excel error: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '匯出失敗：' . $e->getMessage()
+            ]);
+        }
     }
 }

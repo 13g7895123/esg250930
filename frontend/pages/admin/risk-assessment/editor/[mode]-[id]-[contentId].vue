@@ -554,18 +554,23 @@ const handleSave = async () => {
 
   isSaving.value = true
 
+  const { executeWithNotification } = useNotification()
+
   try {
     // 轉換表單資料為後端格式
     const backendData = formToBackend(formData.value, questionData.value)
 
     console.log('[Editor] Saving data:', backendData)
 
-    // 呼叫儲存
-    await saveQuestion(backendData, questionData.value)
-
-    // 顯示成功訊息
-    const { $notify } = useNuxtApp()
-    await $notify.success('儲存成功', '題目已成功儲存')
+    // 使用 executeWithNotification 處理儲存，自動顯示載入中和成功/失敗提示
+    await executeWithNotification(
+      async () => await saveQuestion(backendData, questionData.value),
+      {
+        loadingMessage: '儲存中...請稍候',
+        successMessage: '題目已成功儲存',
+        errorMessage: '儲存失敗，請稍後再試'
+      }
+    )
 
     // 返回列表頁
     setTimeout(() => {
@@ -573,8 +578,7 @@ const handleSave = async () => {
     }, 1500)
   } catch (error) {
     console.error('[Editor] Save failed:', error)
-    const { $notify } = useNuxtApp()
-    $notify.error('儲存失敗', error.message || '請稍後再試')
+    // 錯誤已經由 executeWithNotification 處理
   } finally {
     isSaving.value = false
   }
@@ -635,47 +639,93 @@ const openScaleModal = () => {
  * 儲存量表資料
  */
 const handleScaleSave = async () => {
-  const { $notify } = useNuxtApp()
+  const { executeWithNotification } = useNotification()
 
-  if (editorMode === 'question' || editorMode === 'preview') {
-    // question 模式不允許編輯量表
-    $notify.info('提示', '此模式下量表為唯讀')
+  if (editorMode === 'preview') {
+    // preview 模式不允許編輯量表
+    const { $notify } = useNuxtApp()
+    $notify.info('提示', '預覽模式下量表為唯讀')
     return
   }
 
   try {
-    const scaleData = prepareScaleDataForSubmission()
+    await executeWithNotification(
+      async () => {
+        const scaleData = prepareScaleDataForSubmission()
 
-    // 儲存可能性量表
-    await apiClient.request(`/templates/${id}/scales/probability`, {
-      method: 'POST',
-      body: {
-        columns: scaleData.probability_scale.columns,
-        rows: scaleData.probability_scale.rows,
-        descriptionText: scaleData.probability_scale.description_text,
-        showDescriptionText: scaleData.probability_scale.show_description,
-        selectedDisplayColumn: scaleData.probability_scale.selected_display_column
+        let probabilityUrl, impactUrl
+
+        if (editorMode === 'question') {
+          // Question 模式：使用 assessment API
+          probabilityUrl = `/api/v1/question-management/assessment/${id}/scales/probability`
+          impactUrl = `/api/v1/question-management/assessment/${id}/scales/impact`
+        } else {
+          // Template 模式：使用 template API
+          probabilityUrl = `/templates/${id}/scales/probability`
+          impactUrl = `/templates/${id}/scales/impact`
+        }
+
+        // 儲存可能性量表
+        if (editorMode === 'question') {
+          await $fetch(probabilityUrl, {
+            method: 'POST',
+            body: {
+              columns: scaleData.probability_scale.columns,
+              rows: scaleData.probability_scale.rows,
+              descriptionText: scaleData.probability_scale.description_text,
+              showDescriptionText: scaleData.probability_scale.show_description,
+              selectedDisplayColumn: scaleData.probability_scale.selected_display_column
+            }
+          })
+        } else {
+          await apiClient.request(probabilityUrl, {
+            method: 'POST',
+            body: {
+              columns: scaleData.probability_scale.columns,
+              rows: scaleData.probability_scale.rows,
+              descriptionText: scaleData.probability_scale.description_text,
+              showDescriptionText: scaleData.probability_scale.show_description,
+              selectedDisplayColumn: scaleData.probability_scale.selected_display_column
+            }
+          })
+        }
+
+        // 儲存財務衝擊量表
+        if (editorMode === 'question') {
+          await $fetch(impactUrl, {
+            method: 'POST',
+            body: {
+              columns: scaleData.impact_scale.columns,
+              rows: scaleData.impact_scale.rows,
+              descriptionText: scaleData.impact_scale.description_text,
+              showDescriptionText: scaleData.impact_scale.show_description,
+              selectedDisplayColumn: scaleData.impact_scale.selected_display_column
+            }
+          })
+        } else {
+          await apiClient.request(impactUrl, {
+            method: 'POST',
+            body: {
+              columns: scaleData.impact_scale.columns,
+              rows: scaleData.impact_scale.rows,
+              descriptionText: scaleData.impact_scale.description_text,
+              showDescriptionText: scaleData.impact_scale.show_description,
+              selectedDisplayColumn: scaleData.impact_scale.selected_display_column
+            }
+          })
+        }
+
+        showScaleModal.value = false
+      },
+      {
+        loadingMessage: '儲存量表中...請稍候',
+        successMessage: '量表已成功儲存',
+        errorMessage: '量表儲存失敗，請稍後再試'
       }
-    })
-
-    // 儲存財務衝擊量表
-    await apiClient.request(`/templates/${id}/scales/impact`, {
-      method: 'POST',
-      body: {
-        columns: scaleData.impact_scale.columns,
-        rows: scaleData.impact_scale.rows,
-        descriptionText: scaleData.impact_scale.description_text,
-        showDescriptionText: scaleData.impact_scale.show_description,
-        selectedDisplayColumn: scaleData.impact_scale.selected_display_column
-      }
-    })
-
-    showScaleModal.value = false
-
-    await $notify.success('儲存成功', '量表已成功儲存')
+    )
   } catch (error) {
     console.error('[Editor] Scale save failed:', error)
-    $notify.error('儲存失敗', error.message || '量表儲存失敗，請稍後再試')
+    // 錯誤已經由 executeWithNotification 處理
   }
 }
 </script>

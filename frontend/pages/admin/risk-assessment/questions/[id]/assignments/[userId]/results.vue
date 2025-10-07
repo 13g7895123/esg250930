@@ -5,7 +5,7 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4">
           <button
-            @click="$router.back()"
+            @click="handleBackToAssignments"
             class="p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
           >
             <ArrowLeftIcon class="w-5 h-5" />
@@ -700,6 +700,11 @@ const refreshData = async () => {
       window.$swal.error('錯誤', '重新載入資料失敗')
     }
   }
+}
+
+const handleBackToAssignments = () => {
+  const assessmentId = route.params.id
+  router.push(`/admin/risk-assessment/questions/${assessmentId}/assignments`)
 }
 
 // Watch for route parameter changes and reload data

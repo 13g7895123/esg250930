@@ -144,20 +144,25 @@
                   >
                   </span>
                 </p>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                  {{ getCategoryName(content.categoryId || content.category_id) }}
+                <span
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 cursor-help"
+                  :title="getCategoryName(content.categoryId || content.category_id)"
+                >
+                  {{ truncateText(getCategoryName(content.categoryId || content.category_id), 6) }}
                 </span>
                 <span
                   v-if="getTopicName(content.topicId)"
-                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 cursor-help"
+                  :title="getTopicName(content.topicId)"
                 >
-                  {{ getTopicName(content.topicId) }}
+                  {{ truncateText(getTopicName(content.topicId), 6) }}
                 </span>
                 <span
                   v-if="getFactorName(content.factorId)"
-                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 cursor-help"
+                  :title="getFactorName(content.factorId)"
                 >
-                  {{ getFactorName(content.factorId) }}
+                  {{ truncateText(getFactorName(content.factorId), 6) }}
                 </span>
               </div>
               <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ content.description }}</p>

@@ -229,11 +229,11 @@
       v-model="showTemplateManagementModal"
       :title="`架構管理 - ${managingTemplate?.version_name}`"
       :item-name="managingTemplate?.version_name"
-      :risk-topics-enabled="managingTemplate?.risk_topics_enabled ?? true"
+      :risk-topics-enabled="!!managingTemplate?.risk_topics_enabled"
       :show-export-import="true"
       management-type="template"
       @close="showTemplateManagementModal = false"
-      @toggle-risk-topics="toggleTemplateRiskTopics(managingTemplate?.id)"
+      @toggle-risk-topics="() => toggleTemplateRiskTopics(managingTemplate?.id)"
       @open-category-management="openManagementModal('categories')"
       @open-topic-management="openManagementModal('topics')"
       @open-factor-management="openManagementModal('factors')"
@@ -549,15 +549,11 @@
         <!-- Custom Description Cell with HTML Rendering and Truncation -->
         <template #cell-description="{ item }">
           <div
-            class="relative"
+            v-html="truncateHtmlDescription(item.description)"
+            class="text-base text-gray-500 dark:text-gray-400 cursor-help"
             @mouseenter="showTooltip($event, item)"
             @mouseleave="hideTooltip"
-          >
-            <div
-              v-html="item.description"
-              class="text-base text-gray-500 dark:text-gray-400 line-clamp-2 overflow-hidden cursor-pointer"
-            ></div>
-          </div>
+          ></div>
         </template>
 
         <!-- Custom Actions Cell -->
@@ -978,6 +974,7 @@ const riskFactorFormData = ref({
 
 // Loading states
 const isLoadingTopics = ref(false)
+const isInitializingEditForm = ref(false)
 
 // Risk topic management
 const showRiskTopicManagementModal = ref(false)
@@ -1064,7 +1061,17 @@ const riskCategoryColumns = ref([
     key: 'description',
     label: '描述',
     sortable: false,
-    cellClass: 'text-base text-gray-500 dark:text-gray-400'
+    cellClass: 'text-base text-gray-500 dark:text-gray-400 cursor-help',
+    formatter: (value) => {
+      if (!value) return '-'
+      const text = value.replace(/<[^>]*>/g, '') // Strip HTML tags for plain text
+      return text.length > 10 ? text.substring(0, 10) + '...' : text
+    },
+    tooltip: (row) => {
+      // Strip HTML for tooltip to show plain text
+      const text = (row.description || '').replace(/<[^>]*>/g, '')
+      return text
+    }
   },
   {
     key: 'created_at',
@@ -1087,7 +1094,12 @@ const riskFactorColumns = ref([
     key: 'factor_name',
     label: '因子名稱',
     sortable: true,
-    cellClass: 'text-base font-medium text-gray-900 dark:text-white'
+    cellClass: 'text-base font-medium text-gray-900 dark:text-white cursor-help',
+    formatter: (value) => {
+      if (!value) return '-'
+      return value.length > 6 ? value.substring(0, 6) + '...' : value
+    },
+    tooltip: (row) => row.factor_name || ''
   },
   {
     key: 'category_name',
@@ -1099,13 +1111,54 @@ const riskFactorColumns = ref([
     key: 'topic_name',
     label: '所屬主題',
     sortable: true,
-    cellClass: 'text-base text-gray-500 dark:text-gray-400'
+    cellClass: 'text-base text-gray-500 dark:text-gray-400 cursor-help',
+    formatter: (value) => {
+      if (!value) return '-'
+      return value.length > 6 ? value.substring(0, 6) + '...' : value
+    },
+    tooltip: (row) => row.topic_name || ''
   },
   {
     key: 'description',
     label: '描述',
     sortable: false,
-    cellClass: 'text-base text-gray-500 dark:text-gray-400'
+    cellClass: 'text-base text-gray-500 dark:text-gray-400 cursor-help',
+    isHtml: true,
+    formatter: (value) => {
+      if (!value) return '-'
+      // For HTML content, strip tags for length check but preserve HTML for display
+      const textOnly = value.replace(/<[^>]*>/g, '')
+      if (textOnly.length <= 10) return value
+
+      // Find a good truncation point that doesn't break HTML tags
+      let truncated = ''
+      let textLength = 0
+      const htmlRegex = /<[^>]*>|[^<]+/g
+      let match
+
+      while ((match = htmlRegex.exec(value)) !== null && textLength < 10) {
+        const piece = match[0]
+        if (piece.startsWith('<')) {
+          truncated += piece // Keep HTML tags intact
+        } else {
+          const remaining = 10 - textLength
+          if (piece.length <= remaining) {
+            truncated += piece
+            textLength += piece.length
+          } else {
+            truncated += piece.substring(0, remaining) + '...'
+            textLength = 10
+          }
+        }
+      }
+
+      return truncated
+    },
+    tooltip: (row) => {
+      // Convert HTML to text format for tooltip (strip tags to show readable text)
+      const text = (row.description || '').replace(/<[^>]*>/g, '')
+      return text
+    }
   },
   {
     key: 'created_at',
@@ -1128,7 +1181,12 @@ const riskTopicColumns = ref([
     key: 'topic_name',
     label: '主題名稱',
     sortable: true,
-    cellClass: 'text-base font-medium text-gray-900 dark:text-white'
+    cellClass: 'text-base font-medium text-gray-900 dark:text-white cursor-help',
+    formatter: (value) => {
+      if (!value) return '-'
+      return value.length > 6 ? value.substring(0, 6) + '...' : value
+    },
+    tooltip: (row) => row.topic_name || ''
   },
   {
     key: 'category_name',
@@ -1140,7 +1198,17 @@ const riskTopicColumns = ref([
     key: 'description',
     label: '描述',
     sortable: false,
-    cellClass: 'text-base text-gray-500 dark:text-gray-400'
+    cellClass: 'text-base text-gray-500 dark:text-gray-400 cursor-help',
+    formatter: (value) => {
+      if (!value) return '-'
+      const text = value.replace(/<[^>]*>/g, '') // Strip HTML tags for plain text
+      return text.length > 10 ? text.substring(0, 10) + '...' : text
+    },
+    tooltip: (row) => {
+      // Strip HTML for tooltip to show plain text
+      const text = (row.description || '').replace(/<[^>]*>/g, '')
+      return text
+    }
   },
   {
     key: 'created_at',
@@ -1152,6 +1220,42 @@ const riskTopicColumns = ref([
 ])
 
 // Methods
+const getTextLength = (html) => {
+  if (!html) return 0
+  return html.replace(/<[^>]*>/g, '').length
+}
+
+const truncateHtmlDescription = (html) => {
+  if (!html) return '-'
+
+  const textOnly = html.replace(/<[^>]*>/g, '')
+  if (textOnly.length <= 10) return html
+
+  // Find a good truncation point that doesn't break HTML tags
+  let truncated = ''
+  let textLength = 0
+  const htmlRegex = /<[^>]*>|[^<]+/g
+  let match
+
+  while ((match = htmlRegex.exec(html)) !== null && textLength < 10) {
+    const piece = match[0]
+    if (piece.startsWith('<')) {
+      truncated += piece // Keep HTML tags intact
+    } else {
+      const remaining = 10 - textLength
+      if (piece.length <= remaining) {
+        truncated += piece
+        textLength += piece.length
+      } else {
+        truncated += piece.substring(0, remaining) + '...'
+        textLength = 10
+      }
+    }
+  }
+
+  return truncated
+}
+
 const formatDate = (date) => {
   if (!date) return '-'
   const dateObj = typeof date === 'string' ? new Date(date) : date
@@ -1160,7 +1264,8 @@ const formatDate = (date) => {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    second: '2-digit'
   }).format(dateObj)
 }
 
@@ -1284,10 +1389,21 @@ const refreshTemplates = async () => {
 }
 
 const manageTemplateStructure = (template) => {
-  // Ensure the template has risk_topics_enabled field (default to true)
+  // Convert risk_topics_enabled to boolean
+  const rawValue = template.risk_topics_enabled
+  let riskTopicsEnabled = false
+
+  if (rawValue === 1 || rawValue === true || rawValue === '1' || rawValue === 'true') {
+    riskTopicsEnabled = true
+  } else if (rawValue === 0 || rawValue === false || rawValue === '0' || rawValue === 'false') {
+    riskTopicsEnabled = false
+  } else if (rawValue === null || rawValue === undefined) {
+    riskTopicsEnabled = true // Default to true if not set
+  }
+
   const templateWithDefaults = {
     ...template,
-    risk_topics_enabled: template.risk_topics_enabled ?? true
+    risk_topics_enabled: riskTopicsEnabled
   }
   managingTemplate.value = templateWithDefaults
   showTemplateManagementModal.value = true
@@ -1295,19 +1411,39 @@ const manageTemplateStructure = (template) => {
 
 const toggleTemplateRiskTopics = async (templateId) => {
   try {
-    templatesStore.toggleRiskTopics(templateId)
+    // Show loading indicator
+    showLoading('正在更新設定...')
+
+    // Call store method (now async)
+    await templatesStore.toggleRiskTopics(templateId)
 
     // Force reactivity update for the managing template
     if (managingTemplate.value && managingTemplate.value.id === templateId) {
       const template = templatesStore.getTemplateById(templateId).value
       if (template) {
-        managingTemplate.value = { ...template }
+        // Ensure risk_topics_enabled is boolean
+        const rawValue = template.risk_topics_enabled
+        let riskTopicsEnabled = false
+
+        if (rawValue === 1 || rawValue === true || rawValue === '1' || rawValue === 'true') {
+          riskTopicsEnabled = true
+        } else if (rawValue === 0 || rawValue === false || rawValue === '0' || rawValue === 'false') {
+          riskTopicsEnabled = false
+        }
+
+        managingTemplate.value = {
+          ...template,
+          risk_topics_enabled: riskTopicsEnabled
+        }
       }
     }
 
+    // Close loading and show success
+    closeAll()
     await showSuccess('設定已更新', '範本風險主題設定已更新')
   } catch (error) {
     console.error('Toggle risk topics error:', error)
+    closeAll()
     await showError('設定失敗', '更新風險主題設定時發生錯誤')
   }
 }
@@ -1460,14 +1596,37 @@ const addRiskFactor = () => {
   showAddRiskFactorModal.value = true
 }
 
-const editRiskFactor = (factor) => {
+const editRiskFactor = async (factor) => {
   editingRiskFactor.value = factor
+  isInitializingEditForm.value = true
+
+  // First set category_id and other fields
   riskFactorFormData.value = {
     factor_name: factor.factor_name,
     category_id: factor.category_id,
-    topic_id: factor.topic_id || '',
+    topic_id: '',  // Will be set after topics load
     description: factor.description || ''
   }
+
+  // If risk topics are enabled and category has topics, wait for topics to load
+  if (managingTemplate.value?.risk_topics_enabled && factor.category_id && managingTemplate.value?.id) {
+    isLoadingTopics.value = true
+    try {
+      await templatesStore.fetchRiskTopics(managingTemplate.value.id)
+      // After topics are loaded, set the topic_id
+      await nextTick()
+      riskFactorFormData.value.topic_id = factor.topic_id || ''
+    } catch (error) {
+      console.error('Failed to load risk topics:', error)
+    } finally {
+      isLoadingTopics.value = false
+    }
+  } else {
+    // No topics, just set the value
+    riskFactorFormData.value.topic_id = factor.topic_id || ''
+  }
+
+  isInitializingEditForm.value = false
   showEditRiskFactorModal.value = true
 }
 
@@ -1709,9 +1868,14 @@ watch([showAddModal, showEditModal], ([newAddModal, newEditModal]) => {
 
 // Watch for category changes in risk factor form
 watch(() => riskFactorFormData.value.category_id, async (newCategoryId, oldCategoryId) => {
-  console.log('Category changed:', { newCategoryId, oldCategoryId })
+  console.log('Category changed:', { newCategoryId, oldCategoryId, isInitializing: isInitializingEditForm.value })
 
-  // Clear topic selection when category changes
+  // Don't clear topic_id if we're initializing the edit form
+  if (isInitializingEditForm.value) {
+    return
+  }
+
+  // Clear topic selection when category changes (user manually changed it)
   if (newCategoryId !== oldCategoryId) {
     riskFactorFormData.value.topic_id = ''
 
@@ -1947,6 +2111,13 @@ const closeStructureImportModal = () => {
 const processImport = async () => {
   if (!selectedFile.value || !managingTemplate.value) return
 
+  // Validate templateId
+  const templateId = managingTemplate.value.id
+  if (!templateId) {
+    await showError('錯誤', '無法取得範本 ID，請重新開啟架構管理')
+    return
+  }
+
   isImporting.value = true
   importErrors.value = []
 
@@ -1958,7 +2129,6 @@ const processImport = async () => {
     formData.append('file', selectedFile.value)
 
     // Upload file to backend for processing with RichText support
-    const templateId = managingTemplate.value.id
     const response = await $fetch(`/api/v1/risk-assessment/templates/${templateId}/import-structure`, {
       method: 'POST',
       body: formData
@@ -1988,10 +2158,19 @@ const processImport = async () => {
 
   } catch (error) {
     console.error('Import error:', error)
+    console.error('Template ID:', templateId)
+    console.error('Managing template:', managingTemplate.value)
     closeAll()
 
     let errorMessage = '匯入架構資料時發生錯誤'
-    if (error.message) {
+    if (error.data?.message) {
+      errorMessage += '：' + error.data.message
+      // Show debug info if available
+      if (error.data.debug) {
+        console.error('Debug info:', error.data.debug)
+        errorMessage += '\n\nDebug: ' + JSON.stringify(error.data.debug)
+      }
+    } else if (error.message) {
       errorMessage += '：' + error.message
     }
 

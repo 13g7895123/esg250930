@@ -18,6 +18,7 @@
     "test:e2e:debug": "playwright test --debug"
   },
   "dependencies": {
+    "@cyhnkckali/vue3-color-picker": "^2.1.5",
     "@heroicons/vue": "^2.1.5",
     "@nuxt/ui": "^2.18.7",
     "@pinia/nuxt": "^0.10.0",

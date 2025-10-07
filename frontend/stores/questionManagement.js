@@ -147,20 +147,26 @@ export const useQuestionManagementStore = defineStore('questionManagement', () =
     isAddingContent.value = true
     clearError()
 
+    console.log('[QuestionManagement Store] addQuestionContent - contentData:', contentData)
+
     const apiData = {
       category_id: contentData.categoryId,
       topic_id: contentData.topicId || null,
       factor_id: contentData.riskFactorId || null,
-      title: contentData.topic || '',
-      description: contentData.a_content || contentData.aContent || '',
+      factorDescription: contentData.factorDescription || contentData.a_content || contentData.aContent || '',
       sort_order: (questionContent.value[assessmentId]?.length || 0) + 1
     }
+
+    console.log('[QuestionManagement Store] addQuestionContent - apiData:', apiData)
+    console.log('[QuestionManagement Store] factorDescription:', apiData.factorDescription)
 
     try {
       const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/contents`, {
         method: 'POST',
         body: apiData
       })
+
+      console.log('[QuestionManagement Store] addQuestionContent - response:', response)
 
       if (response.success && response.data) {
         // 轉換並加入本地狀態
@@ -200,19 +206,31 @@ export const useQuestionManagementStore = defineStore('questionManagement', () =
     isUpdatingContent.value = true
     clearError()
 
+    console.log('[QuestionManagement Store] updateQuestionContent - contentData:', contentData)
+
     const apiData = {
       category_id: contentData.categoryId,
       topic_id: contentData.topicId || null,
       factor_id: contentData.riskFactorId || null,
-      title: contentData.topic || '',
-      description: contentData.a_content || contentData.aContent || ''
+      factorDescription: contentData.factorDescription || contentData.a_content || contentData.aContent || ''
     }
 
+    console.log('[QuestionManagement Store] updateQuestionContent - apiData:', apiData)
+    console.log('[QuestionManagement Store] factorDescription:', apiData.factorDescription)
+    console.log('[QuestionManagement Store] apiData keys:', Object.keys(apiData))
+    console.log('[QuestionManagement Store] apiData JSON:', JSON.stringify(apiData, null, 2))
+
     try {
+      console.log('[QuestionManagement Store] About to send PUT request to:', `/api/v1/question-management/contents/${contentId}`)
+      console.log('[QuestionManagement Store] Request body:', JSON.stringify(apiData, null, 2))
+
       const response = await $fetch(`/api/v1/question-management/contents/${contentId}`, {
         method: 'PUT',
         body: apiData
       })
+
+      console.log('[QuestionManagement Store] updateQuestionContent - response:', response)
+      console.log('[QuestionManagement Store] response.debug:', response.debug)
 
       if (response.success && response.data) {
         // 更新本地狀態
@@ -364,6 +382,32 @@ export const useQuestionManagementStore = defineStore('questionManagement', () =
     return initialize(assessmentId)
   }
 
+  /**
+   * 清除特定 assessment 的所有快取資料
+   */
+  const clearAssessmentCache = (assessmentId) => {
+    console.log('[QuestionManagement Store] Clearing cache for assessment:', assessmentId)
+
+    // 清除該 assessment 的所有快取資料
+    delete assessments.value[assessmentId]
+    delete questionContent.value[assessmentId]
+    delete questionCategories.value[assessmentId]
+    delete questionTopics.value[assessmentId]
+    delete questionFactors.value[assessmentId]
+
+    console.log('[QuestionManagement Store] Cache cleared successfully')
+  }
+
+  /**
+   * 重新載入特定 assessment 的所有資料（清除快取後使用）
+   */
+  const fetchAllQuestionData = async (assessmentId) => {
+    console.log('[QuestionManagement Store] Fetching all question data for assessment:', assessmentId)
+
+    // 使用 initialize 方法重新載入所有資料
+    return initialize(assessmentId)
+  }
+
   return {
     // State
     assessments,
@@ -395,6 +439,8 @@ export const useQuestionManagementStore = defineStore('questionManagement', () =
     fetchQuestionStructure,
     initialize,
     refreshAssessment,
+    clearAssessmentCache,
+    fetchAllQuestionData,
     clearError
   }
 })

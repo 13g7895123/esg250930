@@ -5,6 +5,7 @@
       :title="`題項管理 - ${companyName}`"
       :description="`管理 ${companyName} 的風險評估題項與相關資料`"
       :show-back-button="true"
+      back-path="/admin/risk-assessment/questions"
     />
 
     <!-- Company Warning Message -->
@@ -531,7 +532,7 @@
       @close="showCategoriesModal = false"
     >
       <DataTable
-        :data="questionCategories || []"
+        :data="sortedQuestionCategories"
         :columns="questionCategoryColumns"
         search-placeholder="搜尋風險類別..."
         :search-fields="['category_name', 'description']"
@@ -637,7 +638,7 @@
       @close="showTopicsModal = false"
     >
       <DataTable
-        :data="questionTopics || []"
+        :data="sortedQuestionTopics"
         :columns="questionTopicColumns"
         search-placeholder="搜尋風險主題..."
         :search-fields="['topic_name', 'category_name', 'description']"
@@ -744,7 +745,7 @@
       @close="showFactorsModal = false"
     >
       <DataTable
-        :data="questionFactors || []"
+        :data="sortedQuestionFactors"
         :columns="questionFactorColumns"
         search-placeholder="搜尋風險因子..."
         :search-fields="['factor_name', 'topic_name', 'category_name', 'description']"
@@ -1178,6 +1179,63 @@ const {
   deleteFactor
 } = useQuestionStructure()
 
+// 排序後的資料 - 使用與 content 頁面相同的排序邏輯
+const sortedQuestionCategories = computed(() => {
+  if (!questionCategories.value || questionCategories.value.length === 0) {
+    return []
+  }
+
+  return [...questionCategories.value].sort((a, b) => {
+    const nameA = a.category_name || ''
+    const nameB = b.category_name || ''
+    return nameA.localeCompare(nameB, 'zh-TW')
+  })
+})
+
+const sortedQuestionTopics = computed(() => {
+  if (!questionTopics.value || questionTopics.value.length === 0) {
+    return []
+  }
+
+  return [...questionTopics.value].sort((a, b) => {
+    // 先按類別排序
+    const categoryA = a.category_name || ''
+    const categoryB = b.category_name || ''
+    const categoryCompare = categoryA.localeCompare(categoryB, 'zh-TW')
+    if (categoryCompare !== 0) return categoryCompare
+
+    // 類別相同時按主題名稱排序
+    const topicA = a.topic_name || ''
+    const topicB = b.topic_name || ''
+    return topicA.localeCompare(topicB, 'zh-TW')
+  })
+})
+
+const sortedQuestionFactors = computed(() => {
+  if (!questionFactors.value || questionFactors.value.length === 0) {
+    return []
+  }
+
+  return [...questionFactors.value].sort((a, b) => {
+    // 先按類別排序
+    const categoryA = a.category_name || ''
+    const categoryB = b.category_name || ''
+    const categoryCompare = categoryA.localeCompare(categoryB, 'zh-TW')
+    if (categoryCompare !== 0) return categoryCompare
+
+    // 類別相同時按主題排序
+    const topicA = a.topic_name || ''
+    const topicB = b.topic_name || ''
+    const topicCompare = topicA.localeCompare(topicB, 'zh-TW')
+    if (topicCompare !== 0) return topicCompare
+
+    // 主題相同時按因子名稱排序
+    const factorA = a.factor_name || ''
+    const factorB = b.factor_name || ''
+    return factorA.localeCompare(factorB, 'zh-TW')
+  })
+})
+
 // Set page title safely for SSR
 const pageTitle = computed(() => `題項管理 - ${companyName.value || '公司'}`)
 usePageTitle(pageTitle)
@@ -1254,18 +1312,42 @@ const questionCategoryColumns = [
   {
     key: 'actions',
     label: '功能',
-    class: 'text-center w-32'
+    sortable: false,
+    cellClass: 'text-base text-gray-900 dark:text-white'
   },
   {
     key: 'category_name',
     label: '類別名稱',
     sortable: true,
-    class: 'font-medium text-gray-900 dark:text-white'
+    cellClass: 'text-base font-medium text-gray-900 dark:text-white cursor-help',
+    formatter: (value) => {
+      if (!value) return '-'
+      return value.length > 6 ? value.substring(0, 6) + '...' : value
+    },
+    tooltip: (row) => row.category_name || ''
   },
   {
     key: 'description',
     label: '描述',
-    class: 'text-gray-600 dark:text-gray-400'
+    sortable: false,
+    cellClass: 'text-base text-gray-500 dark:text-gray-400 cursor-help',
+    formatter: (value) => {
+      if (!value) return '-'
+      const text = value.replace(/<[^>]*>/g, '') // Strip HTML tags for plain text
+      return text.length > 10 ? text.substring(0, 10) + '...' : text
+    },
+    tooltip: (row) => {
+      // Strip HTML for tooltip to show plain text
+      const text = (row.description || '').replace(/<[^>]*>/g, '')
+      return text
+    }
+  },
+  {
+    key: 'created_at',
+    label: '建立日期',
+    sortable: true,
+    cellClass: 'text-base text-gray-500 dark:text-gray-400',
+    formatter: (value) => formatDate(value)
   }
 ]
 
@@ -1273,23 +1355,48 @@ const questionTopicColumns = [
   {
     key: 'actions',
     label: '功能',
-    class: 'text-center w-32'
+    sortable: false,
+    cellClass: 'text-base text-gray-900 dark:text-white'
   },
   {
     key: 'topic_name',
     label: '主題名稱',
     sortable: true,
-    class: 'font-medium text-gray-900 dark:text-white'
+    cellClass: 'text-base font-medium text-gray-900 dark:text-white cursor-help',
+    formatter: (value) => {
+      if (!value) return '-'
+      return value.length > 6 ? value.substring(0, 6) + '...' : value
+    },
+    tooltip: (row) => row.topic_name || ''
   },
   {
     key: 'category_name',
     label: '所屬類別',
-    class: 'text-gray-600 dark:text-gray-400'
+    sortable: true,
+    cellClass: 'text-base text-gray-500 dark:text-gray-400'
   },
   {
     key: 'description',
     label: '描述',
-    class: 'text-gray-600 dark:text-gray-400'
+    sortable: false,
+    cellClass: 'text-base text-gray-500 dark:text-gray-400 cursor-help',
+    formatter: (value) => {
+      if (!value) return '-'
+      const text = value.replace(/<[^>]*>/g, '') // Strip HTML tags for plain text
+      return text.length > 10 ? text.substring(0, 10) + '...' : text
+    },
+    tooltip: (row) => {
+      // Strip HTML for tooltip to show plain text
+      const text = (row.description || '').replace(/<[^>]*>/g, '')
+      return text
+    }
+  },
+  {
+    key: 'created_at',
+    label: '建立日期',
+    sortable: true,
+    cellClass: 'text-base text-gray-500 dark:text-gray-400',
+    formatter: (value) => formatDate(value)
   }
 ]
 
@@ -1297,28 +1404,89 @@ const questionFactorColumns = [
   {
     key: 'actions',
     label: '功能',
-    class: 'text-center w-32'
+    sortable: false,
+    cellClass: 'text-base text-gray-900 dark:text-white'
   },
   {
     key: 'factor_name',
     label: '因子名稱',
     sortable: true,
-    class: 'font-medium text-gray-900 dark:text-white'
-  },
-  {
-    key: 'topic_name',
-    label: '所屬主題',
-    class: 'text-gray-600 dark:text-gray-400'
+    cellClass: 'text-base font-medium text-gray-900 dark:text-white cursor-help',
+    formatter: (value) => {
+      if (!value) return '-'
+      return value.length > 6 ? value.substring(0, 6) + '...' : value
+    },
+    tooltip: (row) => row.factor_name || ''
   },
   {
     key: 'category_name',
     label: '所屬類別',
-    class: 'text-gray-600 dark:text-gray-400'
+    sortable: true,
+    cellClass: 'text-base text-gray-500 dark:text-gray-400 cursor-help',
+    formatter: (value) => {
+      if (!value) return '-'
+      return value.length > 6 ? value.substring(0, 6) + '...' : value
+    },
+    tooltip: (row) => row.category_name || ''
+  },
+  {
+    key: 'topic_name',
+    label: '所屬主題',
+    sortable: true,
+    cellClass: 'text-base text-gray-500 dark:text-gray-400 cursor-help',
+    formatter: (value) => {
+      if (!value) return '-'
+      return value.length > 6 ? value.substring(0, 6) + '...' : value
+    },
+    tooltip: (row) => row.topic_name || ''
   },
   {
     key: 'description',
     label: '描述',
-    class: 'text-gray-600 dark:text-gray-400'
+    sortable: false,
+    cellClass: 'text-base text-gray-500 dark:text-gray-400 cursor-help',
+    isHtml: true,
+    formatter: (value) => {
+      if (!value) return '-'
+      // For HTML content, strip tags for length check but preserve HTML for display
+      const textOnly = value.replace(/<[^>]*>/g, '')
+      if (textOnly.length <= 10) return value
+
+      // Find a good truncation point that doesn't break HTML tags
+      let truncated = ''
+      let textLength = 0
+      const htmlRegex = /<[^>]*>|[^<]+/g
+      let match
+
+      while ((match = htmlRegex.exec(value)) !== null && textLength < 10) {
+        const piece = match[0]
+        if (piece.startsWith('<')) {
+          truncated += piece // Keep HTML tags intact
+        } else {
+          const remaining = 10 - textLength
+          if (piece.length <= remaining) {
+            truncated += piece
+            textLength += piece.length
+          } else {
+            truncated += piece.substring(0, remaining) + '...'
+            textLength = 10
+          }
+        }
+      }
+      return truncated
+    },
+    tooltip: (row) => {
+      // Strip HTML for tooltip to show plain text
+      const text = (row.description || '').replace(/<[^>]*>/g, '')
+      return text
+    }
+  },
+  {
+    key: 'created_at',
+    label: '建立日期',
+    sortable: true,
+    cellClass: 'text-base text-gray-500 dark:text-gray-400',
+    formatter: (value) => formatDate(value)
   }
 ]
 
@@ -1639,7 +1807,19 @@ const copyOptions = ref({
   includeResults: false
 })
 
-// Date is now stored in display format, no need for formatDate function
+// Date formatting function for columns
+const formatDate = (date) => {
+  if (!date) return '-'
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+  return new Intl.DateTimeFormat('zh-TW', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  }).format(dateObj)
+}
 
 // Question management composable
 const {
@@ -1985,6 +2165,15 @@ const submitForm = async () => {
 
           if (syncResponse.success) {
             console.log('範本架構複製成功:', syncResponse.data)
+
+            // 清除 store 中該 assessment 的所有快取資料
+            console.log('清除 store 快取...')
+            const questionManagementStore = useQuestionManagementStore()
+            await questionManagementStore.clearAssessmentCache(editingItem.value.id)
+
+            // 重新載入該 assessment 的所有資料
+            console.log('重新載入 assessment 資料...')
+            await questionManagementStore.fetchAllQuestionData(editingItem.value.id)
           } else {
             console.error('範本架構複製失敗:', syncResponse.message)
           }
@@ -2017,6 +2206,12 @@ const closeModals = () => {
 // Action button methods
 const showPersonnelAssignment = async (item) => {
   selectedQuestionForAssignment.value = item
+
+  // Ensure structure data is loaded for sorting
+  if (item.id && (!questionCategories.value?.length || !questionTopics.value?.length || !questionFactors.value?.length)) {
+    console.log('Loading structure data for sorting...')
+    await loadQuestionStructureData(item.id)
+  }
 
   // Load question content for the selected item
   await loadQuestionContentForAssignment(item)
@@ -2059,9 +2254,31 @@ const loadQuestionContentForAssignment = async (questionItem) => {
           assignmentCount: 0 // Will be updated by assignment API
         }))
 
-        questionContentForAssignment.value = transformedContent
-        console.log('Loaded content from database API:', transformedContent)
-        console.log('Content IDs:', transformedContent.map(item => item.contentId))
+        // 排序邏輯 - 與 content 頁面相同：按類別 > 主題 > 因子
+        const sortedContent = transformedContent.sort((a, b) => {
+          // 取得類別名稱（使用原始的 questionCategories，不是 sorted 版本）
+          const categoryA = questionCategories.value?.find(c => c.id === a.category_id)?.category_name || ''
+          const categoryB = questionCategories.value?.find(c => c.id === b.category_id)?.category_name || ''
+
+          // 先按類別排序
+          const categoryCompare = categoryA.localeCompare(categoryB, 'zh-TW')
+          if (categoryCompare !== 0) return categoryCompare
+
+          // 類別相同時按主題排序
+          const topicA = questionTopics.value?.find(t => t.id === a.topic_id)?.topic_name || ''
+          const topicB = questionTopics.value?.find(t => t.id === b.topic_id)?.topic_name || ''
+          const topicCompare = topicA.localeCompare(topicB, 'zh-TW')
+          if (topicCompare !== 0) return topicCompare
+
+          // 主題相同時按因子排序
+          const factorA = questionFactors.value?.find(f => f.id === a.factor_id)?.factor_name || ''
+          const factorB = questionFactors.value?.find(f => f.id === b.factor_id)?.factor_name || ''
+          return factorA.localeCompare(factorB, 'zh-TW')
+        })
+
+        questionContentForAssignment.value = sortedContent
+        console.log('Loaded and sorted content from database API:', sortedContent)
+        console.log('Content IDs:', sortedContent.map(item => item.contentId))
       } else {
         console.warn('Invalid API response or no content found')
         questionContentForAssignment.value = []
@@ -2264,6 +2481,7 @@ const refreshStructureData = async () => {
 const syncFromTemplate = async () => {
   if (!managingQuestion.value?.id) {
     console.error('No assessment ID found for syncing')
+    await showError('同步失敗', '找不到評估項目，請重新整理頁面後再試')
     return
   }
 
@@ -2278,11 +2496,15 @@ const syncFromTemplate = async () => {
     // 重新載入架構資料
     await loadQuestionStructureData(managingQuestion.value.id)
 
-    // 顯示成功訊息（可以加入通知系統）
+    // 顯示成功訊息
+    const syncedCounts = result?.data || {}
+    const message = `已同步 ${syncedCounts.categories || 0} 個類別、${syncedCounts.topics || 0} 個主題、${syncedCounts.factors || 0} 個因子`
+    await showSuccess('從範本同步成功', message)
+
     console.log('Template sync completed successfully')
   } catch (error) {
     console.error('Error syncing from template:', error)
-    // 這裡可以加入錯誤通知
+    await showError('同步失敗', error?.message || '從範本同步架構時發生錯誤，請稍後再試')
   }
 }
 

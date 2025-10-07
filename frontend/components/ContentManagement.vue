@@ -5,12 +5,14 @@
       :title="title"
       :description="description"
       :show-back-button="showBackButton"
+      :back-path="backPath"
+      @back="$emit('back')"
     />
 
     <!-- Data Table with Pagination -->
     <DataTable
       ref="dataTableRef"
-      :data="contentData"
+      :data="sortedContentData"
       :columns="columns"
       search-placeholder="搜尋題目..."
       :search-fields="['risk_category', 'risk_topic', 'risk_factor']"
@@ -155,37 +157,61 @@
 
       <!-- Custom Risk Category Cell -->
       <template #cell-risk_category="{ item }">
-        <div class="text-base text-gray-900 dark:text-white">
-          <span v-if="item.category_id" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-            {{ getCategoryName(item.category_id) }}
+        <div class="text-base text-gray-900 dark:text-white relative group">
+          <span v-if="item.category_id" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 cursor-help">
+            {{ getCategoryName(item.category_id).length > 6 ? getCategoryName(item.category_id).substring(0, 6) + '...' : getCategoryName(item.category_id) }}
           </span>
           <span v-else class="text-gray-400 dark:text-gray-500 italic">未分類</span>
+          <!-- Tooltip for full text -->
+          <div
+            v-if="item.category_id && getCategoryName(item.category_id).length > 6"
+            class="absolute left-0 bottom-full mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none"
+          >
+            {{ getCategoryName(item.category_id) }}
+            <div class="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+          </div>
         </div>
       </template>
 
       <!-- Custom Risk Topic Cell -->
       <template #cell-risk_topic="{ item }">
-        <div class="text-base font-medium text-gray-900 dark:text-white">
-          <span v-if="item.topic_id" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-            {{ getTopicName(item.topic_id) }}
+        <div class="text-base font-medium text-gray-900 dark:text-white relative group">
+          <span v-if="item.topic_id" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 cursor-help">
+            {{ getTopicName(item.topic_id).length > 6 ? getTopicName(item.topic_id).substring(0, 6) + '...' : getTopicName(item.topic_id) }}
           </span>
-          <span v-else-if="item.topic" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-            {{ item.topic }}
+          <span v-else-if="item.topic" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 cursor-help">
+            {{ item.topic.length > 6 ? item.topic.substring(0, 6) + '...' : item.topic }}
           </span>
           <span v-else class="text-gray-400 dark:text-gray-500 italic">未設定</span>
+          <!-- Tooltip for full text -->
+          <div
+            v-if="(item.topic_id && getTopicName(item.topic_id).length > 6) || (item.topic && item.topic.length > 6)"
+            class="absolute left-0 bottom-full mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none"
+          >
+            {{ item.topic_id ? getTopicName(item.topic_id) : item.topic }}
+            <div class="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+          </div>
         </div>
       </template>
 
       <!-- Custom Risk Factor Cell -->
       <template #cell-risk_factor="{ item }">
-        <div class="text-base text-gray-900 dark:text-white">
-          <span v-if="item.risk_factor_id" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-            {{ getRiskFactorName(item.risk_factor_id) }}
+        <div class="text-base text-gray-900 dark:text-white relative group">
+          <span v-if="item.risk_factor_id" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 cursor-help">
+            {{ getRiskFactorName(item.risk_factor_id).length > 6 ? getRiskFactorName(item.risk_factor_id).substring(0, 6) + '...' : getRiskFactorName(item.risk_factor_id) }}
           </span>
-          <span v-else-if="item.risk_factor" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-            {{ item.risk_factor }}
+          <span v-else-if="item.risk_factor" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 cursor-help">
+            {{ item.risk_factor.length > 6 ? item.risk_factor.substring(0, 6) + '...' : item.risk_factor }}
           </span>
           <span v-else class="text-gray-400 dark:text-gray-500 italic">未設定</span>
+          <!-- Tooltip for full text -->
+          <div
+            v-if="(item.risk_factor_id && getRiskFactorName(item.risk_factor_id).length > 6) || (item.risk_factor && item.risk_factor.length > 6)"
+            class="absolute left-0 bottom-full mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none"
+          >
+            {{ item.risk_factor_id ? getRiskFactorName(item.risk_factor_id) : item.risk_factor }}
+            <div class="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+          </div>
         </div>
       </template>
 
@@ -948,6 +974,10 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  backPath: {
+    type: String,
+    default: null
+  },
   contentData: {
     type: Array,
     required: true
@@ -1384,6 +1414,7 @@ const editContent = async (content) => {
   // 保存原始值
   const originalTopicId = content.topic_id || ''
   const originalRiskFactorId = content.risk_factor_id || ''
+  const originalFactorDescription = content.factor_description || content.factorDescription || ''
 
   // 先設置基本欄位
   formData.value.topic = content.topic || ''
@@ -1422,7 +1453,7 @@ const editContent = async (content) => {
 
       console.log('[EditContent] Available factors after fetch:', props.riskFactors?.length || 0)
 
-      // 最後設置 riskFactorId
+      // 最後設置 riskFactorId 和 factorDescription
       if (originalRiskFactorId) {
         formData.value.riskFactorId = originalRiskFactorId
 
@@ -1430,23 +1461,25 @@ const editContent = async (content) => {
         await nextTick()
         await nextTick()
 
-        // Find the factor and populate description (convert both IDs to numbers)
-        const searchId = parseInt(originalRiskFactorId)
-        const factor = props.riskFactors.find(f => parseInt(f.id) === searchId)
-        console.log('[EditContent] Looking for factor ID:', searchId)
-        console.log('[EditContent] Factor ID type in search:', typeof searchId)
-        console.log('[EditContent] Found factor:', factor ? `Yes (${factor.factor_name})` : 'No')
+        // 優先使用 content 中的 factor_description（這是從資料庫 JOIN 取得的最新值）
+        if (originalFactorDescription) {
+          console.log('[EditContent] Using factor description from content:', originalFactorDescription.substring(0, 50) + '...')
+          formData.value.factorDescription = originalFactorDescription
+          await nextTick()
+        } else {
+          // 如果 content 中沒有，才從 factors 列表中尋找
+          const searchId = parseInt(originalRiskFactorId)
+          const factor = props.riskFactors.find(f => parseInt(f.id) === searchId)
+          console.log('[EditContent] Looking for factor ID:', searchId)
+          console.log('[EditContent] Found factor:', factor ? `Yes (${factor.factor_name})` : 'No')
 
-        if (factor) {
-          console.log('[EditContent] Factor description:', factor.description ? 'Has description' : 'No description')
-          if (factor.description) {
+          if (factor && factor.description) {
+            console.log('[EditContent] Using factor description from list')
             formData.value.factorDescription = factor.description
             await nextTick()
+          } else {
+            console.warn('[EditContent] No factor description found')
           }
-        } else {
-          console.warn('[EditContent] Factor ID', searchId, 'not found in', props.riskFactors?.length || 0, 'factors')
-          console.log('[EditContent] Available factor IDs:', props.riskFactors?.map(f => f.id) || [])
-          console.log('[EditContent] Available factor IDs (as numbers):', props.riskFactors?.map(f => parseInt(f.id)) || [])
         }
       }
     } catch (error) {
@@ -1479,6 +1512,9 @@ const confirmDelete = () => {
 }
 
 const submitForm = () => {
+  console.log('[submitForm] Starting form submission')
+  console.log('[submitForm] formData.value:', JSON.stringify(formData.value, null, 2))
+
   // Validate required fields - risk factor is now required
   if (!formData.value.riskFactorId) {
     alert('請選擇風險因子')
@@ -1487,6 +1523,7 @@ const submitForm = () => {
 
   // Validate factor description is required
   if (!formData.value.factorDescription || formData.value.factorDescription.trim() === '') {
+    console.error('[submitForm] factorDescription is empty!')
     alert('請輸入風險因子描述')
     return
   }
@@ -1505,11 +1542,24 @@ const submitForm = () => {
     submitData.topic = formData.value.topic
   }
 
+  console.log('[submitForm] submitData to be sent:', JSON.stringify(submitData, null, 2))
+  console.log('[submitForm] factorDescription length:', submitData.factorDescription?.length || 0)
+
+  // 保存當前頁面狀態到 localStorage
+  if (process.client && dataTableRef.value) {
+    const currentPageNumber = dataTableRef.value.getCurrentPage()
+    const storageKey = `content_management_page_${props.contentType}_${props.parentId}`
+    localStorage.setItem(storageKey, currentPageNumber.toString())
+    console.log('[submitForm] Saved current page:', currentPageNumber)
+  }
+
   if (showAddModal.value) {
     // Add new content
+    console.log('[submitForm] Emitting add-content')
     emit('add-content', submitData)
   } else if (showEditModal.value) {
     // Update existing content
+    console.log('[submitForm] Emitting update-content for ID:', editingContent.value.id)
     emit('update-content', editingContent.value.id, submitData)
   }
 
@@ -1845,9 +1895,23 @@ const exportToExcel = async () => {
   const { $notify } = useNuxtApp()
 
   try {
+    // Determine API endpoint based on content type
+    let apiUrl = ''
+    let filename = ''
+
+    if (props.contentType === 'template') {
+      apiUrl = `/api/v1/risk-assessment/templates/${props.parentId}/export-excel`
+      filename = `範本內容_${props.parentId}_${Date.now()}.xlsx`
+    } else if (props.contentType === 'question') {
+      apiUrl = `/api/v1/question-management/assessment/${props.parentId}/export-excel`
+      filename = `題項內容_${props.parentId}_${Date.now()}.xlsx`
+    } else {
+      throw new Error('未知的內容類型')
+    }
+
     // Call backend API to export Excel with RichText support
     // Use native fetch for blob responses as $fetch has issues with blob type
-    const response = await fetch(`/api/v1/risk-assessment/templates/${props.parentId}/export-excel`, {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -1865,7 +1929,7 @@ const exportToExcel = async () => {
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `範本內容_${props.parentId}_${Date.now()}.xlsx`
+    a.download = filename
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -2123,11 +2187,22 @@ const handleFileImport = async (event) => {
   $notify.info('正在匯入 Excel 檔案，請稍候...')
 
   try {
+    // Determine API endpoint based on content type
+    let apiUrl = ''
+
+    if (props.contentType === 'template') {
+      apiUrl = `/api/v1/risk-assessment/templates/${props.parentId}/import-excel`
+    } else if (props.contentType === 'question') {
+      apiUrl = `/api/v1/question-management/assessment/${props.parentId}/import-excel`
+    } else {
+      throw new Error('未知的內容類型')
+    }
+
     // Call backend API to import Excel with RichText support
     const formData = new FormData()
     formData.append('file', file)
 
-    const result = await $fetch(`/api/v1/risk-assessment/templates/${props.parentId}/import-excel`, {
+    const result = await $fetch(apiUrl, {
       method: 'POST',
       body: formData
     })
@@ -2246,7 +2321,8 @@ const formattedBatchData = computed(() => {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      second: '2-digit'
     }),
     summary_text: `成功 ${batch.success_count} / 跳過 ${batch.skipped_count} / 失敗 ${batch.error_count}`
   }))
@@ -2435,9 +2511,55 @@ onMounted(() => {
   fetchLatestBatchSummary()
 })
 
-// Debug: Watch contentData prop changes
-watch(() => props.contentData, (newValue) => {
+// Sorted content data - sort by category > topic > factor
+const sortedContentData = computed(() => {
+  if (!props.contentData || props.contentData.length === 0) {
+    return []
+  }
+
+  return [...props.contentData].sort((a, b) => {
+    // Get category names
+    const categoryA = getCategoryName(a.category_id) || ''
+    const categoryB = getCategoryName(b.category_id) || ''
+
+    // First, sort by category
+    const categoryCompare = categoryA.localeCompare(categoryB, 'zh-TW')
+    if (categoryCompare !== 0) return categoryCompare
+
+    // If categories are the same, sort by topic (if topics are enabled)
+    if (props.riskTopicsEnabled) {
+      const topicA = getTopicName(a.topic_id) || ''
+      const topicB = getTopicName(b.topic_id) || ''
+      const topicCompare = topicA.localeCompare(topicB, 'zh-TW')
+      if (topicCompare !== 0) return topicCompare
+    }
+
+    // If topics are the same (or not enabled), sort by factor
+    const factorA = getRiskFactorName(a.risk_factor_id) || ''
+    const factorB = getRiskFactorName(b.risk_factor_id) || ''
+    return factorA.localeCompare(factorB, 'zh-TW')
+  })
+})
+
+// Debug: Watch contentData prop changes and restore page
+watch(() => props.contentData, async (newValue) => {
   console.log(`[ContentManagement] Received contentData: ${newValue?.length || 0} items`)
+
+  // 恢復保存的頁面狀態
+  if (process.client && dataTableRef.value && newValue && newValue.length > 0) {
+    await nextTick() // 等待 DOM 更新
+
+    const storageKey = `content_management_page_${props.contentType}_${props.parentId}`
+    const savedPage = localStorage.getItem(storageKey)
+
+    if (savedPage) {
+      const pageNumber = parseInt(savedPage, 10)
+      console.log('[ContentManagement] Restoring page:', pageNumber)
+      dataTableRef.value.setCurrentPage(pageNumber)
+      // 清除保存的頁面，避免影響其他操作
+      localStorage.removeItem(storageKey)
+    }
+  }
 }, { immediate: true })
 
 // Cleanup on unmount

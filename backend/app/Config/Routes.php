@@ -245,12 +245,22 @@ $routes->group('api/v1/question-management', function($routes) {
         return service('response')->setStatusCode(200);
     });
 
+    // CORS preflight options for content import/export
+    $routes->options('assessment/(:num)/export-excel', function() {
+        return service('response')->setStatusCode(200);
+    });
+    $routes->options('assessment/(:num)/import-excel', function() {
+        return service('response')->setStatusCode(200);
+    });
+
     // Assessment Structure Management
     $routes->get('assessment/(:num)/structure', 'Api\V1\QuestionManagement\QuestionManagementController::getAssessmentStructure/$1');
     $routes->post('assessment/(:num)/sync-from-template', 'Api\V1\QuestionManagement\QuestionManagementController::syncFromTemplate/$1');
     $routes->post('assessment/(:num)/import-structure', 'Api\V1\QuestionManagement\QuestionStructureController::importStructure/$1');
     $routes->post('assessment/(:num)/export-structure', 'Api\V1\QuestionManagement\QuestionStructureController::exportStructure/$1');
     $routes->get('assessment/(:num)/scales', 'Api\V1\QuestionManagement\QuestionManagementController::getAssessmentScales/$1');
+    $routes->post('assessment/(:num)/scales/probability', 'Api\V1\QuestionManagement\QuestionManagementController::saveAssessmentProbabilityScale/$1');
+    $routes->post('assessment/(:num)/scales/impact', 'Api\V1\QuestionManagement\QuestionManagementController::saveAssessmentImpactScale/$1');
     $routes->get('assessment/(:num)/stats', 'Api\V1\QuestionManagement\QuestionManagementController::getAssessmentStats/$1');
     $routes->get('assessment/(:num)/assignment-status', 'Api\V1\QuestionManagement\QuestionManagementController::getAssignmentStatus/$1');
     $routes->get('assessment/(:num)/assignments', 'Api\V1\QuestionManagement\QuestionManagementController::getAssignments/$1');
@@ -285,6 +295,10 @@ $routes->group('api/v1/question-management', function($routes) {
     $routes->post('assessment/(:num)/contents', 'Api\V1\QuestionManagement\QuestionManagementController::createContent/$1');
     $routes->put('contents/(:num)', 'Api\V1\QuestionManagement\QuestionManagementController::updateContent/$1');
     $routes->delete('contents/(:num)', 'Api\V1\QuestionManagement\QuestionManagementController::deleteContent/$1');
+
+    // Content Import/Export
+    $routes->post('assessment/(:num)/export-excel', 'Api\V1\QuestionManagement\QuestionManagementController::exportExcel/$1');
+    $routes->post('assessment/(:num)/import-excel', 'Api\V1\QuestionManagement\QuestionManagementController::importExcel/$1');
 
     // Statistics Results
     $routes->get('assessment/(:num)/statistics-results', 'Api\V1\QuestionManagement\QuestionManagementController::getStatisticsResults/$1');

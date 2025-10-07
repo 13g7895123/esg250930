@@ -216,11 +216,27 @@ class TemplateRedirectController extends Controller
 
             $input = json_decode(file_get_contents('php://input'), true);
 
+            // Handle risk_topics_enabled before building data array (convert to 0/1)
+            if (isset($input['risk_topics_enabled'])) {
+                $value = $input['risk_topics_enabled'];
+                // Convert boolean/string to 0 or 1
+                if ($value === true || $value === 'true' || $value === '1' || $value === 1) {
+                    $input['risk_topics_enabled'] = 1;
+                } else {
+                    $input['risk_topics_enabled'] = 0;
+                }
+            }
+
             $data = [
                 'version_name' => $input['version_name'] ?? $existingTemplate['version_name'],
                 'description' => $input['description'] ?? $existingTemplate['description'],
                 'status' => $input['status'] ?? $existingTemplate['status']
             ];
+
+            // Add risk_topics_enabled to data if provided
+            if (isset($input['risk_topics_enabled'])) {
+                $data['risk_topics_enabled'] = $input['risk_topics_enabled'];
+            }
 
             $updateResult = $this->templateModel->update($id, $data);
 

@@ -36,12 +36,30 @@ const props = defineProps({
   showBackButton: {
     type: Boolean,
     default: false
+  },
+  backPath: {
+    type: String,
+    default: null
   }
 })
+
+const emit = defineEmits(['back'])
 
 const router = useRouter()
 
 const handleBack = () => {
+  // 優先觸發父元件的 @back 事件
+  if (emit('back')) {
+    return
+  }
+
+  // 如果有指定 backPath，導航到該路徑
+  if (props.backPath) {
+    router.push(props.backPath)
+    return
+  }
+
+  // 預設行為：返回上一頁
   router.back()
 }
 </script>

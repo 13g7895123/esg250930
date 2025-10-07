@@ -16,7 +16,8 @@ class RiskAssessmentTemplateModel extends Model
         'version_name',
         'description',
         'status',
-        'copied_from'
+        'copied_from',
+        'risk_topics_enabled'
     ];
 
     // Dates

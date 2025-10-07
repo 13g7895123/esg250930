@@ -9,6 +9,7 @@
     :title="`範本內容管理 - ${templateInfo?.version_name || templateInfo?.versionName || '未知範本'}`"
     description="管理風險評估範本的內容"
     :show-back-button="true"
+    :back-path="`/admin/risk-assessment/templates`"
     :content-data="templateContent"
     :risk-categories="riskCategories"
     :risk-topics="riskTopics"
@@ -72,50 +73,48 @@ const isRefreshing = ref(false)
 
 // Content management methods
 const addTemplateContent = async (contentData) => {
+  const { showSuccess, showError } = useNotification()
+
+  // 保存當前滾動位置
+  const scrollPosition = window.scrollY || document.documentElement.scrollTop
+
   try {
     await templatesStore.addTemplateContent(templateId, contentData)
     // 新增成功後重新載入列表（靜默重新載入）
     await refreshContent(false)
 
     // 顯示成功通知
-    const toast = useToast()
-    toast.add({
-      title: '新增成功',
-      description: '題目已成功新增',
-      color: 'green'
-    })
+    await showSuccess('題目已成功新增')
+
+    // 等待 DOM 更新後恢復滾動位置
+    await nextTick()
+    window.scrollTo({ top: scrollPosition, behavior: 'instant' })
   } catch (error) {
     console.error('Failed to add template content:', error)
-    const toast = useToast()
-    toast.add({
-      title: '新增失敗',
-      description: '無法新增題目，請稍後再試',
-      color: 'red'
-    })
+    await showError('無法新增題目，請稍後再試')
   }
 }
 
 const updateTemplateContent = async (contentId, contentData) => {
+  const { showSuccess, showError } = useNotification()
+
+  // 保存當前滾動位置
+  const scrollPosition = window.scrollY || document.documentElement.scrollTop
+
   try {
     await templatesStore.updateTemplateContent(templateId, contentId, contentData)
     // 更新成功後重新載入列表（靜默重新載入）
     await refreshContent(false)
 
     // 顯示成功通知
-    const toast = useToast()
-    toast.add({
-      title: '更新成功',
-      description: '題目已成功更新',
-      color: 'green'
-    })
+    await showSuccess('題目已成功更新')
+
+    // 等待 DOM 更新後恢復滾動位置
+    await nextTick()
+    window.scrollTo({ top: scrollPosition, behavior: 'instant' })
   } catch (error) {
     console.error('Failed to update template content:', error)
-    const toast = useToast()
-    toast.add({
-      title: '更新失敗',
-      description: '無法更新題目，請稍後再試',
-      color: 'red'
-    })
+    await showError('無法更新題目，請稍後再試')
   }
 }
 
@@ -140,26 +139,18 @@ const deleteTemplateContent = async (contentId) => {
 }
 
 const reorderTemplateContent = async (newOrder) => {
+  const { showSuccess, showError } = useNotification()
+
   try {
     await templatesStore.reorderTemplateContent(templateId, newOrder)
     // 重新排序成功後重新載入列表（靜默重新載入）
     await refreshContent(false)
 
     // 顯示成功通知
-    const toast = useToast()
-    toast.add({
-      title: '排序成功',
-      description: '題目順序已更新',
-      color: 'green'
-    })
+    await showSuccess('題目順序已更新')
   } catch (error) {
     console.error('Failed to reorder template content:', error)
-    const toast = useToast()
-    toast.add({
-      title: '排序失敗',
-      description: '無法重新排序題目，請稍後再試',
-      color: 'red'
-    })
+    await showError('無法重新排序題目，請稍後再試')
   }
 }
 
@@ -221,23 +212,15 @@ const refreshContent = async (showNotification = true) => {
 
     // Show success notification only if requested
     if (showNotification) {
-      const toast = useToast()
-      toast.add({
-        title: '重新整理完成',
-        description: '內容資料已更新',
-        color: 'green'
-      })
+      const { showSuccess } = useNotification()
+      await showSuccess('內容資料已更新')
     }
 
     console.log('Content refresh completed successfully')
   } catch (error) {
     console.error('Refresh content error:', error)
-    const toast = useToast()
-    toast.add({
-      title: '重新整理失敗',
-      description: '無法更新內容資料，請稍後再試',
-      color: 'red'
-    })
+    const { showError } = useNotification()
+    await showError('無法更新內容資料，請稍後再試')
   } finally {
     isRefreshing.value = false
   }

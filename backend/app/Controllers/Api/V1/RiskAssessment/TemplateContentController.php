@@ -733,6 +733,22 @@ class TemplateContentController extends BaseController
                 }
             }
 
+            // Sort contents by category > topic > factor (same as frontend display)
+            // Use Collator for proper Chinese locale sorting (matches frontend localeCompare)
+            $collator = new \Collator('zh_TW');
+            usort($contents, function($a, $b) use ($collator) {
+                // First, sort by category name
+                $categoryCompare = $collator->compare($a['category_name'] ?? '', $b['category_name'] ?? '');
+                if ($categoryCompare !== 0) return $categoryCompare;
+
+                // If categories are the same, sort by topic name
+                $topicCompare = $collator->compare($a['topic_name'] ?? '', $b['topic_name'] ?? '');
+                if ($topicCompare !== 0) return $topicCompare;
+
+                // If topics are the same, sort by factor name
+                return $collator->compare($a['factor_name'] ?? '', $b['factor_name'] ?? '');
+            });
+
             // Create Excel file
             $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();

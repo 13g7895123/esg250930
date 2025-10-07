@@ -57,24 +57,102 @@
         <div class="flex items-center bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
           <div class="flex items-center px-3 py-2 space-x-2">
             <label class="text-xs font-medium text-gray-600 dark:text-gray-300">文字</label>
-            <input
-              type="color"
-              @change="formatTextColor($event.target.value)"
-              class="w-6 h-6 border border-gray-300 dark:border-gray-500 rounded cursor-pointer"
-              title="文字顏色"
-              value="#000000"
-            />
+            <UPopover
+              v-model:open="isTextColorPopoverOpen"
+              :popper="{ placement: 'bottom', strategy: 'absolute', offsetDistance: 8 }"
+              mode="click"
+              :ui="{
+                width: 'w-auto',
+                background: 'bg-white dark:bg-gray-800',
+                ring: 'ring-1 ring-gray-200 dark:ring-gray-700',
+                rounded: 'rounded-lg',
+                shadow: 'shadow-lg'
+              }"
+            >
+              <button
+                @click="saveSelection"
+                type="button"
+                class="w-6 h-6 border border-gray-300 dark:border-gray-500 rounded cursor-pointer"
+                :style="{ backgroundColor: textColor }"
+                title="文字顏色"
+              >
+                <span class="sr-only">選擇文字顏色</span>
+              </button>
+              <template #panel="{ close }">
+                <div class="p-3">
+                  <Vue3ColorPicker
+                    v-if="isTextColorPopoverOpen"
+                    :key="`text-color-${isTextColorPopoverOpen}`"
+                    v-model="textColor"
+                    @update:modelValue="formatTextColor"
+                    mode="solid"
+                    type="HEX"
+                    :showColorList="false"
+                    :showEyeDrop="false"
+                    :showAlpha="false"
+                  />
+                  <div class="mt-3 flex justify-end gap-2">
+                    <button
+                      @click="close"
+                      type="button"
+                      class="px-3 py-1.5 text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 rounded transition-colors"
+                    >
+                      完成
+                    </button>
+                  </div>
+                </div>
+              </template>
+            </UPopover>
           </div>
           <div class="w-px h-6 bg-gray-200 dark:bg-gray-600"></div>
           <div class="flex items-center px-3 py-2 space-x-2">
             <label class="text-xs font-medium text-gray-600 dark:text-gray-300">背景</label>
-            <input
-              type="color"
-              @change="formatBackgroundColor($event.target.value)"
-              class="w-6 h-6 border border-gray-300 dark:border-gray-500 rounded cursor-pointer"
-              title="背景顏色"
-              value="#ffffff"
-            />
+            <UPopover
+              v-model:open="isBackgroundColorPopoverOpen"
+              :popper="{ placement: 'bottom', strategy: 'absolute', offsetDistance: 8 }"
+              mode="click"
+              :ui="{
+                width: 'w-auto',
+                background: 'bg-white dark:bg-gray-800',
+                ring: 'ring-1 ring-gray-200 dark:ring-gray-700',
+                rounded: 'rounded-lg',
+                shadow: 'shadow-lg'
+              }"
+            >
+              <button
+                @click="saveSelection"
+                type="button"
+                class="w-6 h-6 border border-gray-300 dark:border-gray-500 rounded cursor-pointer"
+                :style="{ backgroundColor: backgroundColor }"
+                title="背景顏色"
+              >
+                <span class="sr-only">選擇背景顏色</span>
+              </button>
+              <template #panel="{ close }">
+                <div class="p-3">
+                  <Vue3ColorPicker
+                    v-if="isBackgroundColorPopoverOpen"
+                    :key="`bg-color-${isBackgroundColorPopoverOpen}`"
+                    v-model="backgroundColor"
+                    @update:modelValue="formatBackgroundColor"
+                    mode="solid"
+                    type="HEX"
+                    :showColorList="false"
+                    :showEyeDrop="false"
+                    :showAlpha="false"
+                  />
+                  <div class="mt-3 flex justify-end gap-2">
+                    <button
+                      @click="close"
+                      type="button"
+                      class="px-3 py-1.5 text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 rounded transition-colors"
+                    >
+                      完成
+                    </button>
+                  </div>
+                </div>
+              </template>
+            </UPopover>
           </div>
         </div>
 
@@ -134,6 +212,8 @@
 
 <script setup>
 import { ref, onMounted, nextTick, computed, watch } from 'vue'
+import { Vue3ColorPicker } from '@cyhnkckali/vue3-color-picker'
+import '@cyhnkckali/vue3-color-picker/dist/style.css'
 
 // Props
 const props = defineProps({
@@ -165,6 +245,11 @@ const emit = defineEmits(['update:modelValue', 'blur', 'focus', 'change'])
 // Refs
 const editorRef = ref(null)
 const showHTMLPreview = ref(false)
+const savedSelection = ref(null) // 保存文字選取範圍
+const textColor = ref('#000000') // 文字顏色
+const backgroundColor = ref('#FFFFFF') // 背景顏色
+const isTextColorPopoverOpen = ref(false) // 控制文字顏色 popover 開關
+const isBackgroundColorPopoverOpen = ref(false) // 控制背景顏色 popover 開關
 
 // 計算屬性
 const htmlContent = computed(() => props.modelValue || '')
@@ -257,33 +342,60 @@ const manualFormatting = (command, value, selection) => {
 
   const range = selection.getRangeAt(0)
   const selectedContent = range.extractContents()
-  let wrapper
 
-  switch (command) {
-    case 'bold':
-      wrapper = document.createElement('strong')
-      break
-    case 'italic':
-      wrapper = document.createElement('em')
-      break
-    case 'underline':
-      wrapper = document.createElement('u')
-      break
-    case 'foreColor':
-      wrapper = document.createElement('span')
+  // 對於顏色相關的格式化，需要先清理樣式避免嵌套
+  if (command === 'foreColor' || command === 'hiliteColor') {
+    const tempDiv = document.createElement('div')
+    tempDiv.appendChild(selectedContent)
+
+    const spans = tempDiv.querySelectorAll('span')
+    spans.forEach(span => {
+      if (command === 'foreColor' && span.style.color) {
+        span.style.color = ''
+      } else if (command === 'hiliteColor' && span.style.backgroundColor) {
+        span.style.backgroundColor = ''
+      }
+      // 如果 span 沒有其他樣式，移除 span 標籤
+      if (!span.style.cssText || span.style.cssText.trim() === '') {
+        const parent = span.parentNode
+        while (span.firstChild) {
+          parent.insertBefore(span.firstChild, span)
+        }
+        parent.removeChild(span)
+      }
+    })
+
+    const wrapper = document.createElement('span')
+    if (command === 'foreColor') {
       wrapper.style.color = value
-      break
-    case 'hiliteColor':
-      wrapper = document.createElement('span')
+    } else if (command === 'hiliteColor') {
       wrapper.style.backgroundColor = value
-      break
-    default:
-      range.insertNode(selectedContent)
-      return
-  }
+    }
+    while (tempDiv.firstChild) {
+      wrapper.appendChild(tempDiv.firstChild)
+    }
+    range.insertNode(wrapper)
+  } else {
+    // 其他格式化（粗體、斜體、底線）直接應用
+    let wrapper
+    switch (command) {
+      case 'bold':
+        wrapper = document.createElement('strong')
+        break
+      case 'italic':
+        wrapper = document.createElement('em')
+        break
+      case 'underline':
+        wrapper = document.createElement('u')
+        break
+      default:
+        range.insertNode(selectedContent)
+        return
+    }
 
-  wrapper.appendChild(selectedContent)
-  range.insertNode(wrapper)
+    wrapper.appendChild(selectedContent)
+    range.insertNode(wrapper)
+  }
 
   // 更新內容
   updateContent()
@@ -338,10 +450,34 @@ const formatFontSize = (size) => {
       if (selection.rangeCount > 0) {
         const range = selection.getRangeAt(0)
         const selectedContent = range.extractContents()
-        const span = document.createElement('span')
-        span.style.fontSize = size
-        span.appendChild(selectedContent)
-        range.insertNode(span)
+
+        // 移除所有內層的字體大小樣式，避免嵌套
+        const tempDiv = document.createElement('div')
+        tempDiv.appendChild(selectedContent)
+
+        // 清除所有 span 的 fontSize 樣式
+        const spans = tempDiv.querySelectorAll('span')
+        spans.forEach(span => {
+          if (span.style.fontSize) {
+            span.style.fontSize = ''
+          }
+          // 如果 span 沒有其他樣式，移除 span 標籤，只保留內容
+          if (!span.style.cssText || span.style.cssText.trim() === '') {
+            const parent = span.parentNode
+            while (span.firstChild) {
+              parent.insertBefore(span.firstChild, span)
+            }
+            parent.removeChild(span)
+          }
+        })
+
+        const newSpan = document.createElement('span')
+        newSpan.style.fontSize = size
+        // 將清理後的內容移到新的 span
+        while (tempDiv.firstChild) {
+          newSpan.appendChild(tempDiv.firstChild)
+        }
+        range.insertNode(newSpan)
 
         updateContent()
         console.log('字體大小設定成功 (手動):', size)
@@ -356,13 +492,33 @@ const formatFontSize = (size) => {
   editorRef.value.focus()
 }
 
+// 保存選取範圍函數
+const saveSelection = () => {
+  if (!editorRef.value) return
+
+  const selection = window.getSelection()
+  if (selection.rangeCount > 0) {
+    savedSelection.value = selection.getRangeAt(0).cloneRange()
+  }
+}
+
 // Color formatting functions - 使用 style 屬性而非 HTML 屬性
 const formatTextColor = (color) => {
   if (!editorRef.value) return
 
   editorRef.value.focus()
 
-  const selection = window.getSelection()
+  // 如果有保存的選取範圍，使用它
+  let selection = window.getSelection()
+  if (savedSelection.value) {
+    try {
+      selection.removeAllRanges()
+      selection.addRange(savedSelection.value.cloneRange())
+    } catch (error) {
+      console.error('恢復選取範圍失敗:', error)
+    }
+  }
+
   const selectedText = selection.toString()
 
   if (!selectedText || selectedText.length === 0) {
@@ -380,11 +536,34 @@ const formatTextColor = (color) => {
   const range = selection.getRangeAt(0)
   const selectedContent = range.extractContents()
 
+  // 移除所有內層的顏色樣式，避免嵌套
+  const tempDiv = document.createElement('div')
+  tempDiv.appendChild(selectedContent)
+
+  // 清除所有 span 的 color 樣式
+  const spans = tempDiv.querySelectorAll('span')
+  spans.forEach(span => {
+    if (span.style.color) {
+      span.style.color = ''
+    }
+    // 如果 span 沒有其他樣式，移除 span 標籤，只保留內容
+    if (!span.style.cssText || span.style.cssText.trim() === '') {
+      const parent = span.parentNode
+      while (span.firstChild) {
+        parent.insertBefore(span.firstChild, span)
+      }
+      parent.removeChild(span)
+    }
+  })
+
   // 使用 span 標籤和 style 屬性
-  const span = document.createElement('span')
-  span.style.color = color
-  span.appendChild(selectedContent)
-  range.insertNode(span)
+  const newSpan = document.createElement('span')
+  newSpan.style.color = color
+  // 將清理後的內容移到新的 span
+  while (tempDiv.firstChild) {
+    newSpan.appendChild(tempDiv.firstChild)
+  }
+  range.insertNode(newSpan)
 
   // 更新內容
   updateContent()
@@ -398,7 +577,17 @@ const formatBackgroundColor = (color) => {
 
   editorRef.value.focus()
 
-  const selection = window.getSelection()
+  // 如果有保存的選取範圍，使用它
+  let selection = window.getSelection()
+  if (savedSelection.value) {
+    try {
+      selection.removeAllRanges()
+      selection.addRange(savedSelection.value.cloneRange())
+    } catch (error) {
+      console.error('恢復選取範圍失敗:', error)
+    }
+  }
+
   const selectedText = selection.toString()
 
   if (!selectedText || selectedText.length === 0) {
@@ -416,11 +605,34 @@ const formatBackgroundColor = (color) => {
   const range = selection.getRangeAt(0)
   const selectedContent = range.extractContents()
 
+  // 移除所有內層的背景顏色樣式，避免嵌套
+  const tempDiv = document.createElement('div')
+  tempDiv.appendChild(selectedContent)
+
+  // 清除所有 span 的 backgroundColor 樣式
+  const spans = tempDiv.querySelectorAll('span')
+  spans.forEach(span => {
+    if (span.style.backgroundColor) {
+      span.style.backgroundColor = ''
+    }
+    // 如果 span 沒有其他樣式，移除 span 標籤，只保留內容
+    if (!span.style.cssText || span.style.cssText.trim() === '') {
+      const parent = span.parentNode
+      while (span.firstChild) {
+        parent.insertBefore(span.firstChild, span)
+      }
+      parent.removeChild(span)
+    }
+  })
+
   // 使用 span 標籤和 style 屬性
-  const span = document.createElement('span')
-  span.style.backgroundColor = color
-  span.appendChild(selectedContent)
-  range.insertNode(span)
+  const newSpan = document.createElement('span')
+  newSpan.style.backgroundColor = color
+  // 將清理後的內容移到新的 span
+  while (tempDiv.firstChild) {
+    newSpan.appendChild(tempDiv.firstChild)
+  }
+  range.insertNode(newSpan)
 
   // 更新內容
   updateContent()

@@ -5,6 +5,7 @@
       title="評估表指派狀況"
       :description="`${assessmentInfo.templateVersion} (${assessmentInfo.year}年)`"
       :show-back-button="true"
+      :back-path="assessmentInfo.companyId ? `/admin/risk-assessment/questions/${assessmentInfo.companyId}/management` : '/admin/risk-assessment/questions'"
     >
       <template #actions>
         <div v-if="assessmentStats" class="flex items-center space-x-4">
