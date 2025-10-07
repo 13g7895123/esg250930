@@ -86,10 +86,17 @@ export const usePersonnelAssignmentApi = () => {
       isLoading.value = true
       error.value = null
 
+      console.log('[API] Loading assignment summary for:', { companyId, assessmentId })
       const response = await personnelAssignmentApi.getAssignmentSummary(companyId, assessmentId)
+      console.log('[API] Assignment summary response:', {
+        success: response.success,
+        assignmentsCount: response.data?.assignments?.length || 0,
+        sampleAssignment: response.data?.assignments?.[0]
+      })
 
       if (response.success) {
         assignments.value = response.data.assignments
+        console.log('[API] Set assignments.value, count:', assignments.value.length)
         return response.data
       } else {
         throw new Error(response.message || '載入指派摘要失敗')
@@ -269,7 +276,7 @@ export const usePersonnelAssignmentApi = () => {
    */
   const getCompatibleAssignmentSummary = (companyId, assessmentId, questionContent) => {
     const currentAssignments = assignments.value.filter(
-      a => a.company_id === companyId && a.assessment_id === assessmentId
+      a => parseInt(a.company_id) === parseInt(companyId) && parseInt(a.assessment_id) === parseInt(assessmentId)
     )
 
     // 確保 questionContent 是陣列
@@ -310,7 +317,7 @@ export const usePersonnelAssignmentApi = () => {
    */
   const getCompatibleAssignedPersonnel = (companyId, assessmentId) => {
     const currentAssignments = assignments.value.filter(
-      a => a.company_id === companyId && a.assessment_id === assessmentId
+      a => parseInt(a.company_id) === parseInt(companyId) && parseInt(a.assessment_id) === parseInt(assessmentId)
     )
 
     const uniquePersonnel = new Map()
@@ -343,10 +350,10 @@ export const usePersonnelAssignmentApi = () => {
    */
   const isPersonnelAssignedToContent = (companyId, assessmentId, contentId, personnelId) => {
     return assignments.value.some(assignment =>
-      assignment.company_id === companyId &&
-      assignment.assessment_id === assessmentId &&
+      parseInt(assignment.company_id) === parseInt(companyId) &&
+      parseInt(assignment.assessment_id) === parseInt(assessmentId) &&
       assignment.question_content_id === contentId &&
-      assignment.personnel_id === personnelId
+      parseInt(assignment.personnel_id) === parseInt(personnelId)
     )
   }
 
@@ -373,6 +380,117 @@ export const usePersonnelAssignmentApi = () => {
     return stats
   })
 
+  /**
+   * 取得指派歷史記錄
+   * @param {number} companyId - 公司ID
+   * @param {number} assessmentId - 評估ID
+   * @param {Object} filters - 篩選條件
+   * @returns {Promise<Array>} 歷史記錄列表
+   */
+  const getAssignmentHistory = async (companyId, assessmentId, filters = {}) => {
+    try {
+      isLoading.value = true
+      error.value = null
+
+      const response = await personnelAssignmentApi.getAssignmentHistory(companyId, assessmentId, filters)
+
+      if (response.success) {
+        return response.data
+      } else {
+        throw new Error(response.message || '取得指派歷史失敗')
+      }
+
+    } catch (err) {
+      error.value = handleApiError(err, '取得指派歷史時發生錯誤')
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * 取得題項內容的指派歷史
+   * @param {number} companyId - 公司ID
+   * @param {number} assessmentId - 評估ID
+   * @param {string} contentId - 題項內容ID
+   * @returns {Promise<Array>} 歷史記錄列表
+   */
+  const getContentHistory = async (companyId, assessmentId, contentId) => {
+    try {
+      isLoading.value = true
+      error.value = null
+
+      const response = await personnelAssignmentApi.getContentHistory(companyId, assessmentId, contentId)
+
+      if (response.success) {
+        return response.data
+      } else {
+        throw new Error(response.message || '取得題項歷史失敗')
+      }
+
+    } catch (err) {
+      error.value = handleApiError(err, '取得題項歷史時發生錯誤')
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * 取得人員的指派歷史
+   * @param {number} companyId - 公司ID
+   * @param {number} assessmentId - 評估ID
+   * @param {number} personnelId - 人員ID
+   * @returns {Promise<Array>} 歷史記錄列表
+   */
+  const getPersonnelHistory = async (companyId, assessmentId, personnelId) => {
+    try {
+      isLoading.value = true
+      error.value = null
+
+      const response = await personnelAssignmentApi.getPersonnelHistory(companyId, assessmentId, personnelId)
+
+      if (response.success) {
+        return response.data
+      } else {
+        throw new Error(response.message || '取得人員歷史失敗')
+      }
+
+    } catch (err) {
+      error.value = handleApiError(err, '取得人員歷史時發生錯誤')
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * 取得歷史統計資訊
+   * @param {number} companyId - 公司ID
+   * @param {number} assessmentId - 評估ID
+   * @returns {Promise<Object>} 統計資訊
+   */
+  const getHistoryStatistics = async (companyId, assessmentId) => {
+    try {
+      isLoading.value = true
+      error.value = null
+
+      const response = await personnelAssignmentApi.getHistoryStatistics(companyId, assessmentId)
+
+      if (response.success) {
+        return response.data
+      } else {
+        throw new Error(response.message || '取得歷史統計失敗')
+      }
+
+    } catch (err) {
+      error.value = handleApiError(err, '取得歷史統計時發生錯誤')
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   return {
     // 狀態
     assignments: readonly(assignments),
@@ -391,6 +509,12 @@ export const usePersonnelAssignmentApi = () => {
     removeAssignment,
     removePersonnelFromAssessment,
     updateAssignmentStatus,
+
+    // 歷史記錄方法
+    getAssignmentHistory,
+    getContentHistory,
+    getPersonnelHistory,
+    getHistoryStatistics,
 
     // 相容性方法
     getCompatibleAssignmentSummary,

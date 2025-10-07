@@ -20,6 +20,16 @@
           </div>
           <div class="flex items-center space-x-2">
             <button
+              @click="showAssignmentHistory = true"
+              class="px-3 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors duration-200"
+              title="查看指派歷史記錄"
+            >
+              <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              歷史記錄
+            </button>
+            <button
               @click="refreshPersonnelData"
               :disabled="isLoadingPersonnel"
               class="px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
@@ -280,7 +290,12 @@
 
         <!-- Assignment History Tab -->
         <div v-else-if="activeTab === 'history'" class="h-full overflow-y-auto p-4">
+          <div v-if="assignmentHistory.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+            <p>尚無指派紀錄</p>
+            <p class="text-sm mt-2">請先進行人員指派</p>
+          </div>
           <DataTable
+            v-else
             :columns="historyColumns"
             :data="assignmentHistory"
             :searchable="true"
@@ -289,51 +304,51 @@
             :initial-sort-field="'assigned_at'"
             :initial-sort-order="'desc'"
           >
-            <template #cell-personnel_name="{ row }">
+            <template #cell-personnel_name="{ item }">
               <div class="flex items-center space-x-2">
                 <div class="w-6 h-6 bg-primary-100 dark:bg-primary-900/20 rounded-full flex items-center justify-center">
                   <span class="text-primary-600 dark:text-primary-400 font-medium text-xs">
-                    {{ row.personnel_name.charAt(0) }}
+                    {{ item.personnel_name.charAt(0) }}
                   </span>
                 </div>
-                <span class="font-medium text-gray-900 dark:text-white">{{ row.personnel_name }}</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ item.personnel_name }}</span>
               </div>
             </template>
 
-            <template #cell-content_description="{ row }">
+            <template #cell-content_description="{ item }">
               <div>
                 <p class="font-medium text-gray-900 dark:text-white text-sm">
-                  {{ truncateText(getFactorDescription(row.factor_id), 20) || row.content_description }}
+                  {{ truncateText(getFactorDescription(item.factor_id), 20) || item.content_description }}
                 </p>
                 <div class="flex items-center gap-1 mt-1">
                   <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                    {{ getCategoryName(row.category_id) }}
+                    {{ getCategoryName(item.category_id) }}
                   </span>
-                  <span v-if="getTopicName(row.topic_id)" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-                    {{ getTopicName(row.topic_id) }}
+                  <span v-if="getTopicName(item.topic_id)" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                    {{ getTopicName(item.topic_id) }}
                   </span>
-                  <span v-if="getFactorName(row.factor_id)" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                    {{ getFactorName(row.factor_id) }}
+                  <span v-if="getFactorName(item.factor_id)" class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    {{ getFactorName(item.factor_id) }}
                   </span>
                 </div>
               </div>
             </template>
 
-            <template #cell-assignment_status="{ row }">
+            <template #cell-assignment_status="{ item }">
               <span :class="[
                 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
-                row.assignment_status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                row.assignment_status === 'accepted' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                row.assignment_status === 'declined' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+                item.assignment_status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                item.assignment_status === 'accepted' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                item.assignment_status === 'declined' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
                 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
               ]">
-                {{ getStatusText(row.assignment_status) }}
+                {{ getStatusText(item.assignment_status) }}
               </span>
             </template>
 
-            <template #cell-assigned_at="{ row }">
+            <template #cell-assigned_at="{ item }">
               <span class="text-sm text-gray-600 dark:text-gray-400">
-                {{ formatDateTime(row.assigned_at) }}
+                {{ formatDateTime(item.assigned_at) }}
               </span>
             </template>
           </DataTable>
@@ -572,6 +587,14 @@
       </div>
     </template>
   </Modal>
+
+  <!-- Assignment History Modal -->
+  <AssignmentHistoryModal
+    v-model="showAssignmentHistory"
+    :company-id="companyId"
+    :assessment-id="questionId"
+    @close="showAssignmentHistory = false"
+  />
 </template>
 
 <script setup>
@@ -583,6 +606,7 @@ import {
   MagnifyingGlassIcon
 } from '@heroicons/vue/24/outline'
 import { onMounted, watch } from 'vue'
+import AssignmentHistoryModal from './AssignmentHistoryModal.vue'
 
 const props = defineProps({
   modelValue: {
@@ -632,6 +656,7 @@ const {
 const showIndividualAssignment = ref(false)
 const showBulkAssignment = ref(false)
 const showDataDebug = ref(false)
+const showAssignmentHistory = ref(false)
 const searchQuery = ref('')
 const filterBy = ref('all')
 const activeTab = ref('assignments')
@@ -694,22 +719,37 @@ const assignmentHistory = computed(() => {
 
   console.log('Computing assignmentHistory, total assignments:', assignments.value.length)
   console.log('Filtering for companyId:', props.companyId, 'questionId:', props.questionId)
+  console.log('Sample assignment:', assignments.value[0])
 
   const filtered = assignments.value
-    .filter(a => a.company_id === parseInt(props.companyId) && a.assessment_id === parseInt(props.questionId))
+    .filter(a => parseInt(a.company_id) === parseInt(props.companyId) && parseInt(a.assessment_id) === parseInt(props.questionId))
 
   console.log('Filtered assignments count:', filtered.length)
+  console.log('questionContent count:', props.questionContent?.length || 0)
 
   return filtered.map(assignment => {
       // Find content details from questionContent
-      const content = props.questionContent.find(c => c.id === assignment.question_content_id)
+      // Support both numeric and string IDs, and also check contentId field
+      const content = props.questionContent.find(c =>
+        c.id == assignment.question_content_id ||
+        c.contentId == assignment.question_content_id ||
+        String(c.id) === String(assignment.question_content_id)
+      )
+
+      if (!content) {
+        console.warn('Content not found for assignment:', {
+          assignment_id: assignment.id,
+          question_content_id: assignment.question_content_id,
+          available_content_ids: props.questionContent.map(c => ({ id: c.id, contentId: c.contentId }))
+        })
+      }
 
       return {
         id: assignment.id,
         personnel_name: assignment.personnel_name,
         personnel_department: assignment.personnel_department,
         personnel_position: assignment.personnel_position,
-        content_description: content?.description || content?.topic || '未命名題目',
+        content_description: content?.description || content?.topic || `未命名題目 (ID: ${assignment.question_content_id})`,
         category_id: content?.category_id || content?.categoryId,
         topic_id: content?.topic_id || content?.topicId,
         factor_id: content?.factor_id || content?.factorId || content?.risk_factor_id,
@@ -981,6 +1021,12 @@ const formatDateTime = (dateTime) => {
 
 // Lifecycle and watchers for API data loading
 onMounted(async () => {
+  console.log('[PersonnelAssignmentModal] Mounted with props:', {
+    companyId: props.companyId,
+    questionId: props.questionId,
+    questionContentCount: props.questionContent?.length || 0
+  })
+
   if (props.companyId) {
     try {
       // Load personnel data
@@ -988,16 +1034,22 @@ onMounted(async () => {
 
       // Load assignment summary and structure data if we have a questionId
       if (props.questionId) {
+        console.log('[PersonnelAssignmentModal] Loading assignment summary for questionId:', props.questionId)
         await Promise.all([
           loadAssignmentSummary(props.companyId, props.questionId),
           getCategories(props.questionId),
           getTopics(props.questionId),
           getFactors(props.questionId)
         ])
+        console.log('[PersonnelAssignmentModal] Finished loading, assignments count:', assignments.value.length)
+      } else {
+        console.warn('[PersonnelAssignmentModal] No questionId provided, skipping assignment summary load')
       }
     } catch (error) {
-      console.error('Error loading initial data:', error)
+      console.error('[PersonnelAssignmentModal] Error loading initial data:', error)
     }
+  } else {
+    console.warn('[PersonnelAssignmentModal] No companyId provided')
   }
 })
 

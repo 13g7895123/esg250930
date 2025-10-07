@@ -480,6 +480,63 @@ export const migrateLocalStorageToApi = {
         console.error('Error clearing localStorage data:', error)
       }
     }
+  },
+
+  /**
+   * 取得指派歷史記錄
+   * @param {number} companyId - 公司ID
+   * @param {number} assessmentId - 評估ID
+   * @param {Object} filters - 篩選條件
+   */
+  async getAssignmentHistory(companyId, assessmentId, filters = {}) {
+    const queryParams = new URLSearchParams()
+    if (filters.personnel_id) queryParams.append('personnel_id', filters.personnel_id)
+    if (filters.question_content_id) queryParams.append('question_content_id', filters.question_content_id)
+    if (filters.action_type) queryParams.append('action_type', filters.action_type)
+    if (filters.start_date) queryParams.append('start_date', filters.start_date)
+    if (filters.end_date) queryParams.append('end_date', filters.end_date)
+
+    const queryString = queryParams.toString()
+    const endpoint = `/companies/${companyId}/assessments/${assessmentId}/history${queryString ? '?' + queryString : ''}`
+
+    return await apiRequest(endpoint, {
+      method: 'GET'
+    })
+  },
+
+  /**
+   * 取得題項內容的指派歷史
+   * @param {number} companyId - 公司ID
+   * @param {number} assessmentId - 評估ID
+   * @param {string} contentId - 題項內容ID
+   */
+  async getContentHistory(companyId, assessmentId, contentId) {
+    return await apiRequest(`/companies/${companyId}/assessments/${assessmentId}/contents/${contentId}/history`, {
+      method: 'GET'
+    })
+  },
+
+  /**
+   * 取得人員的指派歷史
+   * @param {number} companyId - 公司ID
+   * @param {number} assessmentId - 評估ID
+   * @param {number} personnelId - 人員ID
+   */
+  async getPersonnelHistory(companyId, assessmentId, personnelId) {
+    return await apiRequest(`/companies/${companyId}/assessments/${assessmentId}/personnel/${personnelId}/history`, {
+      method: 'GET'
+    })
+  },
+
+  /**
+   * 取得歷史統計資訊
+   * @param {number} companyId - 公司ID
+   * @param {number} assessmentId - 評估ID
+   */
+  async getHistoryStatistics(companyId, assessmentId) {
+    return await apiRequest(`/companies/${companyId}/assessments/${assessmentId}/history/statistics`, {
+      method: 'GET'
+    })
   }
 }
 

@@ -95,13 +95,14 @@ class PersonnelAssignmentModel extends Model
     ];
 
     /**
-     * 為題項內容指派人員
+     * 為題項內容指派人員（並記錄歷史）
      *
      * @param int $companyId 公司ID
      * @param int $assessmentId 評估記錄ID
      * @param string|int $questionContentId 題項內容ID（支援UUID字串格式）
      * @param array $personnelData 人員資料
      * @param int|null $assignedBy 指派者ID
+     * @param string|null $assignedByName 指派者姓名
      * @return bool|int 成功返回指派ID，失敗返回false
      */
     public function assignPersonnelToContent(
@@ -109,7 +110,8 @@ class PersonnelAssignmentModel extends Model
         int $assessmentId,
         string|int $questionContentId,
         array $personnelData,
-        ?int $assignedBy = null
+        ?int $assignedBy = null,
+        ?string $assignedByName = null
     ) {
         // 檢查是否已經指派
         if ($this->isPersonnelAssigned($companyId, $assessmentId, $questionContentId, $personnelData['id'])) {
@@ -129,7 +131,16 @@ class PersonnelAssignmentModel extends Model
             'assigned_at' => date('Y-m-d H:i:s')
         ];
 
-        return $this->insert($data);
+        $assignmentId = $this->insert($data);
+
+        if ($assignmentId) {
+            // 記錄到歷史表
+            $data['id'] = $assignmentId;
+            $historyModel = new PersonnelAssignmentHistoryModel();
+            $historyModel->logCreated($data, $assignedBy, $assignedByName);
+        }
+
+        return $assignmentId;
     }
 
     /**
@@ -222,20 +233,43 @@ class PersonnelAssignmentModel extends Model
     }
 
     /**
-     * 移除人員與題項內容的指派關係
+     * 移除人員與題項內容的指派關係（並記錄歷史）
      *
      * @param int $companyId 公司ID
      * @param int $assessmentId 評估記錄ID
      * @param string|int $questionContentId 題項內容ID（支援UUID字串格式）
      * @param int $personnelId 人員ID
+     * @param int|null $actionBy 操作人員ID
+     * @param string|null $actionByName 操作人員姓名
+     * @param string|null $reason 移除原因
      * @return bool 是否成功移除
      */
     public function removeAssignment(
         int $companyId,
         int $assessmentId,
         string|int $questionContentId,
-        int $personnelId
+        int $personnelId,
+        ?int $actionBy = null,
+        ?string $actionByName = null,
+        ?string $reason = null
     ): bool {
+        // 先取得要移除的指派記錄（用於歷史記錄）
+        $assignment = $this->where([
+            'company_id' => $companyId,
+            'assessment_id' => $assessmentId,
+            'question_content_id' => $questionContentId,
+            'personnel_id' => $personnelId
+        ])->first();
+
+        if (!$assignment) {
+            return false; // 找不到指派記錄
+        }
+
+        // 記錄到歷史表
+        $historyModel = new PersonnelAssignmentHistoryModel();
+        $historyModel->logRemoved($assignment, $actionBy, $actionByName, $reason);
+
+        // 刪除指派記錄
         return $this->where([
             'company_id' => $companyId,
             'assessment_id' => $assessmentId,
@@ -245,18 +279,42 @@ class PersonnelAssignmentModel extends Model
     }
 
     /**
-     * 移除人員在整個評估記錄中的所有指派
+     * 移除人員在整個評估記錄中的所有指派（並記錄歷史）
      *
      * @param int $companyId 公司ID
      * @param int $assessmentId 評估記錄ID
      * @param int $personnelId 人員ID
+     * @param int|null $actionBy 操作人員ID
+     * @param string|null $actionByName 操作人員姓名
+     * @param string|null $reason 移除原因
      * @return bool 是否成功移除
      */
     public function removePersonnelFromAssessment(
         int $companyId,
         int $assessmentId,
-        int $personnelId
+        int $personnelId,
+        ?int $actionBy = null,
+        ?string $actionByName = null,
+        ?string $reason = null
     ): bool {
+        // 先取得所有要移除的指派記錄（用於歷史記錄）
+        $assignments = $this->where([
+            'company_id' => $companyId,
+            'assessment_id' => $assessmentId,
+            'personnel_id' => $personnelId
+        ])->findAll();
+
+        if (empty($assignments)) {
+            return false; // 找不到任何指派記錄
+        }
+
+        // 記錄到歷史表
+        $historyModel = new PersonnelAssignmentHistoryModel();
+        foreach ($assignments as $assignment) {
+            $historyModel->logRemoved($assignment, $actionBy, $actionByName, $reason);
+        }
+
+        // 刪除所有指派記錄
         return $this->where([
             'company_id' => $companyId,
             'assessment_id' => $assessmentId,

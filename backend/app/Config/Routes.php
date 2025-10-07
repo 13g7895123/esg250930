@@ -374,6 +374,12 @@ $routes->group('api/v1/personnel', function($routes) {
     $routes->post('assignments/batch', 'Api\V1\PersonnelAssignmentController::batchCreateAssignments');
     $routes->delete('assignments', 'Api\V1\PersonnelAssignmentController::removeAssignment');
     $routes->put('assignments/(:num)/status', 'Api\V1\PersonnelAssignmentController::updateAssignmentStatus/$1');
+
+    // Assignment History routes
+    $routes->get('companies/(:num)/assessments/(:num)/history', 'Api\V1\PersonnelAssignmentController::getAssignmentHistory/$1/$2');
+    $routes->get('companies/(:num)/assessments/(:num)/contents/(:segment)/history', 'Api\V1\PersonnelAssignmentController::getContentHistory/$1/$2/$3');
+    $routes->get('companies/(:num)/assessments/(:num)/personnel/(:num)/history', 'Api\V1\PersonnelAssignmentController::getPersonnelHistory/$1/$2/$3');
+    $routes->get('companies/(:num)/assessments/(:num)/history/statistics', 'Api\V1\PersonnelAssignmentController::getHistoryStatistics/$1/$2');
 });
 
 // V1 External Personnel API Routes

@@ -5,6 +5,7 @@ namespace App\Controllers\Api\V1;
 use CodeIgniter\RESTful\ResourceController;
 use App\Models\ExternalPersonnelModel;
 use App\Models\PersonnelAssignmentModel;
+use App\Models\PersonnelAssignmentHistoryModel;
 use App\Models\LocalCompanyModel;
 use GuzzleHttp\Client;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -404,7 +405,7 @@ class PersonnelAssignmentController extends ResourceController
     }
 
     /**
-     * 移除人員指派
+     * 移除人員指派（並記錄歷史）
      * DELETE /api/v1/personnel/assignments
      */
     public function removeAssignment()
@@ -420,12 +421,15 @@ class PersonnelAssignmentController extends ResourceController
                 }
             }
 
-            // 移除指派關係
+            // 移除指派關係（並記錄歷史）
             $removed = $this->assignmentModel->removeAssignment(
                 $data['company_id'],
                 $data['assessment_id'],
                 $data['question_content_id'],
-                $data['personnel_id']
+                $data['personnel_id'],
+                $data['action_by'] ?? null,
+                $data['action_by_name'] ?? null,
+                $data['reason'] ?? null
             );
 
             if ($removed) {
@@ -444,7 +448,7 @@ class PersonnelAssignmentController extends ResourceController
     }
 
     /**
-     * 移除人員在整個評估中的所有指派
+     * 移除人員在整個評估中的所有指派（並記錄歷史）
      * DELETE /api/v1/personnel/companies/{companyId}/assessments/{assessmentId}/personnel/{personnelId}
      */
     public function removePersonnelFromAssessment($companyId = null, $assessmentId = null, $personnelId = null)
@@ -454,11 +458,17 @@ class PersonnelAssignmentController extends ResourceController
                 return $this->fail('公司ID、評估ID和人員ID為必填參數', 400);
             }
 
-            // 移除人員在評估中的所有指派
+            // 取得操作人資訊（如果有提供）
+            $requestData = $this->request->getJSON(true);
+
+            // 移除人員在評估中的所有指派（並記錄歷史）
             $removed = $this->assignmentModel->removePersonnelFromAssessment(
                 $companyId,
                 $assessmentId,
-                $personnelId
+                $personnelId,
+                $requestData['action_by'] ?? null,
+                $requestData['action_by_name'] ?? null,
+                $requestData['reason'] ?? null
             );
 
             if ($removed) {
@@ -847,6 +857,128 @@ class PersonnelAssignmentController extends ResourceController
         } catch (\Exception $e) {
             log_message('error', 'Error in debugValidateAssignment: ' . $e->getMessage());
             return $this->failServerError('驗證指派記錄時發生錯誤: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * 取得指派歷史記錄
+     * GET /api/v1/personnel/companies/{companyId}/assessments/{assessmentId}/history
+     */
+    public function getAssignmentHistory($companyId = null, $assessmentId = null)
+    {
+        try {
+            if (empty($companyId) || empty($assessmentId)) {
+                return $this->fail('公司ID和評估ID為必填參數', 400);
+            }
+
+            $historyModel = new PersonnelAssignmentHistoryModel();
+
+            // 取得篩選條件
+            $filters = [];
+            if ($this->request->getGet('personnel_id')) {
+                $filters['personnel_id'] = $this->request->getGet('personnel_id');
+            }
+            if ($this->request->getGet('question_content_id')) {
+                $filters['question_content_id'] = $this->request->getGet('question_content_id');
+            }
+            if ($this->request->getGet('action_type')) {
+                $filters['action_type'] = $this->request->getGet('action_type');
+            }
+            if ($this->request->getGet('start_date')) {
+                $filters['start_date'] = $this->request->getGet('start_date');
+            }
+            if ($this->request->getGet('end_date')) {
+                $filters['end_date'] = $this->request->getGet('end_date');
+            }
+
+            $history = $historyModel->getAssessmentHistory($companyId, $assessmentId, $filters);
+
+            return $this->respond([
+                'success' => true,
+                'data' => $history,
+                'total' => count($history)
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error in getAssignmentHistory: ' . $e->getMessage());
+            return $this->failServerError('取得指派歷史時發生錯誤');
+        }
+    }
+
+    /**
+     * 取得題項內容的指派歷史
+     * GET /api/v1/personnel/companies/{companyId}/assessments/{assessmentId}/contents/{contentId}/history
+     */
+    public function getContentHistory($companyId = null, $assessmentId = null, $contentId = null)
+    {
+        try {
+            if (empty($companyId) || empty($assessmentId) || empty($contentId)) {
+                return $this->fail('公司ID、評估ID和題項內容ID為必填參數', 400);
+            }
+
+            $historyModel = new PersonnelAssignmentHistoryModel();
+            $history = $historyModel->getContentHistory($companyId, $assessmentId, $contentId);
+
+            return $this->respond([
+                'success' => true,
+                'data' => $history,
+                'total' => count($history)
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error in getContentHistory: ' . $e->getMessage());
+            return $this->failServerError('取得題項內容歷史時發生錯誤');
+        }
+    }
+
+    /**
+     * 取得人員的指派歷史
+     * GET /api/v1/personnel/companies/{companyId}/assessments/{assessmentId}/personnel/{personnelId}/history
+     */
+    public function getPersonnelHistory($companyId = null, $assessmentId = null, $personnelId = null)
+    {
+        try {
+            if (empty($companyId) || empty($assessmentId) || empty($personnelId)) {
+                return $this->fail('公司ID、評估ID和人員ID為必填參數', 400);
+            }
+
+            $historyModel = new PersonnelAssignmentHistoryModel();
+            $history = $historyModel->getPersonnelHistory($companyId, $assessmentId, $personnelId);
+
+            return $this->respond([
+                'success' => true,
+                'data' => $history,
+                'total' => count($history)
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error in getPersonnelHistory: ' . $e->getMessage());
+            return $this->failServerError('取得人員歷史時發生錯誤');
+        }
+    }
+
+    /**
+     * 取得指派歷史統計
+     * GET /api/v1/personnel/companies/{companyId}/assessments/{assessmentId}/history/statistics
+     */
+    public function getHistoryStatistics($companyId = null, $assessmentId = null)
+    {
+        try {
+            if (empty($companyId) || empty($assessmentId)) {
+                return $this->fail('公司ID和評估ID為必填參數', 400);
+            }
+
+            $historyModel = new PersonnelAssignmentHistoryModel();
+            $stats = $historyModel->getHistoryStatistics($companyId, $assessmentId);
+
+            return $this->respond([
+                'success' => true,
+                'data' => $stats
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error in getHistoryStatistics: ' . $e->getMessage());
+            return $this->failServerError('取得歷史統計時發生錯誤');
         }
     }
 }
