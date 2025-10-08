@@ -120,9 +120,14 @@ export const useExternalUserStore = defineStore('externalUser', () => {
 
     // 查詢並設置內部用戶ID
     if (externalId.value) {
-      const internalId = await fetchInternalUserId(externalId.value)
-      internalUserId.value = internalId
-      console.log('設置內部用戶ID (userId):', userId.value)
+      try {
+        const internalId = await fetchInternalUserId(externalId.value)
+        internalUserId.value = internalId
+        console.log('設置內部用戶ID (userId):', userId.value)
+      } catch (error) {
+        console.error('查詢內部用戶ID時發生錯誤，但不影響頁面載入:', error)
+        // 不拋出錯誤，允許頁面繼續載入
+      }
     }
 
     console.log('最後更新:', lastUpdated.value)
@@ -246,7 +251,7 @@ export const useExternalUserStore = defineStore('externalUser', () => {
   }
 }, {
   persist: {
-    storage: sessionStorage, // 使用 sessionStorage（當前瀏覽器分頁有效）
+    storage: typeof window !== 'undefined' ? sessionStorage : undefined, // 使用 sessionStorage（當前瀏覽器分頁有效）
     pick: ['userInfo', 'token', 'internalUserId', 'isLoaded', 'lastUpdated'] // 持久化用戶相關字段
   }
 })

@@ -2,15 +2,31 @@
   <div class="p-6">
     <!-- Page Header -->
     <div class="mb-6">
-      <div class="flex justify-between items-start">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            風險評估題目
-          </h1>
-          <p class="text-gray-600 dark:text-gray-400">
-            {{ questionInfo?.year || 2024 }}年度 {{ templateInfo?.versionName || '未知範本' }} - 點擊作答按鈕開始填寫
-          </p>
-        </div>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          風險評估題目
+        </h1>
+        <p class="text-gray-600 dark:text-gray-400">
+          {{ questionInfo?.year || 2024 }}年度 {{ templateInfo?.versionName || '未知範本' }} - 點擊作答按鈕開始填寫
+        </p>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <DataTable
+      :data="questionContent"
+      :columns="columns"
+      search-placeholder="搜尋題目描述或分類..."
+      :search-fields="['topic', 'description', 'category_name', 'factor_name']"
+      empty-title="尚無指派給您的題目"
+      empty-message="請聯繫管理員進行題目指派"
+      no-search-results-title="沒有找到符合的題目"
+      no-search-results-message="請嘗試其他搜尋關鍵字"
+      @search="(query) => console.log('搜尋查詢:', query)"
+      @sort="(field, order) => console.log('排序:', field, order)"
+    >
+      <!-- Actions Header Slot -->
+      <template #actions>
         <div class="flex gap-3">
           <!-- Mapping Test Button -->
           <button
@@ -34,27 +50,6 @@
             {{ isRefreshing ? '重新整理中...' : '重新整理' }}
           </button>
         </div>
-      </div>
-    </div>
-
-    <!-- Data Table -->
-    <DataTable
-      :data="questionContent"
-      :columns="columns"
-      search-placeholder="搜尋題目描述或分類..."
-      :search-fields="['topic', 'description', 'category_name', 'factor_name']"
-      empty-title="尚無指派給您的題目"
-      empty-message="請聯繫管理員進行題目指派"
-      no-search-results-title="沒有找到符合的題目"
-      no-search-results-message="請嘗試其他搜尋關鍵字"
-      @search="(query) => console.log('搜尋查詢:', query)"
-      @sort="(field, order) => console.log('排序:', field, order)"
-    >
-      <!-- Actions Header Slot -->
-      <template #actions>
-        <div class="text-gray-500 dark:text-gray-400 text-sm">
-          重新整理可以拿到資料
-        </div>
       </template>
 
       <!-- Custom Actions Cell -->
@@ -77,10 +72,14 @@
 
       <!-- Custom Description Cell -->
       <template #cell-description="{ item }">
-        <div class="min-w-0">
-          <p class="text-sm text-gray-900 dark:text-white line-clamp-2">
-            {{ item.description || '無描述' }}
-          </p>
+        <div
+          class="relative"
+          @mouseenter="showDescriptionTooltip($event, item)"
+          @mouseleave="hideDescriptionTooltip"
+        >
+          <div class="text-sm text-gray-900 dark:text-white cursor-pointer truncate">
+            {{ truncateText(item.description || '無描述', 20) }}
+          </div>
         </div>
       </template>
 
@@ -117,6 +116,28 @@
         </div>
       </template>
     </DataTable>
+
+    <!-- Tooltip for Description (rendered at body level to avoid overflow issues) -->
+    <Teleport to="body">
+      <div
+        v-if="descriptionTooltipData.visible && descriptionTooltipData.content"
+        :style="{
+          position: 'fixed',
+          left: descriptionTooltipData.x + 'px',
+          top: descriptionTooltipData.y + 'px',
+          zIndex: 9999
+        }"
+        class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl p-4 max-w-2xl w-96 max-h-96 overflow-y-auto"
+        @mouseenter="keepDescriptionTooltipOpen"
+        @mouseleave="hideDescriptionTooltip"
+      >
+        <div
+          class="text-sm text-gray-700 dark:text-gray-300 prose prose-sm dark:prose-invert max-w-none"
+          v-html="descriptionTooltipData.content"
+        ></div>
+        <div class="absolute -top-2 left-4 w-4 h-4 bg-white dark:bg-gray-800 border-l border-t border-gray-200 dark:border-gray-700 transform rotate-45"></div>
+      </div>
+    </Teleport>
 
     <!-- Mapping Test Modal -->
     <Modal
@@ -392,6 +413,9 @@ definePageMeta({
 const route = useRoute()
 const companyId = route.params.companyId
 
+// 獲取 URL 中的 token 參數
+const token = computed(() => route.query.token)
+
 // Enhanced questionId parsing with fallback
 let questionId = parseInt(route.params.questionId)
 
@@ -442,6 +466,15 @@ const questionInfo = ref({
 // Initialize reactive data
 const questionContent = ref([])
 const isRefreshing = ref(false)
+
+// Tooltip data for description field
+const descriptionTooltipData = ref({
+  visible: false,
+  content: '',
+  x: 0,
+  y: 0
+})
+let descriptionTooltipTimeout = null
 
 // Mapping test functionality
 const showMappingTest = ref(false)
@@ -607,7 +640,7 @@ const loadQuestionData = async () => {
         topic_id: item.topic_id,
         risk_factor_id: item.factor_id,
         topic: item.title || '未命名題目',
-        description: item.description || '',
+        description: item.factor_description || '',  // 從 question_factors.description 欄位取得
         order: item.sort_order || 0,
         response_count: item.response_count || 0,
         category_name: item.category_name || '',
@@ -801,6 +834,56 @@ const checkAssignments = async () => {
   }
 }
 
+// 截斷文字輔助函數
+const truncateText = (text, maxLength) => {
+  if (!text) return ''
+
+  // 移除 HTML 標籤來計算純文字長度
+  const plainText = text.replace(/<[^>]*>/g, '')
+
+  if (plainText.length <= maxLength) {
+    return plainText
+  }
+
+  return plainText.substring(0, maxLength) + '...'
+}
+
+// Description tooltip 控制函數
+const showDescriptionTooltip = (event, item) => {
+  const content = item.description
+  if (!content) return
+
+  // Clear any existing timeout
+  if (descriptionTooltipTimeout) {
+    clearTimeout(descriptionTooltipTimeout)
+  }
+
+  // Get the element's position
+  const rect = event.target.getBoundingClientRect()
+
+  // Position tooltip below the element
+  descriptionTooltipData.value = {
+    visible: true,
+    content: content,
+    x: rect.left,
+    y: rect.bottom + 8 // 8px gap below the element
+  }
+}
+
+const hideDescriptionTooltip = () => {
+  // Add a small delay to allow mouse to move to tooltip
+  descriptionTooltipTimeout = setTimeout(() => {
+    descriptionTooltipData.value.visible = false
+  }, 100)
+}
+
+const keepDescriptionTooltipOpen = () => {
+  // Cancel hide timeout when mouse enters tooltip
+  if (descriptionTooltipTimeout) {
+    clearTimeout(descriptionTooltipTimeout)
+  }
+}
+
 // 除錯人員同步功能
 const debugPersonnelSync = async () => {
   if (isSyncingPersonnel.value) return
@@ -855,6 +938,17 @@ const debugPersonnelSync = async () => {
 
 
 onMounted(async () => {
+  // 優先調用用戶資料解密 API 並儲存到 Pinia Store
+  if (token.value) {
+    try {
+      await externalUserStore.fetchExternalUserData(token.value)
+    } catch (error) {
+      console.error('Failed to fetch external user data:', error)
+      // 即使用戶資料載入失敗，仍繼續載入頁面
+      // 可選：顯示友善的錯誤提示
+    }
+  }
+
   try {
     // Only proceed if questionId is valid
     if (isNaN(questionId) || questionId <= 0) {
@@ -862,7 +956,7 @@ onMounted(async () => {
       return
     }
 
-    // Load content data from database API
+    // Load content data from database API (with user filtering)
     await loadQuestionData()
   } catch (error) {
     console.error('Error in content page initialization:', error)
