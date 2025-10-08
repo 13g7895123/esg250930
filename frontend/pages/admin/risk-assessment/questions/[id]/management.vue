@@ -371,14 +371,12 @@
 
     <!-- Question Structure Management Modal -->
     <StructureManagementModal
-      v-if="managingQuestion"
-      :model-value="showQuestionStructureModal"
+      v-model="showQuestionStructureModal"
       :title="`架構管理 - ${managingQuestion?.templateVersion || ''} (${managingQuestion?.year || ''}年)`"
       :item-name="`${managingQuestion?.templateVersion || ''} (${managingQuestion?.year || ''}年)`"
       :risk-topics-enabled="enableTopicLayer"
       :show-export-import="true"
       management-type="question"
-      @update:model-value="(value) => showQuestionStructureModal = value"
       @close="showQuestionStructureModal = false"
       @toggle-risk-topics="onTopicLayerToggleChange"
       @open-category-management="openQuestionManagementModal('categories')"

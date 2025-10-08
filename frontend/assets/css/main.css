@@ -289,3 +289,8 @@ button.bg-primary-600:hover,
 button[class*="hover:bg-primary-7"]:hover {
   background-color: #4338ca !important;
 }
+
+/* SweetAlert2 z-index override to appear above modals (z-index > 9999) */
+.swal-high-zindex {
+  z-index: 10000 !important;
+}

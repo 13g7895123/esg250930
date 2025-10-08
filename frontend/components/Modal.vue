@@ -158,14 +158,14 @@ const titleId = computed(() => `modal-title-${Math.random().toString(36).substri
 // Width classes mapping
 const widthClasses = computed(() => {
   const widthMap = {
-    xs: 'max-w-xs',
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-xl',
-    '2xl': 'max-w-2xl',
-    '3xl': 'max-w-3xl',
-    '4xl': 'max-w-4xl',
+    xs: 'w-full max-w-xs',
+    sm: 'w-full max-w-sm',
+    md: 'w-full max-w-md',
+    lg: 'w-full max-w-lg',
+    xl: 'w-full max-w-xl',
+    '2xl': 'w-full max-w-2xl',
+    '3xl': 'w-full max-w-3xl',
+    '4xl': 'w-full max-w-4xl',
     full: 'w-full h-full max-w-none max-h-none m-0 rounded-none'
   }
   return widthMap[props.size]

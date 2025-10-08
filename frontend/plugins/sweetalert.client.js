@@ -8,6 +8,10 @@ export default defineNuxtPlugin(() => {
     confirmButtonText: '確認',
     cancelButtonText: '取消',
     reverseButtons: true, // 讓取消按鈕在左邊，確認在右邊
+    heightAuto: false, // 防止高度自動調整導致的問題
+    customClass: {
+      container: 'swal-high-zindex' // 添加自定義 class 來設置高 z-index
+    }
   }
 
   // 建立客製化的 SweetAlert 實例
