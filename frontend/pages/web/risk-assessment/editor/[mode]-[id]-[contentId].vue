@@ -142,8 +142,8 @@
         class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
         @click.self="cancelHoverEdit"
       >
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4" @click.stop>
-          <div class="p-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 flex flex-col" style="max-height: 90vh;" @click.stop>
+          <div class="p-6 overflow-y-auto flex-1 min-h-0">
             <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
               編輯提示文字 - {{ editingSection }}
             </h3>

@@ -2,10 +2,13 @@
   <Teleport to="body">
     <div
       v-if="modelValue"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
       @click.self="closeModal"
     >
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto m-4">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-6xl overflow-y-auto flex flex-col"
+        style="max-height: 90vh;"
+      >
         <!-- Modal Header -->
         <div class="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
           <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ title }}</h2>

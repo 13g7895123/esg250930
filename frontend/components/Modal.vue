@@ -4,69 +4,72 @@
     class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
     @click="handleBackdropClick"
   >
-    <div
+    <div class="fixed max-h-screen flex justify-center items-center" @click="handleBackdropClick">
+      <div
       :class="[
         'bg-white dark:bg-gray-800 rounded-lg shadow-xl',
         'transition-all duration-200 transform',
         modelValue ? 'scale-100 opacity-100' : 'scale-95 opacity-0',
         sizeClasses
       ]"
-      @click.stop
-      role="dialog"
-      aria-modal="true"
-      :aria-labelledby="titleId"
-    >
-      <!-- Modal Header -->
-      <div v-if="$slots.header || title" class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <div class="flex items-center justify-between">
-          <slot name="header">
-            <h3 :id="titleId" class="text-lg font-medium text-gray-900 dark:text-white">
-              {{ title }}
-            </h3>
-          </slot>
-          <button
-            v-if="showCloseButton"
-            @click="close"
-            class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
-            aria-label="關閉"
-          >
-            <XMarkIcon class="w-5 h-5" />
-          </button>
+        :style="{ maxHeight: size === 'full' ? 'none' : '90vh' }"
+        @click.stop
+        role="dialog"
+        aria-modal="true"
+        :aria-labelledby="titleId"
+      >
+        <!-- Modal Header -->
+        <div v-if="$slots.header || title" class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <div class="flex items-center justify-between">
+            <slot name="header">
+              <h3 :id="titleId" class="text-lg font-medium text-gray-900 dark:text-white">
+                {{ title }}
+              </h3>
+            </slot>
+            <button
+              v-if="showCloseButton"
+              @click="close"
+              class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
+              aria-label="關閉"
+            >
+              <XMarkIcon class="w-5 h-5" />
+            </button>
+          </div>
         </div>
-      </div>
 
-      <!-- Modal Body -->
-      <div :class="['p-6 overflow-y-auto flex-1', bodyClass]">
-        <slot />
-      </div>
+        <!-- Modal Body -->
+        <div :class="['p-6 overflow-y-auto flex-1 min-h-0', bodyClass]">
+          <slot />
+        </div>
 
-      <!-- Modal Footer -->
-      <div v-if="$slots.footer" class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 rounded-b-lg">
-        <slot name="footer" />
-      </div>
+        <!-- Modal Footer -->
+        <div v-if="$slots.footer" class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 rounded-b-lg">
+          <slot name="footer" />
+        </div>
 
-      <!-- Default Footer with Actions -->
-      <div v-else-if="showDefaultFooter" class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 rounded-b-lg">
-        <div class="flex justify-end space-x-3">
-          <button
-            v-if="showCancelButton"
-            type="button"
-            @click="close"
-            class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors duration-200"
-          >
-            {{ cancelText }}
-          </button>
-          <button
-            v-if="showConfirmButton"
-            type="button"
-            @click="confirm"
-            :class="[
-              'px-4 py-2 rounded-lg transition-colors duration-200',
-              confirmButtonClass
-            ]"
-          >
-            {{ confirmText }}
-          </button>
+        <!-- Default Footer with Actions -->
+        <div v-else-if="showDefaultFooter" class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 rounded-b-lg">
+          <div class="flex justify-end space-x-3">
+            <button
+              v-if="showCancelButton"
+              type="button"
+              @click="close"
+              class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors duration-200"
+            >
+              {{ cancelText }}
+            </button>
+            <button
+              v-if="showConfirmButton"
+              type="button"
+              @click="confirm"
+              :class="[
+                'px-4 py-2 rounded-lg transition-colors duration-200',
+                confirmButtonClass
+              ]"
+            >
+              {{ confirmText }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -140,14 +143,14 @@ const titleId = computed(() => `modal-title-${Math.random().toString(36).substri
 // Size classes mapping
 const sizeClasses = computed(() => {
   const sizeMap = {
-    xs: 'w-full max-w-xs max-h-[90vh] flex flex-col',
-    sm: 'w-full max-w-sm max-h-[90vh] flex flex-col',
-    md: 'w-full max-w-md max-h-[90vh] flex flex-col',
-    lg: 'w-full max-w-lg max-h-[90vh] flex flex-col',
-    xl: 'w-full max-w-xl max-h-[90vh] flex flex-col',
-    '2xl': 'w-full max-w-2xl max-h-[90vh] flex flex-col',
-    '3xl': 'w-full max-w-3xl max-h-[90vh] flex flex-col',
-    '4xl': 'w-full max-w-4xl max-h-[90vh] flex flex-col',
+    xs: 'w-full max-w-xs flex flex-col',
+    sm: 'w-full max-w-sm flex flex-col',
+    md: 'w-full max-w-md flex flex-col',
+    lg: 'w-full max-w-lg flex flex-col',
+    xl: 'w-full max-w-xl flex flex-col',
+    '2xl': 'w-full max-w-2xl flex flex-col',
+    '3xl': 'w-full max-w-3xl flex flex-col',
+    '4xl': 'w-full max-w-4xl flex flex-col',
     full: 'w-full h-full max-w-none max-h-none m-0 rounded-none'
   }
   return sizeMap[props.size]

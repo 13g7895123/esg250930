@@ -142,10 +142,11 @@
         @click="showDeleteConfirm = false"
       >
         <div
-          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md"
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md flex flex-col"
+          style="max-height: 90vh;"
           @click.stop
         >
-          <div class="p-6">
+          <div class="p-6 overflow-y-auto flex-1 min-h-0">
             <div class="flex items-center mb-4">
               <ExclamationTriangleIcon class="w-6 h-6 text-red-600 mr-3" />
               <h3 class="text-lg font-medium text-gray-900 dark:text-white">

@@ -281,14 +281,15 @@
     <!-- Add/Edit Modal -->
     <div
       v-if="showAddModal || showEditModal"
-      class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto"
+      class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
       @click="closeModals"
     >
       <div
-        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl my-8"
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl flex flex-col"
+        style="max-height: 90vh;"
         @click.stop
       >
-        <div class="p-6 max-h-[calc(100vh-4rem)] overflow-y-auto">
+        <div class="p-6 overflow-y-auto flex-1 min-h-0">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
             {{ showAddModal ? '新增題目' : '編輯題目' }}
           </h3>
@@ -495,7 +496,8 @@
       @click="showDebugModal = false"
     >
       <div
-        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col"
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl overflow-hidden flex flex-col"
+        style="max-height: 90vh;"
         @click.stop
       >
         <!-- Header -->
@@ -647,7 +649,8 @@
       @click="closeBatchDetails"
     >
       <div
-        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col"
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl overflow-hidden flex flex-col"
+        style="max-height: 90vh;"
         @click.stop
       >
         <!-- Header -->

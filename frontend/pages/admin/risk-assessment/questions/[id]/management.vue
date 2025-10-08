@@ -288,10 +288,11 @@
       @click="showCopyOptions = false"
     >
       <div
-        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md"
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md flex flex-col"
+        style="max-height: 90vh;"
         @click.stop
       >
-        <div class="p-6">
+        <div class="p-6 overflow-y-auto flex-1 min-h-0">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
             複製選項
           </h3>
@@ -1179,17 +1180,13 @@ const {
   deleteFactor
 } = useQuestionStructure()
 
-// 排序後的資料 - 使用與 content 頁面相同的排序邏輯
+// 直接使用後端回傳的資料順序，不再進行前端排序
 const sortedQuestionCategories = computed(() => {
   if (!questionCategories.value || questionCategories.value.length === 0) {
     return []
   }
 
-  return [...questionCategories.value].sort((a, b) => {
-    const nameA = a.category_name || ''
-    const nameB = b.category_name || ''
-    return nameA.localeCompare(nameB, 'zh-TW')
-  })
+  return questionCategories.value
 })
 
 const sortedQuestionTopics = computed(() => {
@@ -1197,18 +1194,7 @@ const sortedQuestionTopics = computed(() => {
     return []
   }
 
-  return [...questionTopics.value].sort((a, b) => {
-    // 先按類別排序
-    const categoryA = a.category_name || ''
-    const categoryB = b.category_name || ''
-    const categoryCompare = categoryA.localeCompare(categoryB, 'zh-TW')
-    if (categoryCompare !== 0) return categoryCompare
-
-    // 類別相同時按主題名稱排序
-    const topicA = a.topic_name || ''
-    const topicB = b.topic_name || ''
-    return topicA.localeCompare(topicB, 'zh-TW')
-  })
+  return questionTopics.value
 })
 
 const sortedQuestionFactors = computed(() => {
@@ -1216,24 +1202,7 @@ const sortedQuestionFactors = computed(() => {
     return []
   }
 
-  return [...questionFactors.value].sort((a, b) => {
-    // 先按類別排序
-    const categoryA = a.category_name || ''
-    const categoryB = b.category_name || ''
-    const categoryCompare = categoryA.localeCompare(categoryB, 'zh-TW')
-    if (categoryCompare !== 0) return categoryCompare
-
-    // 類別相同時按主題排序
-    const topicA = a.topic_name || ''
-    const topicB = b.topic_name || ''
-    const topicCompare = topicA.localeCompare(topicB, 'zh-TW')
-    if (topicCompare !== 0) return topicCompare
-
-    // 主題相同時按因子名稱排序
-    const factorA = a.factor_name || ''
-    const factorB = b.factor_name || ''
-    return factorA.localeCompare(factorB, 'zh-TW')
-  })
+  return questionFactors.value
 })
 
 // Set page title safely for SSR
@@ -2207,9 +2176,9 @@ const closeModals = () => {
 const showPersonnelAssignment = async (item) => {
   selectedQuestionForAssignment.value = item
 
-  // Ensure structure data is loaded for sorting
+  // Ensure structure data is loaded
   if (item.id && (!questionCategories.value?.length || !questionTopics.value?.length || !questionFactors.value?.length)) {
-    console.log('Loading structure data for sorting...')
+    console.log('Loading structure data...')
     await loadQuestionStructureData(item.id)
   }
 
@@ -2254,31 +2223,10 @@ const loadQuestionContentForAssignment = async (questionItem) => {
           assignmentCount: 0 // Will be updated by assignment API
         }))
 
-        // 排序邏輯 - 與 content 頁面相同：按類別 > 主題 > 因子
-        const sortedContent = transformedContent.sort((a, b) => {
-          // 取得類別名稱（使用原始的 questionCategories，不是 sorted 版本）
-          const categoryA = questionCategories.value?.find(c => c.id === a.category_id)?.category_name || ''
-          const categoryB = questionCategories.value?.find(c => c.id === b.category_id)?.category_name || ''
-
-          // 先按類別排序
-          const categoryCompare = categoryA.localeCompare(categoryB, 'zh-TW')
-          if (categoryCompare !== 0) return categoryCompare
-
-          // 類別相同時按主題排序
-          const topicA = questionTopics.value?.find(t => t.id === a.topic_id)?.topic_name || ''
-          const topicB = questionTopics.value?.find(t => t.id === b.topic_id)?.topic_name || ''
-          const topicCompare = topicA.localeCompare(topicB, 'zh-TW')
-          if (topicCompare !== 0) return topicCompare
-
-          // 主題相同時按因子排序
-          const factorA = questionFactors.value?.find(f => f.id === a.factor_id)?.factor_name || ''
-          const factorB = questionFactors.value?.find(f => f.id === b.factor_id)?.factor_name || ''
-          return factorA.localeCompare(factorB, 'zh-TW')
-        })
-
-        questionContentForAssignment.value = sortedContent
-        console.log('Loaded and sorted content from database API:', sortedContent)
-        console.log('Content IDs:', sortedContent.map(item => item.contentId))
+        // 直接使用後端回傳的資料順序，不再進行前端排序
+        questionContentForAssignment.value = transformedContent
+        console.log('Loaded content from database API (using backend order):', transformedContent)
+        console.log('Content IDs:', transformedContent.map(item => item.contentId))
       } else {
         console.warn('Invalid API response or no content found')
         questionContentForAssignment.value = []

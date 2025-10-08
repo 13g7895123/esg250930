@@ -241,10 +241,11 @@
         @click="closeSearch"
       >
         <div
-          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg mx-4"
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg mx-4 flex flex-col"
+          style="max-height: 90vh;"
           @click.stop
         >
-          <div class="p-4">
+          <div class="p-4 overflow-y-auto flex-1 min-h-0">
             <input
               ref="searchInput"
               v-model="searchQuery"

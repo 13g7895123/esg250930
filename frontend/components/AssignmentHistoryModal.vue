@@ -7,7 +7,10 @@
       @click.self="closeModal"
     >
       <!-- Modal Container -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl flex flex-col"
+        style="max-height: 90vh;"
+      >
 
         <!-- Modal Header -->
         <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">

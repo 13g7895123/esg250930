@@ -88,7 +88,7 @@
             v-model:expanded="expandedSections.sectionA"
           >
             <RichTextEditor
-              v-if="!computedFeatures.readonly"
+              v-if="!isSectionABReadonly"
               v-model="formData.riskFactorDescription"
               :show-html-info="false"
               placeholder="請輸入風險因子議題描述..."
@@ -105,9 +105,8 @@
             v-model:expanded="expandedSections.sectionB"
           >
             <RichTextEditor
-              v-if="!computedFeatures.readonly"
+              v-if="!isSectionABReadonly"
               v-model="formData.referenceText"
-              :readonly="computedFeatures.readonly"
               :show-html-info="false"
               placeholder="請輸入參考文字..."
             />
@@ -120,6 +119,8 @@
             v-model:choice="formData.hasRiskEvent"
             v-model:description="formData.riskEventDescription"
             :readonly="computedFeatures.readonly"
+            :hide-record-button="props.editorMode === 'answer'"
+            :placeholder="props.editorMode === 'answer' && props.questionTemplate ? props.questionTemplate.riskEventDescription : '請輸入該題目懸浮文字'"
           />
 
           <!-- Section D: 對應作為 -->
@@ -128,6 +129,9 @@
             v-model:description="formData.counterActionDescription"
             v-model:cost="formData.counterActionCost"
             :readonly="computedFeatures.readonly"
+            :hide-record-button="props.editorMode === 'answer'"
+            :description-placeholder="props.editorMode === 'answer' && props.questionTemplate ? props.questionTemplate.counterActionDescription : '請輸入該題目懸浮文字'"
+            :cost-placeholder="props.editorMode === 'answer' && props.questionTemplate ? props.questionTemplate.counterActionCost : '請輸入該題目懸浮文字'"
           />
 
           <!-- 量表按鈕區 -->
@@ -148,6 +152,8 @@
               :impact-options="impactScaleOptions"
               :disabled="computedFeatures.readonly"
               :info-text="formData.hoverTexts?.E1"
+              :description-placeholder="props.editorMode === 'answer' && props.questionTemplate ? props.questionTemplate.risk.description : '請描述風險'"
+              :calculation-placeholder="props.editorMode === 'answer' && props.questionTemplate ? props.questionTemplate.risk.calculation : '請說明計算方式'"
               @edit-info="editHoverText"
             />
 
@@ -160,6 +166,8 @@
               :impact-options="impactScaleOptions"
               :disabled="computedFeatures.readonly"
               :info-text="formData.hoverTexts?.F1"
+              :description-placeholder="props.editorMode === 'answer' && props.questionTemplate ? props.questionTemplate.opportunity.description : '請描述機會'"
+              :calculation-placeholder="props.editorMode === 'answer' && props.questionTemplate ? props.questionTemplate.opportunity.calculation : '請說明計算方式'"
               @edit-info="editHoverText"
             />
           </div>
@@ -178,6 +186,7 @@
               v-model:g1-negative-impact-description="formData.negativeImpact.description"
               :disabled="computedFeatures.readonly"
               :info-text="formData.hoverTexts?.G1"
+              :description-placeholder="props.editorMode === 'answer' && props.questionTemplate ? props.questionTemplate.negativeImpact.description : '請說明負面衝擊'"
               @edit-info="editHoverText"
             />
 
@@ -186,6 +195,7 @@
               v-model:h1-positive-impact-description="formData.positiveImpact.description"
               :disabled="computedFeatures.readonly"
               :info-text="formData.hoverTexts?.H1"
+              :description-placeholder="props.editorMode === 'answer' && props.questionTemplate ? props.questionTemplate.positiveImpact.description : '請說明正面影響'"
               @edit-info="editHoverText"
             />
           </div>
@@ -199,8 +209,8 @@
         class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
         @click.self="cancelHoverEdit"
       >
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4" @click.stop>
-          <div class="p-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 flex flex-col" style="max-height: 90vh;" @click.stop>
+          <div class="p-6 overflow-y-auto flex-1 min-h-0">
             <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
               編輯提示文字 - {{ editingSection }}
             </h3>
@@ -290,6 +300,8 @@
       :show-description-text="showDescriptionText"
       :impact-scale-columns="impactScaleColumns"
       :impact-scale-rows="impactScaleRows"
+      :impact-description-text="impactDescriptionText"
+      :show-impact-description-text="showImpactDescriptionText"
       :show-edit-toggle="editorMode === 'question' || editorMode === 'template'"
       @toggle-edit="scaleViewMode = 'editor'"
     />
@@ -337,6 +349,12 @@ const props = defineProps({
 
   // 初始資料
   questionData: {
+    type: Object,
+    default: null
+  },
+
+  // 題目模板（用於 answer 模式的 placeholder）
+  questionTemplate: {
     type: Object,
     default: null
   },
@@ -505,11 +523,53 @@ const computedFeatures = computed(() => {
   return features.value
 })
 
+// Section A 和 B 在 answer 模式下應該是唯讀的
+const isSectionABReadonly = computed(() => {
+  // answer 模式下，A 和 B 區段顯示題目內容，應該是唯讀的
+  const result = props.editorMode === 'answer' || isPreviewMode.value
+  console.log('[EditorContainer] isSectionABReadonly computed:', {
+    editorMode: props.editorMode,
+    isPreviewMode: isPreviewMode.value,
+    result
+  })
+  return result
+})
+
 // Watch questionData 變化並轉換為表單格式
 watch(() => props.questionData, (newData) => {
+  console.log('[EditorContainer] questionData watch triggered:', {
+    hasData: !!newData,
+    editorMode: props.editorMode,
+    newData
+  })
+
   if (newData) {
-    formData.value = backendToForm(newData)
-    console.log('[EditorContainer] Form data initialized from questionData:', formData.value)
+    // 檢查 questionData 是否已經是轉換後的表單格式
+    const isAlreadyFormData = newData.hasOwnProperty('riskFactorDescription')
+
+    console.log('[EditorContainer] Data format check:', {
+      isAlreadyFormData,
+      hasRiskFactorDescription: !!newData.riskFactorDescription,
+      hasFactorDescription: !!newData.factor_description,
+      hasReferenceText: !!newData.referenceText,
+      hasBContent: !!newData.b_content
+    })
+
+    if (isAlreadyFormData) {
+      // 如果已經是表單格式（answer page 已經轉換過），直接使用
+      formData.value = { ...getDefaultFormData(), ...newData }
+      console.log('[EditorContainer] Using pre-converted form data')
+    } else {
+      // 如果是後端格式，進行轉換
+      console.log('[EditorContainer] Converting backend data to form data')
+      formData.value = backendToForm(newData)
+    }
+
+    console.log('[EditorContainer] Final formData.value:', {
+      riskFactorDescription: formData.value.riskFactorDescription,
+      referenceText: formData.value.referenceText,
+      fullData: formData.value
+    })
   }
 }, { immediate: true })
 
@@ -736,6 +796,14 @@ const handleScaleSave = async () => {
 // 生命週期
 onMounted(async () => {
   console.log('[EditorContainer] Mounted - Mode:', props.editorMode, 'ID:', props.id, 'ContentID:', props.contentId)
+  console.log('[EditorContainer] Props at mount:', {
+    editorMode: props.editorMode,
+    questionData: props.questionData,
+    isWebMode: props.isWebMode,
+    externalUserId: props.externalUserId
+  })
+  console.log('[EditorContainer] Initial formData:', formData.value)
+  console.log('[EditorContainer] isSectionABReadonly at mount:', isSectionABReadonly.value)
 
   // 載入量表資料
   await loadScaleData()
@@ -747,6 +815,6 @@ onMounted(async () => {
 <style scoped>
 /* 風險架構資訊卡片樣式 */
 .risk-factor-bg {
-  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  background-color: #059669;
 }
 </style>

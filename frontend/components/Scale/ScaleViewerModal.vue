@@ -5,18 +5,38 @@
       v-if="modelValue"
       :class="[
         'fixed z-50',
-        isCompactMode ? '' : 'inset-0 flex items-center justify-center bg-black bg-opacity-50'
+        isCompactMode ? '' : 'inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4'
       ]"
       :style="isCompactMode ? { top: modalPosition.y + 'px', left: modalPosition.x + 'px' } : {}"
       @click.self="!isCompactMode && closeModal()"
     >
       <div
         :class="[
-          'bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-y-auto modal-draggable',
-          isCompactMode ? 'max-w-3xl' : 'w-full max-w-6xl max-h-[90vh] m-4'
+          'bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden modal-draggable flex flex-col relative',
+          isCompactMode ? '' : 'w-full max-w-6xl'
         ]"
-        :style="isCompactMode ? { maxHeight: '80vh' } : {}"
+        :style="isCompactMode ? {
+          width: modalSize.width + 'px',
+          height: modalSize.height + 'px',
+          minWidth: '400px',
+          minHeight: '300px',
+          maxWidth: '90vw',
+          maxHeight: '90vh'
+        } : { maxHeight: '90vh' }"
       >
+        <!-- Resize Handles (只在精簡模式顯示) -->
+        <template v-if="isCompactMode">
+          <!-- 四個角 -->
+          <div class="resize-handle resize-nw" @mousedown="startResize($event, 'nw')"></div>
+          <div class="resize-handle resize-ne" @mousedown="startResize($event, 'ne')"></div>
+          <div class="resize-handle resize-sw" @mousedown="startResize($event, 'sw')"></div>
+          <div class="resize-handle resize-se" @mousedown="startResize($event, 'se')"></div>
+          <!-- 四個邊 -->
+          <div class="resize-handle resize-n" @mousedown="startResize($event, 'n')"></div>
+          <div class="resize-handle resize-s" @mousedown="startResize($event, 's')"></div>
+          <div class="resize-handle resize-w" @mousedown="startResize($event, 'w')"></div>
+          <div class="resize-handle resize-e" @mousedown="startResize($event, 'e')"></div>
+        </template>
         <!-- Modal Header -->
         <div
           :class="[
@@ -26,7 +46,34 @@
           @mousedown="startDrag"
         >
           <div class="flex items-center justify-between">
-            <h2 class="text-xl font-bold text-gray-900 dark:text-white">量表檢視</h2>
+            <div class="flex items-center space-x-3">
+              <h2 class="text-xl font-bold text-gray-900 dark:text-white">量表檢視</h2>
+              <!-- 精簡模式下的切換按鈕（在 title 旁邊） -->
+              <div v-if="isCompactMode" class="inline-flex rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 p-1">
+                <button
+                  @click="activeTab = 'probability'"
+                  :class="[
+                    'px-3 py-1 rounded-md text-xs font-medium transition-all duration-200',
+                    activeTab === 'probability'
+                      ? 'bg-green-600 text-white shadow-sm'
+                      : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                  ]"
+                >
+                  可能性量表
+                </button>
+                <button
+                  @click="activeTab = 'impact'"
+                  :class="[
+                    'px-3 py-1 rounded-md text-xs font-medium transition-all duration-200',
+                    activeTab === 'impact'
+                      ? 'bg-green-600 text-white shadow-sm'
+                      : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                  ]"
+                >
+                  財務衝擊量表
+                </button>
+              </div>
+            </div>
             <div class="flex items-center space-x-2">
               <!-- 切換精簡模式按鈕 -->
               <button
@@ -60,7 +107,7 @@
         </div>
 
         <!-- Modal Content (Tabs) -->
-        <div v-else class="p-6">
+        <div v-else class="p-6 overflow-y-auto flex-1">
           <!-- Tab Navigation (完整模式) -->
           <div v-if="!isCompactMode" class="border-b border-gray-200 dark:border-gray-700 mb-6">
             <nav class="-mb-px flex items-center justify-between">
@@ -102,35 +149,10 @@
             </nav>
           </div>
 
-          <!-- Tab Navigation (精簡模式) -->
-          <div v-else class="mb-4 flex items-center justify-between">
-            <div class="inline-flex rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 p-1">
-              <button
-                @click="activeTab = 'probability'"
-                :class="[
-                  'px-3 py-1 rounded-md text-xs font-medium transition-all duration-200',
-                  activeTab === 'probability'
-                    ? 'bg-green-600 text-white shadow-sm'
-                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                ]"
-              >
-                可能性量表
-              </button>
-              <button
-                @click="activeTab = 'impact'"
-                :class="[
-                  'px-3 py-1 rounded-md text-xs font-medium transition-all duration-200',
-                  activeTab === 'impact'
-                    ? 'bg-green-600 text-white shadow-sm'
-                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                ]"
-              >
-                財務衝擊量表
-              </button>
-            </div>
+          <!-- Tab Navigation (精簡模式) - 切換按鈕已移到 header -->
+          <div v-else-if="showEditToggle" class="mb-4 flex items-center justify-end">
             <!-- 切換編輯模式按鈕 (精簡模式) -->
             <button
-              v-if="showEditToggle"
               @click="$emit('toggle-edit')"
               class="py-1 px-3 text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-600 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors duration-200"
             >
@@ -152,9 +174,12 @@
                 <p class="mt-1 text-sm">請先在編輯頁面中設定並儲存可能性量表資料</p>
               </div>
             </div>
-            <div v-else class="p-6 border-2 border-blue-300 dark:border-blue-600 rounded-lg bg-blue-50 dark:bg-blue-900/10">
+            <div v-else class="border-2 border-blue-300 dark:border-blue-600 rounded-lg bg-blue-50 dark:bg-blue-900/10 overflow-hidden">
               <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                <table :class="[
+                  'min-w-full divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800',
+                  showDescriptionText && descriptionText ? 'rounded-t-lg' : 'rounded-lg'
+                ]">
                   <thead class="bg-gray-100 dark:bg-gray-700">
                     <tr>
                       <th
@@ -193,7 +218,7 @@
               </div>
 
               <!-- Description Text Display (if exists) -->
-              <div v-if="showDescriptionText && descriptionText" class="mt-0 p-4 bg-gray-50 dark:bg-gray-900/50 border border-t-0 border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300">
+              <div v-if="showDescriptionText && descriptionText" class="p-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700 text-base text-gray-700 dark:text-gray-300">
                 <div class="whitespace-pre-wrap">{{ descriptionText }}</div>
               </div>
             </div>
@@ -210,9 +235,12 @@
                 <p class="mt-1 text-sm">請先在編輯頁面中設定並儲存財務衝擊量表資料</p>
               </div>
             </div>
-            <div v-else class="p-6 border-2 border-blue-300 dark:border-blue-600 rounded-lg bg-blue-50 dark:bg-blue-900/10">
+            <div v-else class="border-2 border-blue-300 dark:border-blue-600 rounded-lg bg-blue-50 dark:bg-blue-900/10 overflow-hidden">
               <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                <table :class="[
+                  'min-w-full divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800',
+                  showImpactDescriptionText && impactDescriptionText ? 'rounded-t-lg' : 'rounded-lg'
+                ]">
                   <thead class="bg-gray-100 dark:bg-gray-700">
                     <tr>
                       <!-- 變動欄位 header -->
@@ -255,6 +283,11 @@
                     </tr>
                   </tbody>
                 </table>
+              </div>
+
+              <!-- Description Text Display (if exists) -->
+              <div v-if="showImpactDescriptionText && impactDescriptionText" class="p-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700 text-base text-gray-700 dark:text-gray-300">
+                <div class="whitespace-pre-wrap">{{ impactDescriptionText }}</div>
               </div>
             </div>
           </div>
@@ -310,6 +343,14 @@ const props = defineProps({
     type: String,
     default: ''
   },
+  showImpactDescriptionText: {
+    type: Boolean,
+    default: false
+  },
+  impactDescriptionText: {
+    type: String,
+    default: ''
+  },
   defaultCompactMode: {
     type: Boolean,
     default: false
@@ -326,13 +367,17 @@ const emit = defineEmits(['update:modelValue', 'toggle-edit'])
 const activeTab = ref('probability')
 const isCompactMode = ref(false)
 const modalPosition = ref({ x: 0, y: 0 })
+const modalSize = ref({ width: 768, height: 600 }) // 預設大小
 const isDragging = ref(false)
 const dragOffset = ref({ x: 0, y: 0 })
+const isResizing = ref(false)
+const resizeDirection = ref('')
+const resizeStart = ref({ x: 0, y: 0, width: 0, height: 0, posX: 0, posY: 0 })
 
 // 計算畫面中間位置
 const centerModal = () => {
-  const modalWidth = 768 // max-w-3xl = 768px
-  const modalHeight = window.innerHeight * 0.8 // 80vh
+  const modalWidth = modalSize.value.width
+  const modalHeight = modalSize.value.height
 
   modalPosition.value = {
     x: (window.innerWidth - modalWidth) / 2,
@@ -368,7 +413,7 @@ const toggleCompactMode = () => {
 
 // 拖曳功能
 const startDrag = (event) => {
-  if (!isCompactMode.value) return
+  if (!isCompactMode.value || isResizing.value) return
 
   isDragging.value = true
   const modalElement = event.target.closest('.modal-draggable')
@@ -398,6 +443,78 @@ const stopDrag = () => {
   document.removeEventListener('mouseup', stopDrag)
 }
 
+// Resize 功能
+const startResize = (event, direction) => {
+  event.preventDefault()
+  event.stopPropagation()
+
+  if (!isCompactMode.value) return
+
+  isResizing.value = true
+  resizeDirection.value = direction
+
+  resizeStart.value = {
+    x: event.clientX,
+    y: event.clientY,
+    width: modalSize.value.width,
+    height: modalSize.value.height,
+    posX: modalPosition.value.x,
+    posY: modalPosition.value.y
+  }
+
+  document.addEventListener('mousemove', onResize)
+  document.addEventListener('mouseup', stopResize)
+}
+
+const onResize = (event) => {
+  if (!isResizing.value) return
+
+  const deltaX = event.clientX - resizeStart.value.x
+  const deltaY = event.clientY - resizeStart.value.y
+
+  const minWidth = 400
+  const minHeight = 300
+  const maxWidth = window.innerWidth * 0.9
+  const maxHeight = window.innerHeight * 0.9
+
+  let newWidth = resizeStart.value.width
+  let newHeight = resizeStart.value.height
+  let newX = resizeStart.value.posX
+  let newY = resizeStart.value.posY
+
+  // 根據拖曳方向計算新的大小和位置
+  if (resizeDirection.value.includes('e')) {
+    newWidth = Math.max(minWidth, Math.min(maxWidth, resizeStart.value.width + deltaX))
+  }
+  if (resizeDirection.value.includes('w')) {
+    const potentialWidth = resizeStart.value.width - deltaX
+    if (potentialWidth >= minWidth && potentialWidth <= maxWidth) {
+      newWidth = potentialWidth
+      newX = resizeStart.value.posX + deltaX
+    }
+  }
+  if (resizeDirection.value.includes('s')) {
+    newHeight = Math.max(minHeight, Math.min(maxHeight, resizeStart.value.height + deltaY))
+  }
+  if (resizeDirection.value.includes('n')) {
+    const potentialHeight = resizeStart.value.height - deltaY
+    if (potentialHeight >= minHeight && potentialHeight <= maxHeight) {
+      newHeight = potentialHeight
+      newY = resizeStart.value.posY + deltaY
+    }
+  }
+
+  modalSize.value = { width: newWidth, height: newHeight }
+  modalPosition.value = { x: newX, y: newY }
+}
+
+const stopResize = () => {
+  isResizing.value = false
+  resizeDirection.value = ''
+  document.removeEventListener('mousemove', onResize)
+  document.removeEventListener('mouseup', stopResize)
+}
+
 // 關閉視窗
 const closeModal = () => {
   emit('update:modelValue', false)
@@ -418,5 +535,82 @@ const closeModal = () => {
 /* 精簡模式時的陰影效果 */
 .modal-draggable.shadow-xl {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Resize Handles */
+.resize-handle {
+  position: absolute;
+  z-index: 10;
+}
+
+/* 四個角 */
+.resize-nw {
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nw-resize;
+}
+
+.resize-ne {
+  top: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  cursor: ne-resize;
+}
+
+.resize-sw {
+  bottom: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  cursor: sw-resize;
+}
+
+.resize-se {
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  cursor: se-resize;
+}
+
+/* 四個邊 */
+.resize-n {
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 4px;
+  cursor: n-resize;
+}
+
+.resize-s {
+  bottom: 0;
+  left: 12px;
+  right: 12px;
+  height: 4px;
+  cursor: s-resize;
+}
+
+.resize-w {
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 4px;
+  cursor: w-resize;
+}
+
+.resize-e {
+  right: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 4px;
+  cursor: e-resize;
+}
+
+/* Hover 效果 */
+.resize-handle:hover {
+  background-color: rgba(59, 130, 246, 0.3);
 }
 </style>

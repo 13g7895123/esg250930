@@ -161,8 +161,8 @@
         <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" @click="showExportModal = false"></div>
 
         <!-- Modal panel -->
-        <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-          <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full flex flex-col" style="max-height: 90vh;">
+          <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 overflow-y-auto flex-1 min-h-0">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-medium text-gray-900 dark:text-white">
                 選擇匯出格式
@@ -221,8 +221,8 @@
         <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" @click="showColumnSelector = false"></div>
 
         <!-- Modal panel -->
-        <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
-          <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full flex flex-col" style="max-height: 90vh;">
+          <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 overflow-y-auto flex-1 min-h-0">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-lg font-medium text-gray-900 dark:text-white">
                 選擇顯示欄位
