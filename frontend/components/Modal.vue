@@ -1,23 +1,37 @@
 <template>
-  <div
-    v-if="modelValue"
-    class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-    @click="handleBackdropClick"
-  >
-    <div class="fixed max-h-screen flex justify-center items-center" @click="handleBackdropClick">
+  <!-- Teleport 1: Background Overlay -->
+  <Teleport to="body">
+    <Transition name="fade">
       <div
-      :class="[
-        'bg-white dark:bg-gray-800 rounded-lg shadow-xl',
-        'transition-all duration-200 transform',
-        modelValue ? 'scale-100 opacity-100' : 'scale-95 opacity-0',
-        sizeClasses
-      ]"
-        :style="{ maxHeight: size === 'full' ? 'none' : '90vh' }"
-        @click.stop
-        role="dialog"
-        aria-modal="true"
-        :aria-labelledby="titleId"
+        v-if="modelValue"
+        class="fixed inset-0 bg-black bg-opacity-50"
+        style="z-index: 9998;"
+        @click="handleBackdropClick"
+      ></div>
+    </Transition>
+  </Teleport>
+
+  <!-- Teleport 2: Modal Container -->
+  <Teleport to="body">
+    <Transition name="modal">
+      <div
+        v-if="modelValue"
+        class="fixed inset-0 flex items-center justify-center px-4"
+        style="z-index: 9999; pointer-events: none;"
       >
+        <!-- Modal Content -->
+        <div
+          :class="[
+            'bg-white dark:bg-gray-800 rounded-lg shadow-xl mx-auto',
+            'flex flex-col',
+            widthClasses
+          ]"
+          :style="{ maxHeight: size === 'full' ? 'none' : '90vh', pointerEvents: 'auto' }"
+          role="dialog"
+          aria-modal="true"
+          :aria-labelledby="titleId"
+          @click.stop
+        >
         <!-- Modal Header -->
         <div v-if="$slots.header || title" class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <div class="flex items-center justify-between">
@@ -72,8 +86,9 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup>
@@ -140,20 +155,20 @@ const emit = defineEmits(['update:modelValue', 'close', 'confirm'])
 // Generate unique ID for accessibility
 const titleId = computed(() => `modal-title-${Math.random().toString(36).substring(2, 11)}`)
 
-// Size classes mapping
-const sizeClasses = computed(() => {
-  const sizeMap = {
-    xs: 'w-full max-w-xs flex flex-col',
-    sm: 'w-full max-w-sm flex flex-col',
-    md: 'w-full max-w-md flex flex-col',
-    lg: 'w-full max-w-lg flex flex-col',
-    xl: 'w-full max-w-xl flex flex-col',
-    '2xl': 'w-full max-w-2xl flex flex-col',
-    '3xl': 'w-full max-w-3xl flex flex-col',
-    '4xl': 'w-full max-w-4xl flex flex-col',
+// Width classes mapping
+const widthClasses = computed(() => {
+  const widthMap = {
+    xs: 'max-w-xs',
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-lg',
+    xl: 'max-w-xl',
+    '2xl': 'max-w-2xl',
+    '3xl': 'max-w-3xl',
+    '4xl': 'max-w-4xl',
     full: 'w-full h-full max-w-none max-h-none m-0 rounded-none'
   }
-  return sizeMap[props.size]
+  return widthMap[props.size]
 })
 
 // Handle backdrop click
@@ -210,3 +225,28 @@ onUnmounted(() => {
   }
 })
 </script>
+
+<style scoped>
+/* Fade transition for backdrop */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Modal transition */
+.modal-enter-active,
+.modal-leave-active {
+  transition: all 0.2s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+</style>
