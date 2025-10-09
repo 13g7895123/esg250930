@@ -163,6 +163,11 @@ const reorderQuestionContent = async (newOrder) => {
   try {
     const result = await questionManagementStore.reorderQuestionContent(questionId, newOrder)
 
+    // 重新載入資料以確保前後端同步
+    console.log('[Content Page] Refreshing assessment data after reorder...')
+    await questionManagementStore.refreshAssessment(questionId)
+    console.log('[Content Page] Assessment data refreshed')
+
     // 關閉 loading
     $notify.close()
 

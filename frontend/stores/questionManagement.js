@@ -325,8 +325,11 @@ export const useQuestionManagementStore = defineStore('questionManagement', () =
       console.log('Server confirmed orders:', response.data?.orders)
 
       if (response.success) {
-        // 更新本地狀態中的排序
+        // 暫時更新本地狀態（提供即時反應）
+        // 注意：呼叫者應該在成功後呼叫 refreshAssessment() 以確保資料完全同步
         questionContent.value[assessmentId] = newOrder
+
+        console.log('[Store] Local state updated temporarily, caller should refresh for full sync')
 
         // 回傳包含伺服器確認的順序資訊
         return {
