@@ -310,16 +310,30 @@ export const useQuestionManagementStore = defineStore('questionManagement', () =
         sort_order: index + 1
       }))
 
+      console.log('=== Sending reorder request ===')
+      console.log('Assessment ID:', assessmentId)
+      console.log('Orders to send:', orders)
+
       const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/contents/reorder`, {
         method: 'PUT',
         body: { orders }
       })
 
+      console.log('=== Reorder API response ===')
+      console.log('Success:', response.success)
+      console.log('Updated count:', response.data?.updated_count)
+      console.log('Server confirmed orders:', response.data?.orders)
+
       if (response.success) {
         // 更新本地狀態中的排序
         questionContent.value[assessmentId] = newOrder
 
-        return response
+        // 回傳包含伺服器確認的順序資訊
+        return {
+          ...response,
+          clientOrders: orders,
+          serverOrders: response.data?.orders || []
+        }
       } else {
         throw new Error(response.message || '更新排序失敗')
       }

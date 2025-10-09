@@ -152,19 +152,50 @@ const deleteQuestionContent = async (contentId) => {
 
 const reorderQuestionContent = async (newOrder) => {
   const { showSuccess, showError } = useNotification()
+  const { $notify } = useNuxtApp()
 
   // 保存當前滾動位置
   const scrollPosition = window.scrollY || document.documentElement.scrollTop
 
-  try {
-    await questionManagementStore.reorderQuestionContent(questionId, newOrder)
+  // 顯示 loading
+  $notify.loading('正在更新排序...')
 
-    await showSuccess('排序成功', '題目順序已成功更新')
+  try {
+    const result = await questionManagementStore.reorderQuestionContent(questionId, newOrder)
+
+    // 關閉 loading
+    $notify.close()
+
+    // 建立排序確認訊息（使用伺服器確認的順序）
+    const serverOrders = result.serverOrders || []
+    const displayCount = Math.min(serverOrders.length, 10)
+
+    const orderInfo = serverOrders.slice(0, displayCount).map((order, index) =>
+      `${index + 1}. <strong>ID: ${order.id}</strong> → sort_order: ${order.sort_order}`
+    ).join('<br>')
+
+    const moreItems = serverOrders.length > displayCount
+      ? `<br><br><em>...還有 ${serverOrders.length - displayCount} 個項目</em>`
+      : ''
+
+    await showSuccess(
+      '排序更新成功',
+      `<div style="text-align: left;">
+        已成功更新 <strong>${result.data?.updated_count || newOrder.length}</strong> 個題目的排序
+        <br><br>
+        <strong>伺服器確認的新排序：</strong><br>
+        ${orderInfo}
+        ${moreItems}
+      </div>`
+    )
 
     // 等待 DOM 更新後恢復滾動位置
     await nextTick()
     window.scrollTo({ top: scrollPosition, behavior: 'instant' })
   } catch (error) {
+    // 關閉 loading
+    $notify.close()
+
     console.error('Failed to reorder question content:', error)
     await showError('排序失敗', error?.message || '無法更新題目順序，請稍後再試')
 

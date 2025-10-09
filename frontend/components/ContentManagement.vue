@@ -1858,8 +1858,25 @@ const handleDrop = async (event, targetItem) => {
   // Remove dragged item from its original position
   const [removed] = items.splice(draggedIndex, 1)
 
-  // Insert it at the target position
-  items.splice(targetIndex, 0, removed)
+  // Calculate correct insertion index
+  // When dragging down, the target index shifts after removal
+  let insertIndex = targetIndex
+  if (draggedIndex < targetIndex) {
+    // Dragging down: insert after the target (which is now one position earlier)
+    insertIndex = targetIndex
+  } else {
+    // Dragging up: insert at the target position
+    insertIndex = targetIndex
+  }
+
+  // Insert it at the correct position
+  items.splice(insertIndex, 0, removed)
+
+  console.log('=== Drag and Drop Debug ===')
+  console.log('Dragged item:', draggedItem.value.id, 'from index:', draggedIndex)
+  console.log('Target item:', targetItem.id, 'at index:', targetIndex)
+  console.log('Insert at index:', insertIndex)
+  console.log('New order:', items.map((item, idx) => `${idx}: ${item.id}`))
 
   // Emit the reorder event with the new order
   emit('reorder-content', items)

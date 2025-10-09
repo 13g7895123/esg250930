@@ -1795,6 +1795,8 @@ class QuestionManagementController extends BaseController
             $db = \Config\Database::connect();
             $db->transStart();
 
+            $updatedOrders = [];
+
             try {
                 foreach ($input['orders'] as $order) {
                     // 驗證內容是否屬於此評估記錄
@@ -1808,6 +1810,12 @@ class QuestionManagementController extends BaseController
 
                     // 更新排序
                     $this->contentModel->update($order['id'], ['sort_order' => $order['sort_order']]);
+
+                    // 記錄更新的順序
+                    $updatedOrders[] = [
+                        'id' => $order['id'],
+                        'sort_order' => $order['sort_order']
+                    ];
                 }
 
                 $db->transComplete();
@@ -1817,10 +1825,15 @@ class QuestionManagementController extends BaseController
                 }
 
                 log_message('info', "Successfully reordered question contents for assessment {$assessmentId}");
+                log_message('info', "Updated orders: " . json_encode($updatedOrders));
 
                 return $this->response->setJSON([
                     'success' => true,
-                    'message' => '成功更新題項內容排序'
+                    'message' => '成功更新題項內容排序',
+                    'data' => [
+                        'updated_count' => count($updatedOrders),
+                        'orders' => $updatedOrders
+                    ]
                 ]);
 
             } catch (\Exception $e) {
