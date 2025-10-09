@@ -7,7 +7,7 @@
           風險評估題目
         </h1>
         <p class="text-gray-600 dark:text-gray-400">
-          {{ questionInfo?.year || 2024 }}年度 {{ templateInfo?.versionName || '未知範本' }} - 點擊作答按鈕開始填寫
+          {{ questionInfo?.year || 2024 }}年度 {{ templateInfo?.versionName || '未知範本' }} - 點擊開始作答按鈕開始填寫
         </p>
       </div>
     </div>
