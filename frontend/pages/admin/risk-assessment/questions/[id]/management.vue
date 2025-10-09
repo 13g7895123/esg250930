@@ -2111,6 +2111,15 @@ const submitForm = async () => {
       const oldTemplateId = editingItem.value.templateId
       const newTemplateId = parseInt(formData.value.templateId)
 
+      // === 範本變更檢測日誌 ===
+      console.log('=== 範本變更檢測 ===')
+      console.log('oldTemplateId:', oldTemplateId, '(type:', typeof oldTemplateId, ')')
+      console.log('newTemplateId:', newTemplateId, '(type:', typeof newTemplateId, ')')
+      console.log('是否相等 (==):', oldTemplateId == newTemplateId)
+      console.log('是否相等 (===):', oldTemplateId === newTemplateId)
+      console.log('template 物件:', template)
+      console.log('=================')
+
       const itemData = {
         templateId: newTemplateId,
         templateVersion: template ? template.version_name : '',
@@ -2122,13 +2131,27 @@ const submitForm = async () => {
       await updateQuestionManagementItem(companyId.value, editingItem.value.id, itemData)
 
       // If template changed, copy new template content
-      if (oldTemplateId !== newTemplateId && template) {
+      // 確保類型一致的比較
+      const oldId = parseInt(oldTemplateId)
+      const newId = parseInt(newTemplateId)
+
+      console.log('標準化後比較:', { oldId, newId, 相同: oldId === newId })
+
+      if (oldId !== newId && template) {
+        console.log('✅ 範本已變更，開始同步...')
         console.log('範本已變更，重新從範本同步內容到資料庫...')
         try {
           // 呼叫後端 API 從範本複製架構到題項管理
+          console.log('=== 準備呼叫同步 API ===')
+          console.log('API URL:', `/api/v1/question-management/assessment/${editingItem.value.id}/sync-from-template`)
+          console.log('Assessment ID:', editingItem.value.id)
+
           const syncResponse = await $fetch(`/api/v1/question-management/assessment/${editingItem.value.id}/sync-from-template`, {
             method: 'POST'
           })
+
+          console.log('=== API 回應成功 ===')
+          console.log('syncResponse:', syncResponse)
 
           if (syncResponse.success) {
             console.log('範本架構複製成功:', syncResponse.data)
@@ -2145,8 +2168,22 @@ const submitForm = async () => {
             console.error('範本架構複製失敗:', syncResponse.message)
           }
         } catch (error) {
-          console.error('同步範本架構時發生錯誤:', error)
+          console.error('=== API 呼叫失敗 ===')
+          console.error('錯誤訊息:', error.message)
+          console.error('錯誤詳情:', error)
+          if (error.data) {
+            console.error('API 錯誤回應:', error.data)
+          }
+          if (error.statusCode) {
+            console.error('HTTP 狀態碼:', error.statusCode)
+          }
         }
+      } else {
+        console.log('❌ 範本未變更或無範本資料，跳過同步')
+        console.log('跳過原因:', {
+          範本ID相同: oldId === newId,
+          無範本資料: !template
+        })
       }
 
       // Reload data after updating

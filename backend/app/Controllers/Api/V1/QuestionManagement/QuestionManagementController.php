@@ -122,6 +122,11 @@ class QuestionManagementController extends BaseController
     public function syncFromTemplate($assessmentId = null)
     {
         try {
+            log_message('info', '=== syncFromTemplate API 被呼叫 ===');
+            log_message('info', 'Assessment ID: ' . ($assessmentId ?? 'null'));
+            log_message('info', 'Request Time: ' . date('Y-m-d H:i:s'));
+            log_message('info', 'Request Method: ' . $this->request->getMethod());
+
             if (!$assessmentId) {
                 return $this->response->setStatusCode(400)->setJSON([
                     'success' => false,
@@ -139,7 +144,12 @@ class QuestionManagementController extends BaseController
             }
 
             $templateId = $assessment['template_id'];
+
+            log_message('info', 'Assessment 資料: ' . json_encode($assessment));
+            log_message('info', 'Template ID: ' . ($templateId ?? 'null'));
+
             if (!$templateId) {
+                log_message('warning', 'Assessment 未指定範本ID，終止同步');
                 return $this->response->setStatusCode(400)->setJSON([
                     'success' => false,
                     'message' => '評估記錄未指定範本ID'
@@ -151,11 +161,11 @@ class QuestionManagementController extends BaseController
             $db->transStart();
 
             // 明確刪除現有的題項內容（確保舊內容被清除）
-            error_log('[syncFromTemplate] Deleting existing contents...');
+            log_message('info', '[syncFromTemplate] 開始刪除現有題項內容...');
             $this->contentModel->where('assessment_id', $assessmentId)->delete();
 
             // 清除現有的題項架構（由於有 CASCADE 設定，會連帶刪除相關資料）
-            error_log('[syncFromTemplate] Deleting existing structure (categories/topics/factors)...');
+            log_message('info', '[syncFromTemplate] 開始刪除現有架構 (categories/topics/factors)...');
             $this->categoryModel->deleteAllByAssessment($assessmentId);
 
             // 載入範本架構資料
@@ -191,28 +201,28 @@ class QuestionManagementController extends BaseController
             $templateImpactScale = $impactScaleModel->where('template_id', $templateId)->first();
 
             // 複製架構到題項管理
-            error_log('[syncFromTemplate] Starting to copy categories. Template categories count: ' . count($templateCategories));
+            log_message('info', '[syncFromTemplate] 開始複製類別。範本類別數量: ' . count($templateCategories));
             $categoryIdMapping = $this->categoryModel->copyFromTemplateCategories($assessmentId, $templateCategories);
-            error_log('[syncFromTemplate] Categories copied: ' . count($categoryIdMapping));
+            log_message('info', '[syncFromTemplate] 類別已複製: ' . count($categoryIdMapping));
 
-            error_log('[syncFromTemplate] Starting to copy topics. Template topics count: ' . count($templateTopics));
+            log_message('info', '[syncFromTemplate] 開始複製主題。範本主題數量: ' . count($templateTopics));
             $topicIdMapping = $this->topicModel->copyFromTemplateTopics($assessmentId, $templateTopics, $categoryIdMapping);
-            error_log('[syncFromTemplate] Topics copied: ' . count($topicIdMapping));
+            log_message('info', '[syncFromTemplate] 主題已複製: ' . count($topicIdMapping));
 
-            error_log('[syncFromTemplate] Starting to copy factors. Template factors count: ' . count($templateFactors));
+            log_message('info', '[syncFromTemplate] 開始複製因子。範本因子數量: ' . count($templateFactors));
             $factorIdMapping = $this->factorModel->copyFromTemplateFactors($assessmentId, $templateFactors, $topicIdMapping, $categoryIdMapping);
-            error_log('[syncFromTemplate] Factors copied: ' . count($factorIdMapping));
+            log_message('info', '[syncFromTemplate] 因子已複製: ' . count($factorIdMapping));
 
-            error_log('[syncFromTemplate] Starting to copy contents. Template contents count: ' . count($templateContents));
+            log_message('info', '[syncFromTemplate] 開始複製內容。範本內容數量: ' . count($templateContents));
             $contentIdMapping = $this->contentModel->copyFromTemplateContents($assessmentId, $templateContents, $categoryIdMapping, $topicIdMapping, $factorIdMapping);
-            error_log('[syncFromTemplate] Contents copied: ' . count($contentIdMapping));
+            log_message('info', '[syncFromTemplate] 內容已複製: ' . count($contentIdMapping));
 
             // 複製可能性量表
             $probabilityScalesCopied = 0;
             $probabilityScaleRowsCopied = 0;
             $probabilityScaleColumnsCopied = 0;
             if ($templateProbabilityScale) {
-                error_log('[syncFromTemplate] Starting to copy probability scale. Template has probability scale: ' . ($templateProbabilityScale ? 'Yes' : 'No'));
+                log_message('info', '[syncFromTemplate] 開始複製可能性量表。範本有可能性量表: ' . ($templateProbabilityScale ? 'Yes' : 'No'));
 
                 // 先刪除現有的可能性量表
                 $questionProbabilityScaleModel->deleteByAssessment($assessmentId);
@@ -222,14 +232,14 @@ class QuestionManagementController extends BaseController
 
                 if ($newProbabilityScaleId) {
                     $probabilityScalesCopied = 1;
-                    error_log('[syncFromTemplate] Probability scale created with ID: ' . $newProbabilityScaleId);
+                    log_message('info', '[syncFromTemplate] 可能性量表已建立，ID: ' . $newProbabilityScaleId);
 
                     // 複製量表欄位
                     $templateProbabilityColumns = $probabilityScaleColumnModel->where('scale_id', $templateProbabilityScale['id'])->findAll();
                     if (!empty($templateProbabilityColumns)) {
                         $questionProbabilityScaleColumnModel->copyFromTemplateColumns($newProbabilityScaleId, $templateProbabilityColumns);
                         $probabilityScaleColumnsCopied = count($templateProbabilityColumns);
-                        error_log('[syncFromTemplate] Probability scale columns copied: ' . $probabilityScaleColumnsCopied);
+                        log_message('info', '[syncFromTemplate] 可能性量表欄位已複製: ' . $probabilityScaleColumnsCopied);
                     }
 
                     // 複製量表列
@@ -237,7 +247,7 @@ class QuestionManagementController extends BaseController
                     if (!empty($templateProbabilityRows)) {
                         $questionProbabilityScaleRowModel->copyFromTemplateRows($newProbabilityScaleId, $templateProbabilityRows);
                         $probabilityScaleRowsCopied = count($templateProbabilityRows);
-                        error_log('[syncFromTemplate] Probability scale rows copied: ' . $probabilityScaleRowsCopied);
+                        log_message('info', '[syncFromTemplate] 可能性量表列已複製: ' . $probabilityScaleRowsCopied);
                     }
                 }
             }
@@ -247,7 +257,7 @@ class QuestionManagementController extends BaseController
             $impactScaleRowsCopied = 0;
             $impactScaleColumnsCopied = 0;
             if ($templateImpactScale) {
-                error_log('[syncFromTemplate] Starting to copy impact scale. Template has impact scale: ' . ($templateImpactScale ? 'Yes' : 'No'));
+                log_message('info', '[syncFromTemplate] 開始複製影響量表。範本有影響量表: ' . ($templateImpactScale ? 'Yes' : 'No'));
 
                 // 先刪除現有的影響量表
                 $questionImpactScaleModel->deleteByAssessment($assessmentId);
@@ -257,14 +267,14 @@ class QuestionManagementController extends BaseController
 
                 if ($newImpactScaleId) {
                     $impactScalesCopied = 1;
-                    error_log('[syncFromTemplate] Impact scale created with ID: ' . $newImpactScaleId);
+                    log_message('info', '[syncFromTemplate] 影響量表已建立，ID: ' . $newImpactScaleId);
 
                     // 複製量表欄位
                     $templateImpactColumns = $impactScaleColumnModel->where('scale_id', $templateImpactScale['id'])->findAll();
                     if (!empty($templateImpactColumns)) {
                         $questionImpactScaleColumnModel->copyFromTemplateColumns($newImpactScaleId, $templateImpactColumns);
                         $impactScaleColumnsCopied = count($templateImpactColumns);
-                        error_log('[syncFromTemplate] Impact scale columns copied: ' . $impactScaleColumnsCopied);
+                        log_message('info', '[syncFromTemplate] 影響量表欄位已複製: ' . $impactScaleColumnsCopied);
                     }
 
                     // 複製量表列
@@ -272,7 +282,7 @@ class QuestionManagementController extends BaseController
                     if (!empty($templateImpactRows)) {
                         $questionImpactScaleRowModel->copyFromTemplateRows($newImpactScaleId, $templateImpactRows);
                         $impactScaleRowsCopied = count($templateImpactRows);
-                        error_log('[syncFromTemplate] Impact scale rows copied: ' . $impactScaleRowsCopied);
+                        log_message('info', '[syncFromTemplate] 影響量表列已複製: ' . $impactScaleRowsCopied);
                     }
                 }
             }
@@ -291,6 +301,15 @@ class QuestionManagementController extends BaseController
                     'message' => '同步範本架構時發生資料庫錯誤: ' . ($dbError['message'] ?? '未知錯誤')
                 ]);
             }
+
+            log_message('info', '[syncFromTemplate] 資料庫事務成功完成');
+            log_message('info', '[syncFromTemplate] 同步結果統計:');
+            log_message('info', '  - 類別數量: ' . count($categoryIdMapping));
+            log_message('info', '  - 主題數量: ' . count($topicIdMapping));
+            log_message('info', '  - 因子數量: ' . count($factorIdMapping));
+            log_message('info', '  - 內容數量: ' . count($contentIdMapping));
+            log_message('info', '  - 可能性量表: ' . $probabilityScalesCopied);
+            log_message('info', '  - 影響量表: ' . $impactScalesCopied);
 
             return $this->response->setJSON([
                 'success' => true,
