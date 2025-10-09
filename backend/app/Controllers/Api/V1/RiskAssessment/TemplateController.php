@@ -189,6 +189,17 @@ class TemplateController extends ResourceController
                 ], 400);
             }
 
+            // Check if version_name already exists (excluding current template)
+            $existingTemplate = $this->model->where('version_name', $input['version_name'])
+                                             ->where('id !=', $id)
+                                             ->first();
+            if ($existingTemplate) {
+                return $this->respond([
+                    'success' => false,
+                    'message' => '版本名稱已存在，請使用不同的名稱'
+                ], 400);
+            }
+
             $data = [
                 'version_name' => $input['version_name'],
                 'description' => $input['description'] ?? $template['description'],
@@ -425,37 +436,35 @@ class TemplateController extends ResourceController
                 if ($newCategoryId) {
                     $db->query("
                         INSERT INTO template_contents (
-                            template_id, category_id, topic_id, risk_factor_id, description, sort_order, is_required,
-                            a_content, b_content, c_placeholder, d_placeholder_1, d_placeholder_2,
+                            template_id, category_id, topic_id, risk_factor_id, sort_order, is_required,
+                            b_content, c_placeholder, d_placeholder_1, d_placeholder_2,
                             e1_placeholder_1, e2_select_1, e2_select_2, e2_placeholder,
                             f2_select_1, f2_select_2, f2_placeholder,
                             e1_info, f1_info, g1_info, h1_info,
                             created_at, updated_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
                     ", [
                         $newTemplateId,
                         $newCategoryId,
                         $newTopicId,
                         $newFactorId,
-                        $content['description'],
-                        $content['sort_order'],
-                        $content['is_required'],
-                        $content['a_content'],
-                        $content['b_content'],
-                        $content['c_placeholder'],
-                        $content['d_placeholder_1'],
-                        $content['d_placeholder_2'],
-                        $content['e1_placeholder_1'],
-                        $content['e2_select_1'],
-                        $content['e2_select_2'],
-                        $content['e2_placeholder'],
-                        $content['f2_select_1'],
-                        $content['f2_select_2'],
-                        $content['f2_placeholder'],
-                        $content['e1_info'],
-                        $content['f1_info'],
-                        $content['g1_info'],
-                        $content['h1_info']
+                        $content['sort_order'] ?? null,
+                        $content['is_required'] ?? null,
+                        $content['b_content'] ?? null,
+                        $content['c_placeholder'] ?? null,
+                        $content['d_placeholder_1'] ?? null,
+                        $content['d_placeholder_2'] ?? null,
+                        $content['e1_placeholder_1'] ?? null,
+                        $content['e2_select_1'] ?? null,
+                        $content['e2_select_2'] ?? null,
+                        $content['e2_placeholder'] ?? null,
+                        $content['f2_select_1'] ?? null,
+                        $content['f2_select_2'] ?? null,
+                        $content['f2_placeholder'] ?? null,
+                        $content['e1_info'] ?? null,
+                        $content['f1_info'] ?? null,
+                        $content['g1_info'] ?? null,
+                        $content['h1_info'] ?? null
                     ]);
                 }
             }

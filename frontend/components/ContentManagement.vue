@@ -14,8 +14,8 @@
       ref="dataTableRef"
       :data="sortedContentData"
       :columns="columns"
-      search-placeholder="搜尋題目..."
-      :search-fields="['risk_category', 'risk_topic', 'risk_factor']"
+      search-placeholder="搜尋風險類別、風險主題、風險因子..."
+      :search-fields="['category_name', 'topic_name', 'factor_name']"
       empty-title="還沒有題目內容"
       empty-message="開始建立您的第一個題目內容"
       no-search-results-title="沒有找到符合的題目"
@@ -24,6 +24,16 @@
       <!-- Actions Slot -->
       <template #actions>
         <div class="flex items-center space-x-3">
+          <!-- Duplicate Error Button -->
+          <button
+            v-if="duplicateItems.length > 0"
+            @click="showDuplicateModal = true"
+            class="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 animate-pulse"
+          >
+            <ExclamationTriangleIcon class="w-4 h-4 mr-2" />
+            錯誤資料 ({{ duplicateItems.length }})
+          </button>
+
           <!-- Add Button -->
           <button
             @click="showAddModal = true"
@@ -85,15 +95,6 @@
               :class="{ 'animate-spin': isRefreshing }"
             />
             重新整理
-          </button>
-
-          <!-- Sort Debug Button -->
-          <button
-            @click="showSortDebugModal = true"
-            class="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200"
-          >
-            <QueueListIcon class="w-4 h-4 mr-2" />
-            排序檢測
           </button>
         </div>
       </template>
@@ -974,107 +975,96 @@
       </div>
     </Modal>
 
-    <!-- Sort Debug Modal -->
+    <!-- Duplicate Items Modal -->
     <Modal
-      :model-value="showSortDebugModal"
-      title="排序檢測"
-      size="3xl"
-      @update:model-value="(value) => showSortDebugModal = value"
-      @close="showSortDebugModal = false"
+      :model-value="showDuplicateModal"
+      title="重複資料檢測"
+      size="4xl"
+      @update:model-value="(value) => showDuplicateModal = value"
+      @close="showDuplicateModal = false"
     >
       <div class="p-4">
-        <div class="mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <div class="flex items-center mb-2">
-            <InformationCircleIcon class="w-5 h-5 text-blue-500 mr-2" />
-            <span class="text-blue-800 dark:text-blue-200 font-semibold">排序檢測說明</span>
+        <!-- Alert Message -->
+        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+          <div class="flex items-start">
+            <ExclamationTriangleIcon class="w-5 h-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 class="text-red-800 dark:text-red-200 font-semibold mb-1">偵測到重複的題目組合</h4>
+              <p class="text-red-700 dark:text-red-300 text-sm">
+                以下 {{ duplicateItems.length }} 筆資料具有相同的「風險類別」、「風險主題」和「風險因子」組合。
+                請編輯或刪除重複的項目以保持資料一致性。
+              </p>
+            </div>
           </div>
-          <ul class="text-sm text-blue-700 dark:text-blue-300 ml-7 space-y-1">
-            <li>• 此功能用於檢測當前的排序狀態，確認資料的 ID、風險因子描述與 sort_order 是否正確</li>
-            <li>• 可以拖曳排序測試功能，拖曳後會即時更新 sort_order 數值</li>
-            <li>• 備註欄位僅供前端測試使用，不會儲存到資料庫</li>
-            <li>• 在此 Modal 中的操作不會影響實際資料</li>
-          </ul>
         </div>
 
-        <!-- Sort Debug Table -->
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-800">
-              <tr>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">
-                  拖曳
-                </th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  順序
-                </th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  ID
-                </th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  風險因子描述
-                </th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  sort_order
-                </th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  備註
-                </th>
-              </tr>
-            </thead>
-            <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              <tr
-                v-for="(item, index) in debugItems"
-                :key="item.id"
-                :class="index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'"
-                @dragover="handleDebugDragOver($event, item)"
-                @dragleave="handleDebugDragLeave"
-                @drop="handleDebugDrop($event, item)"
+        <!-- Duplicate Items Table -->
+        <DataTable
+          :data="duplicateItemsWithDetails"
+          :columns="duplicateColumns"
+          :searchable="true"
+          :search-fields="['id', 'category_name', 'topic_name', 'factor_name']"
+          search-placeholder="搜尋 ID、類別、主題或因子..."
+          empty-message="沒有重複資料"
+          :initial-page-size="10"
+        >
+          <!-- ID Column -->
+          <template #cell-id="{ item }">
+            <span class="font-mono text-sm">{{ item.id }}</span>
+          </template>
+
+          <!-- Category Column -->
+          <template #cell-category_name="{ item }">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+              {{ item.category_name }}
+            </span>
+          </template>
+
+          <!-- Topic Column -->
+          <template #cell-topic_name="{ item }">
+            <span v-if="item.topic_name" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+              {{ item.topic_name }}
+            </span>
+            <span v-else class="text-gray-400 dark:text-gray-500 italic text-sm">未設定</span>
+          </template>
+
+          <!-- Factor Column -->
+          <template #cell-factor_name="{ item }">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+              {{ item.factor_name }}
+            </span>
+          </template>
+
+          <!-- Duplicate Info Column -->
+          <template #cell-duplicate_info="{ item }">
+            <div class="text-sm text-red-600 dark:text-red-400">
+              與 {{ item.duplicate_count - 1 }} 筆資料重複
+            </div>
+          </template>
+
+          <!-- Actions Column -->
+          <template #cell-actions="{ item }">
+            <div class="flex items-center space-x-2">
+              <!-- Edit Button -->
+              <button
+                @click="editContentFromDuplicate(item)"
+                class="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors duration-200"
+                title="編輯"
               >
-                <!-- Drag Handle -->
-                <td class="px-4 py-4 whitespace-nowrap">
-                  <div
-                    class="cursor-move text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                    draggable="true"
-                    @dragstart="handleDebugDragStart($event, item)"
-                    @dragend="handleDebugDragEnd"
-                  >
-                    <Bars3Icon class="w-5 h-5" />
-                  </div>
-                </td>
-                <!-- Order -->
-                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                  {{ index + 1 }}
-                </td>
-                <!-- ID -->
-                <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {{ item.id }}
-                </td>
-                <!-- Description -->
-                <td class="px-4 py-4 text-sm text-gray-700 dark:text-gray-300">
-                  {{ (item.a_content || item.description || '無描述').substring(0, 5) }}{{ (item.a_content || item.description || '').length > 5 ? '...' : '' }}
-                </td>
-                <!-- Sort Order -->
-                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                  {{ item.sort_order || item.order || 0 }}
-                </td>
-                <!-- Notes -->
-                <td class="px-4 py-4">
-                  <input
-                    v-model="debugNotes[item.id]"
-                    type="text"
-                    placeholder="輸入備註..."
-                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:text-gray-100"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                <PencilIcon class="w-4 h-4" />
+              </button>
 
-        <!-- Summary -->
-        <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
-          總計：{{ debugItems.length }} 筆資料
-        </div>
+              <!-- Delete Button -->
+              <button
+                @click="deleteContentFromDuplicate(item)"
+                class="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
+                title="刪除"
+              >
+                <TrashIcon class="w-4 h-4" />
+              </button>
+            </div>
+          </template>
+        </DataTable>
       </div>
     </Modal>
 
@@ -1097,8 +1087,7 @@ import {
   DocumentArrowUpIcon,
   ArrowDownTrayIcon,
   ChevronDownIcon,
-  InformationCircleIcon,
-  QueueListIcon
+  InformationCircleIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -1182,7 +1171,6 @@ const showAddCategoryModal = ref(false)
 const showEditCategoryModal = ref(false)
 const showRiskFactorModal = ref(false)
 const showRiskTopicModal = ref(false)
-const showSortDebugModal = ref(false)
 const contentToDelete = ref(null)
 const editingContent = ref(null)
 const editingCategory = ref(null)
@@ -1206,15 +1194,13 @@ const isLoadingHistory = ref(false)
 const showBatchDetails = ref(false)
 const showAllErrorRecords = ref(false)
 
+// Duplicate detection state
+const duplicateItems = ref([])
+const showDuplicateModal = ref(false)
+
 // Drag and drop state
 const draggedItem = ref(null)
 const dragOverItem = ref(null)
-
-// Debug modal drag state
-const debugDraggedItem = ref(null)
-const debugDragOverItem = ref(null)
-const debugItems = ref([])
-const debugNotes = ref({})
 
 // Tooltip state for a_content
 const tooltipData = ref({
@@ -1320,6 +1306,85 @@ const categoryColumns = ref([
   }
 ])
 
+// DataTable columns configuration for duplicate items
+const duplicateColumns = computed(() => {
+  const cols = [
+    {
+      key: 'id',
+      label: 'ID',
+      sortable: true,
+      cellClass: 'text-base text-gray-900 dark:text-white'
+    },
+    {
+      key: 'category_name',
+      label: '風險類別',
+      sortable: true,
+      cellClass: 'text-base text-gray-900 dark:text-white'
+    }
+  ]
+
+  // 只有當風險主題啟用時才顯示風險主題欄位
+  if (props.riskTopicsEnabled) {
+    cols.push({
+      key: 'topic_name',
+      label: '風險主題',
+      sortable: true,
+      cellClass: 'text-base text-gray-900 dark:text-white'
+    })
+  }
+
+  cols.push(
+    {
+      key: 'factor_name',
+      label: '風險因子',
+      sortable: true,
+      cellClass: 'text-base text-gray-900 dark:text-white'
+    },
+    {
+      key: 'duplicate_info',
+      label: '重複狀態',
+      sortable: false,
+      cellClass: 'text-base text-gray-900 dark:text-white'
+    },
+    {
+      key: 'actions',
+      label: '操作',
+      sortable: false,
+      cellClass: 'text-base text-gray-900 dark:text-white'
+    }
+  )
+
+  return cols
+})
+
+// Computed property for duplicate items with details
+const duplicateItemsWithDetails = computed(() => {
+  // 建立一個 map 來計算每個組合的重複次數
+  const duplicateCountMap = new Map()
+
+  duplicateItems.value.forEach(item => {
+    const key = props.riskTopicsEnabled
+      ? `${item.category_id}-${item.topic_id}-${item.risk_factor_id}`
+      : `${item.category_id}-${item.risk_factor_id}`
+
+    duplicateCountMap.set(key, (duplicateCountMap.get(key) || 0) + 1)
+  })
+
+  return duplicateItems.value.map(item => {
+    const key = props.riskTopicsEnabled
+      ? `${item.category_id}-${item.topic_id}-${item.risk_factor_id}`
+      : `${item.category_id}-${item.risk_factor_id}`
+
+    return {
+      ...item,
+      category_name: getCategoryName(item.category_id),
+      topic_name: props.riskTopicsEnabled ? getTopicName(item.topic_id) : null,
+      factor_name: getRiskFactorName(item.risk_factor_id),
+      duplicate_count: duplicateCountMap.get(key) || 0
+    }
+  })
+})
+
 // Helper methods to get names by ID
 const getCategoryName = (categoryId) => {
   const category = props.riskCategories.find(cat => cat.id === categoryId)
@@ -1378,6 +1443,42 @@ const formatDateTime = (dateTime) => {
   } catch (error) {
     return dateTime
   }
+}
+
+// Duplicate detection functions
+const checkDuplicate = (items, newItem, excludeId = null) => {
+  return items.find(item =>
+    item.id !== excludeId &&
+    item.category_id === newItem.categoryId &&
+    (props.riskTopicsEnabled ? item.topic_id === newItem.topicId : true) &&
+    item.risk_factor_id === newItem.riskFactorId
+  )
+}
+
+const findAllDuplicates = (items) => {
+  const duplicates = []
+  const seen = new Map()
+
+  items.forEach(item => {
+    // 建立唯一鍵值，根據是否啟用主題層來決定
+    const key = props.riskTopicsEnabled
+      ? `${item.category_id}-${item.topic_id}-${item.risk_factor_id}`
+      : `${item.category_id}-${item.risk_factor_id}`
+
+    if (seen.has(key)) {
+      const existing = seen.get(key)
+      // 加入第一次出現的項目（如果還沒加入）
+      if (!duplicates.find(d => d.id === existing.id)) {
+        duplicates.push(existing)
+      }
+      // 加入當前重複項目
+      duplicates.push(item)
+    } else {
+      seen.set(key, item)
+    }
+  })
+
+  return duplicates
 }
 
 // Helper method to convert HTML to Excel-compatible rich text
@@ -1488,21 +1589,12 @@ const filteredRiskTopics = computed(() => {
 const filteredRiskFactors = computed(() => {
   let factors = props.riskFactors || []
 
-  console.log('=== Filtering risk factors ===')
-  console.log('Total factors:', factors.length)
-  console.log('Selected category:', formData.value.categoryId)
-  console.log('Selected topic:', formData.value.topicId)
-  console.log('Topics enabled:', props.riskTopicsEnabled)
 
   if (factors.length > 0) {
-    console.log('Sample factor (full data):', factors[0])
-    console.log('Sample factor has description?', !!factors[0].description)
-    console.log('Sample factor description length:', factors[0].description?.length || 0)
   }
 
   // 如果沒有選擇類別，顯示所有因子
   if (!formData.value.categoryId) {
-    console.log('No category selected, returning all factors')
     return factors
   }
 
@@ -1513,10 +1605,8 @@ const filteredRiskFactors = computed(() => {
       const factorTopicId = String(factor.topic_id || '')
       const selectedTopicId = String(formData.value.topicId || '')
       const match = factorTopicId === selectedTopicId
-      console.log(`Factor ${factor.id} (${factor.factor_name}) topic_id: "${factorTopicId}" (type: ${typeof factor.topic_id}), matches topic "${selectedTopicId}" (type: ${typeof formData.value.topicId}): ${match}`)
       return match
     })
-    console.log('After topic filter:', factors.length)
   } else {
     // 如果主題未啟用或未選擇主題，則按分類篩選
     factors = factors.filter(factor => {
@@ -1528,24 +1618,8 @@ const filteredRiskFactors = computed(() => {
       const hasCategoryName = !!factor.category_name
 
       const match = directCategoryMatch || hasCategoryName
-      console.log(`Factor ${factor.id} (${factor.factor_name}) - direct: ${directCategoryMatch}, has category_name: ${hasCategoryName}, final: ${match}`)
       return match
     })
-    console.log('After category filter:', factors.length)
-  }
-
-  console.log('=== Final filtered factors ===')
-  console.log('Count:', factors.length)
-  if (factors.length > 0) {
-    console.log('Factors:', factors.map(f => ({
-      id: f.id,
-      name: f.factor_name,
-      topic_id: f.topic_id,
-      category_id: f.category_id,
-      hasDescription: !!f.description,
-      descriptionLength: f.description?.length || 0
-    })))
-    console.log('First factor full data:', factors[0])
   }
 
   return factors
@@ -1598,8 +1672,6 @@ const editContent = async (content) => {
       await nextTick()
       await nextTick()
 
-      console.log('[EditContent] Available factors after fetch:', props.riskFactors?.length || 0)
-
       // 最後設置 riskFactorId 和 factorDescription
       if (originalRiskFactorId) {
         formData.value.riskFactorId = originalRiskFactorId
@@ -1610,22 +1682,16 @@ const editContent = async (content) => {
 
         // 優先使用 content 中的 factor_description（這是從資料庫 JOIN 取得的最新值）
         if (originalFactorDescription) {
-          console.log('[EditContent] Using factor description from content:', originalFactorDescription.substring(0, 50) + '...')
           formData.value.factorDescription = originalFactorDescription
           await nextTick()
         } else {
           // 如果 content 中沒有，才從 factors 列表中尋找
           const searchId = parseInt(originalRiskFactorId)
           const factor = props.riskFactors.find(f => parseInt(f.id) === searchId)
-          console.log('[EditContent] Looking for factor ID:', searchId)
-          console.log('[EditContent] Found factor:', factor ? `Yes (${factor.factor_name})` : 'No')
 
           if (factor && factor.description) {
-            console.log('[EditContent] Using factor description from list')
             formData.value.factorDescription = factor.description
             await nextTick()
-          } else {
-            console.warn('[EditContent] No factor description found')
           }
         }
       }
@@ -1658,10 +1724,7 @@ const confirmDelete = () => {
   contentToDelete.value = null
 }
 
-const submitForm = () => {
-  console.log('[submitForm] Starting form submission')
-  console.log('[submitForm] formData.value:', JSON.stringify(formData.value, null, 2))
-
+const submitForm = async () => {
   // Validate required fields - risk factor is now required
   if (!formData.value.riskFactorId) {
     alert('請選擇風險因子')
@@ -1670,7 +1733,6 @@ const submitForm = () => {
 
   // Validate factor description is required
   if (!formData.value.factorDescription || formData.value.factorDescription.trim() === '') {
-    console.error('[submitForm] factorDescription is empty!')
     alert('請輸入風險因子描述')
     return
   }
@@ -1689,24 +1751,49 @@ const submitForm = () => {
     submitData.topic = formData.value.topic
   }
 
-  console.log('[submitForm] submitData to be sent:', JSON.stringify(submitData, null, 2))
-  console.log('[submitForm] factorDescription length:', submitData.factorDescription?.length || 0)
+  // 檢查重複
+  const excludeId = showEditModal.value ? editingContent.value.id : null
+  const duplicate = checkDuplicate(props.contentData, submitData, excludeId)
+
+  if (duplicate) {
+    const categoryName = getCategoryName(duplicate.category_id)
+    const topicName = props.riskTopicsEnabled ? getTopicName(duplicate.topic_id) : '(不適用)'
+    const factorName = getRiskFactorName(duplicate.risk_factor_id)
+
+    const { $swal } = useNuxtApp()
+    const result = await $swal.fire({
+      title: '偵測到重複資料',
+      html: `
+        <div class="text-left">
+          <p class="mb-2">此組合已經存在：</p>
+          <ul class="list-disc list-inside space-y-1">
+            <li><strong>風險類別：</strong>${categoryName}</li>
+            ${props.riskTopicsEnabled ? `<li><strong>風險主題：</strong>${topicName}</li>` : ''}
+            <li><strong>風險因子：</strong>${factorName}</li>
+            <li><strong>重複項目 ID：</strong>${duplicate.id}</li>
+          </ul>
+          <p class="mt-3 text-red-600">無法新增或更新為重複的題目組合。</p>
+        </div>
+      `,
+      icon: 'error',
+      confirmButtonText: '確定',
+      confirmButtonColor: '#dc2626'
+    })
+    return
+  }
 
   // 保存當前頁面狀態到 localStorage
   if (process.client && dataTableRef.value) {
     const currentPageNumber = dataTableRef.value.getCurrentPage()
     const storageKey = `content_management_page_${props.contentType}_${props.parentId}`
     localStorage.setItem(storageKey, currentPageNumber.toString())
-    console.log('[submitForm] Saved current page:', currentPageNumber)
   }
 
   if (showAddModal.value) {
     // Add new content
-    console.log('[submitForm] Emitting add-content')
     emit('add-content', submitData)
   } else if (showEditModal.value) {
     // Update existing content
-    console.log('[submitForm] Emitting update-content for ID:', editingContent.value.id)
     emit('update-content', editingContent.value.id, submitData)
   }
 
@@ -1748,6 +1835,21 @@ const editCategory = (category) => {
 
 const deleteCategory = (category) => {
   emit('delete-category', category.id)
+}
+
+// Duplicate modal methods
+const editContentFromDuplicate = (item) => {
+  // 關閉重複資料 Modal
+  showDuplicateModal.value = false
+  // 呼叫原有的編輯函數
+  editContent(item)
+}
+
+const deleteContentFromDuplicate = (item) => {
+  // 關閉重複資料 Modal
+  showDuplicateModal.value = false
+  // 呼叫原有的刪除函數
+  deleteContent(item)
 }
 
 const submitCategoryForm = () => {
@@ -1802,8 +1904,6 @@ watch(() => showAddCategoryModal.value || showEditCategoryModal.value, (newValue
 
 // Watch for category changes to implement cascading selection
 watch(() => formData.value.categoryId, async (newCategoryId, oldCategoryId) => {
-  console.log('Category changed from', oldCategoryId, 'to', newCategoryId)
-
   // Clear topic and risk factor when category changes
   if (newCategoryId !== oldCategoryId) {
     formData.value.topicId = ''
@@ -1813,7 +1913,6 @@ watch(() => formData.value.categoryId, async (newCategoryId, oldCategoryId) => {
     // Fetch topics for the selected category if risk topics are enabled
     if (newCategoryId && props.riskTopicsEnabled) {
       try {
-        console.log('Fetching topics for category:', newCategoryId)
         await fetchTopicsForCategory(newCategoryId)
       } catch (error) {
         console.error('Failed to fetch topics for category:', error)
@@ -1823,7 +1922,6 @@ watch(() => formData.value.categoryId, async (newCategoryId, oldCategoryId) => {
     // Fetch factors for the selected category
     if (newCategoryId) {
       try {
-        console.log('Fetching factors for category:', newCategoryId)
         await fetchFactorsForCategory(newCategoryId)
       } catch (error) {
         console.error('Failed to fetch factors for category:', error)
@@ -1834,8 +1932,6 @@ watch(() => formData.value.categoryId, async (newCategoryId, oldCategoryId) => {
 
 // Watch for topic changes to clear risk factor selection
 watch(() => formData.value.topicId, async (newTopicId, oldTopicId) => {
-  console.log('Topic changed from', oldTopicId, 'to', newTopicId)
-
   // Clear risk factor when topic changes
   if (newTopicId !== oldTopicId) {
     formData.value.riskFactorId = ''
@@ -1844,7 +1940,6 @@ watch(() => formData.value.topicId, async (newTopicId, oldTopicId) => {
     // Fetch factors for the selected topic if risk topics are enabled and topic is selected
     if (newTopicId && props.riskTopicsEnabled && formData.value.categoryId) {
       try {
-        console.log('Fetching factors for topic:', newTopicId, 'and category:', formData.value.categoryId)
         await fetchFactorsForTopic(newTopicId, formData.value.categoryId)
       } catch (error) {
         console.error('Failed to fetch factors for topic:', error)
@@ -1855,12 +1950,6 @@ watch(() => formData.value.topicId, async (newTopicId, oldTopicId) => {
 
 // Watch for risk factor changes to auto-populate description
 watch(() => formData.value.riskFactorId, async (newFactorId, oldFactorId) => {
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-  console.log('[Watcher] Risk factor ID changed')
-  console.log('[Watcher] From:', oldFactorId, '→ To:', newFactorId)
-  console.log('[Watcher] Total available factors:', props.riskFactors?.length || 0)
-  console.log('[Watcher] Factor IDs in props:', props.riskFactors?.map(f => f.id) || [])
-
   if (newFactorId) {
     // Wait for the next tick to ensure DOM and props are updated
     await nextTick()
@@ -1868,19 +1957,8 @@ watch(() => formData.value.riskFactorId, async (newFactorId, oldFactorId) => {
     // Convert both IDs to numbers for comparison to handle type mismatch
     const searchId = parseInt(newFactorId)
     const factor = props.riskFactors.find(f => parseInt(f.id) === searchId)
-    console.log('[Watcher] Searching for factor ID:', searchId)
-    console.log('[Watcher] Type of search ID:', typeof searchId)
-    console.log('[Watcher] Sample factor ID type:', props.riskFactors[0] ? typeof props.riskFactors[0].id : 'N/A')
-    console.log('[Watcher] Found:', factor ? '✅ Yes' : '❌ No')
 
     if (factor) {
-      console.log('[Watcher] Factor details:', {
-        id: factor.id,
-        name: factor.factor_name,
-        hasDescription: !!factor.description,
-        descriptionLength: factor.description?.length || 0
-      })
-
       // Always set description from factor, even if empty
       const description = factor.description || factor.factor_description || ''
 
@@ -1890,46 +1968,24 @@ watch(() => formData.value.riskFactorId, async (newFactorId, oldFactorId) => {
 
       // Force another update cycle to ensure RichTextEditor receives the value
       await nextTick()
-      console.log('[Watcher] ✅ Description set successfully')
     } else {
-      console.warn('[Watcher] ❌ Factor not found - clearing description')
       formData.value.factorDescription = ''
     }
   } else {
     // Clear description when no factor is selected
     formData.value.factorDescription = ''
-    console.log('[Watcher] Cleared (no factor selected)')
   }
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 })
 
-// Watch props.riskFactors to debug data structure
-watch(() => props.riskFactors, (newFactors) => {
-  if (newFactors && newFactors.length > 0) {
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-    console.log('[Props] riskFactors updated')
-    console.log('[Props] Total factors:', newFactors.length)
-    console.log('[Props] First factor sample:', newFactors[0])
-    console.log('[Props] First factor has description?', !!newFactors[0]?.description)
-    console.log('[Props] Description content:', newFactors[0]?.description?.substring(0, 100) || 'No description')
-    console.log('[Props] All factor IDs:', newFactors.map(f => f.id))
-    console.log('[Props] Factors with description:', newFactors.filter(f => f.description).length)
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-  }
-}, { deep: true })
-
-// Drag and drop handlers
+// Drag and drop handlers (migrated from Sort Debug Modal)
 const handleDragStart = (event, item) => {
   draggedItem.value = item
   event.dataTransfer.effectAllowed = 'move'
   event.dataTransfer.setData('text/html', event.target)
-
-  // Add visual feedback
   event.target.closest('tr')?.classList.add('opacity-50')
 }
 
 const handleDragEnd = (event) => {
-  // Remove visual feedback
   event.target.closest('tr')?.classList.remove('opacity-50')
   draggedItem.value = null
   dragOverItem.value = null
@@ -1938,8 +1994,6 @@ const handleDragEnd = (event) => {
 const handleDragOver = (event, item) => {
   event.preventDefault()
   dragOverItem.value = item
-
-  // Add visual feedback for drop target
   const row = event.target.closest('tr')
   if (row && draggedItem.value && draggedItem.value.id !== item.id) {
     row.classList.add('border-t-2', 'border-primary-500')
@@ -1947,20 +2001,18 @@ const handleDragOver = (event, item) => {
 }
 
 const handleDragLeave = (event) => {
-  // Remove visual feedback when leaving the drop target
   const row = event.target.closest('tr')
   if (row) {
     row.classList.remove('border-t-2', 'border-primary-500')
   }
 }
 
-const handleDrop = async (event, targetItem) => {
+const handleDrop = (event, targetItem) => {
   event.preventDefault()
 
-  // Remove visual feedback - use closest table to limit scope
-  const table = event.target.closest('table')
-  const allRows = table ? table.querySelectorAll('tr') : document.querySelectorAll('tr')
-  allRows.forEach(row => {
+  // Remove visual feedback
+  const allRows = event.target.closest('table')?.querySelectorAll('tr')
+  allRows?.forEach(row => {
     row.classList.remove('border-t-2', 'border-primary-500', 'opacity-50')
   })
 
@@ -1970,8 +2022,8 @@ const handleDrop = async (event, targetItem) => {
     return
   }
 
-  // Create a new order array based on the drop
-  const items = [...props.contentData]
+  // 使用已排序的資料，確保基於正確的順序進行拖曳
+  const items = [...sortedContentData.value]
   const draggedIndex = items.findIndex(item => item.id === draggedItem.value.id)
   const targetIndex = items.findIndex(item => item.id === targetItem.id)
 
@@ -1979,13 +2031,29 @@ const handleDrop = async (event, targetItem) => {
     return
   }
 
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('🔄 主表格拖曳排序')
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log(`📌 拖曳項目: ID ${draggedItem.value.id} (原位置: ${draggedIndex})`)
+  console.log(`🎯 目標項目: ID ${targetItem.id} (位置: ${targetIndex})`)
+  console.log(`${draggedIndex < targetIndex ? '⬇️ 向下拖曳' : '⬆️ 向上拖曳'}`)
+  console.log('')
+
+  // 顯示拖曳前的狀態（變更範圍前後2位，共5位）
+  const beforeStart = Math.max(0, Math.min(draggedIndex, targetIndex) - 2)
+  const beforeEnd = Math.min(items.length, Math.max(draggedIndex, targetIndex) + 3)
+  console.log('📋 拖曳前排序:')
+  items.slice(beforeStart, beforeEnd).forEach((item, idx) => {
+    const actualIdx = beforeStart + idx
+    const marker = actualIdx === draggedIndex ? '👉' : actualIdx === targetIndex ? '🎯' : '  '
+    console.log(`${marker} 位置 ${actualIdx}: ID ${item.id}, sort_order: ${item.sort_order}`)
+  })
+  console.log('')
+
   // Remove dragged item from its original position
   const [removed] = items.splice(draggedIndex, 1)
 
   // Calculate correct insertion index
-  // Note: After removal, targetIndex is correct for both dragging up and down
-  // - Dragging down: target shifts left by 1, inserting at original targetIndex places item after target
-  // - Dragging up: target position unchanged, inserting at targetIndex places item at target's position
   const insertIndex = targetIndex
 
   // Insert it at the correct position
@@ -1995,14 +2063,25 @@ const handleDrop = async (event, targetItem) => {
   const reorderedItems = items.map((item, index) => ({
     ...item,
     sort_order: index + 1,
-    order: index + 1  // Keep 'order' for compatibility
+    order: index + 1
   }))
 
-  console.log('=== Main Table Drag and Drop ===')
-  console.log('Dragged item:', draggedItem.value.id, 'from index:', draggedIndex)
-  console.log('Target item:', targetItem.id, 'at index:', targetIndex)
-  console.log('Insert at index:', insertIndex)
-  console.log('New order:', reorderedItems.map((item, idx) => `${idx}: ID ${item.id}, sort_order: ${item.sort_order}`))
+  // 顯示拖曳後的狀態（同樣範圍）
+  const afterStart = Math.max(0, Math.min(draggedIndex, targetIndex) - 2)
+  const afterEnd = Math.min(reorderedItems.length, Math.max(draggedIndex, targetIndex) + 3)
+  console.log('✅ 拖曳後排序:')
+  reorderedItems.slice(afterStart, afterEnd).forEach((item, idx) => {
+    const actualIdx = afterStart + idx
+    const newPos = reorderedItems.findIndex(i => i.id === draggedItem.value.id)
+    const marker = actualIdx === newPos ? '✨' : '  '
+    console.log(`${marker} 位置 ${actualIdx}: ID ${item.id}, sort_order: ${item.sort_order}`)
+  })
+  console.log('')
+
+  // 顯示完整的送給後端的資料（ID和sort_order）
+  console.log('📤 送往後端的完整排序資料:')
+  console.log(reorderedItems.map(item => ({ id: item.id, sort_order: item.sort_order })))
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
   // Emit the reorder event with the new order (with updated sort_order)
   emit('reorder-content', reorderedItems)
@@ -2010,99 +2089,6 @@ const handleDrop = async (event, targetItem) => {
   draggedItem.value = null
   dragOverItem.value = null
 }
-
-// Debug Modal Drag and Drop Handlers
-const handleDebugDragStart = (event, item) => {
-  debugDraggedItem.value = item
-  event.dataTransfer.effectAllowed = 'move'
-  event.dataTransfer.setData('text/html', event.target)
-  event.target.closest('tr')?.classList.add('opacity-50')
-}
-
-const handleDebugDragEnd = (event) => {
-  event.target.closest('tr')?.classList.remove('opacity-50')
-  debugDraggedItem.value = null
-  debugDragOverItem.value = null
-}
-
-const handleDebugDragOver = (event, item) => {
-  event.preventDefault()
-  debugDragOverItem.value = item
-  const row = event.target.closest('tr')
-  if (row && debugDraggedItem.value && debugDraggedItem.value.id !== item.id) {
-    row.classList.add('border-t-2', 'border-purple-500')
-  }
-}
-
-const handleDebugDragLeave = (event) => {
-  const row = event.target.closest('tr')
-  if (row) {
-    row.classList.remove('border-t-2', 'border-purple-500')
-  }
-}
-
-const handleDebugDrop = (event, targetItem) => {
-  event.preventDefault()
-
-  // Remove visual feedback
-  const allRows = event.target.closest('table')?.querySelectorAll('tr')
-  allRows?.forEach(row => {
-    row.classList.remove('border-t-2', 'border-purple-500', 'opacity-50')
-  })
-
-  if (!debugDraggedItem.value || debugDraggedItem.value.id === targetItem.id) {
-    debugDraggedItem.value = null
-    debugDragOverItem.value = null
-    return
-  }
-
-  // Create a new order array based on the drop
-  const items = [...debugItems.value]
-  const draggedIndex = items.findIndex(item => item.id === debugDraggedItem.value.id)
-  const targetIndex = items.findIndex(item => item.id === targetItem.id)
-
-  if (draggedIndex === -1 || targetIndex === -1) {
-    return
-  }
-
-  // Remove dragged item from its original position
-  const [removed] = items.splice(draggedIndex, 1)
-
-  // Calculate correct insertion index
-  const insertIndex = targetIndex
-
-  // Insert it at the correct position
-  items.splice(insertIndex, 0, removed)
-
-  // Update sort_order for all items to reflect their new positions
-  debugItems.value = items.map((item, index) => ({
-    ...item,
-    sort_order: index + 1,
-    order: index + 1
-  }))
-
-  console.log('=== Debug Modal Drag and Drop ===')
-  console.log('Dragged item:', debugDraggedItem.value.id, 'from index:', draggedIndex)
-  console.log('Target item:', targetItem.id, 'at index:', targetIndex)
-  console.log('New order:', debugItems.value.map((item, idx) => `${idx}: ID ${item.id}, sort_order: ${item.sort_order}`))
-
-  debugDraggedItem.value = null
-  debugDragOverItem.value = null
-}
-
-// Watch for modal open to initialize debug items
-watch(showSortDebugModal, (newVal) => {
-  if (newVal) {
-    // Initialize debug items with current sorted data
-    debugItems.value = sortedContentData.value.map((item, index) => ({
-      ...item,
-      sort_order: item.sort_order || item.order || index + 1,
-      order: item.sort_order || item.order || index + 1
-    }))
-    // Initialize empty notes
-    debugNotes.value = {}
-  }
-})
 
 // Dropdown and Modal Methods
 const toggleExportImportDropdown = () => {
@@ -2793,8 +2779,6 @@ const sortedContentData = computed(() => {
 
 // Debug: Watch contentData prop changes and restore page
 watch(() => props.contentData, async (newValue) => {
-  console.log(`[ContentManagement] Received contentData: ${newValue?.length || 0} items`)
-
   // 恢復保存的頁面狀態
   if (process.client && dataTableRef.value && newValue && newValue.length > 0) {
     await nextTick() // 等待 DOM 更新
@@ -2804,10 +2788,17 @@ watch(() => props.contentData, async (newValue) => {
 
     if (savedPage) {
       const pageNumber = parseInt(savedPage, 10)
-      console.log('[ContentManagement] Restoring page:', pageNumber)
       dataTableRef.value.setCurrentPage(pageNumber)
       // 清除保存的頁面，避免影響其他操作
       localStorage.removeItem(storageKey)
+    }
+  }
+
+  // 檢查重複資料
+  if (newValue && newValue.length > 0) {
+    duplicateItems.value = findAllDuplicates(newValue)
+    if (duplicateItems.value.length > 0) {
+      console.warn(`偵測到 ${duplicateItems.value.length} 筆重複資料`)
     }
   }
 }, { immediate: true })

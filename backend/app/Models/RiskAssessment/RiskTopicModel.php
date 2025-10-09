@@ -137,19 +137,51 @@ class RiskTopicModel extends Model
 
     /**
      * Reorder topics within a template
+     * Expects $topicOrders to be an array of objects with 'id' and 'sort_order' keys
      */
     public function reorderTopics($templateId, $topicOrders)
     {
         $this->db->transStart();
 
-        foreach ($topicOrders as $order => $topicId) {
-            $this->update($topicId, [
-                'sort_order' => $order + 1
-            ]);
+        try {
+            // First verify all topics belong to this template
+            $topicIds = array_column($topicOrders, 'id');
+            $existingTopics = $this->whereIn('id', $topicIds)
+                ->where('template_id', $templateId)
+                ->findAll();
+
+            if (count($existingTopics) !== count($topicIds)) {
+                throw new \Exception("部分主題不存在或不屬於此範本");
+            }
+
+            // Prepare batch update data
+            $currentTime = date('Y-m-d H:i:s');
+            $batchData = [];
+
+            foreach ($topicOrders as $order) {
+                $batchData[] = [
+                    'id' => (int)$order['id'],
+                    'sort_order' => (int)$order['sort_order'],
+                    'updated_at' => $currentTime
+                ];
+            }
+
+            // Use CI4's updateBatch for efficient batch update
+            if (!empty($batchData)) {
+                $this->db->table($this->table)->updateBatch($batchData, 'id');
+            }
+
+            $this->db->transComplete();
+
+            if ($this->db->transStatus() === false) {
+                throw new \Exception('資料庫交易失敗');
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            $this->db->transRollback();
+            log_message('error', 'RiskTopicModel::reorderTopics - ' . $e->getMessage());
+            return false;
         }
-
-        $this->db->transComplete();
-
-        return $this->db->transStatus();
     }
 }

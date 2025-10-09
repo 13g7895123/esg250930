@@ -144,6 +144,19 @@ class TemplateRedirectController extends Controller
         try {
             $input = json_decode(file_get_contents('php://input'), true);
 
+            // Check if version_name already exists
+            $existingTemplate = $this->templateModel->where('version_name', $input['version_name'] ?? 'New Template')->first();
+            if ($existingTemplate) {
+                http_response_code(400);
+                $errorResponse = [
+                    'success' => false,
+                    'message' => '版本名稱已存在，請使用不同的名稱',
+                    'data' => null
+                ];
+                echo json_encode($errorResponse, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                exit;
+            }
+
             $data = [
                 'version_name' => $input['version_name'] ?? 'New Template',
                 'description' => $input['description'] ?? '',
@@ -215,6 +228,24 @@ class TemplateRedirectController extends Controller
             }
 
             $input = json_decode(file_get_contents('php://input'), true);
+
+            // Check if version_name already exists (excluding current template)
+            if (isset($input['version_name'])) {
+                $duplicateTemplate = $this->templateModel
+                    ->where('version_name', $input['version_name'])
+                    ->where('id !=', $id)
+                    ->first();
+                if ($duplicateTemplate) {
+                    http_response_code(400);
+                    $errorResponse = [
+                        'success' => false,
+                        'message' => '版本名稱已存在，請使用不同的名稱',
+                        'data' => null
+                    ];
+                    echo json_encode($errorResponse, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                    exit;
+                }
+            }
 
             // Handle risk_topics_enabled before building data array (convert to 0/1)
             if (isset($input['risk_topics_enabled'])) {

@@ -514,19 +514,37 @@ class TemplateContentController extends BaseController
             $db->transStart();
 
             try {
-                foreach ($input['orders'] as $order) {
-                    // Verify content belongs to template
-                    $content = $this->contentModel->where('id', $order['id'])
-                                                  ->where('template_id', $templateId)
-                                                  ->first();
+                // First verify all content items belong to this template
+                $contentIds = array_column($input['orders'], 'id');
+                $existingContents = $this->contentModel
+                    ->whereIn('id', $contentIds)
+                    ->where('template_id', $templateId)
+                    ->findAll();
 
-                    if (!$content) {
-                        throw new \Exception("範本內容 ID {$order['id']} 不存在或不屬於此範本");
-                    }
-
-                    // Update sort order
-                    $this->contentModel->update($order['id'], ['sort_order' => $order['sort_order']]);
+                if (count($existingContents) !== count($contentIds)) {
+                    throw new \Exception("部分範本內容不存在或不屬於此範本");
                 }
+
+                // Prepare batch update data
+                $currentTime = date('Y-m-d H:i:s');
+                $batchData = [];
+                $updatedOrders = [];
+
+                foreach ($input['orders'] as $order) {
+                    $batchData[] = [
+                        'id' => (int)$order['id'],
+                        'sort_order' => (int)$order['sort_order'],
+                        'updated_at' => $currentTime
+                    ];
+
+                    $updatedOrders[] = [
+                        'id' => (int)$order['id'],
+                        'sort_order' => (int)$order['sort_order']
+                    ];
+                }
+
+                // Use CI4's updateBatch for efficient batch update
+                $affectedRows = $db->table('template_contents')->updateBatch($batchData, 'id');
 
                 $db->transComplete();
 
@@ -539,7 +557,11 @@ class TemplateContentController extends BaseController
 
                 return $this->response->setJSON([
                     'success' => true,
-                    'message' => '排序更新成功'
+                    'message' => '排序更新成功',
+                    'data' => [
+                        'updated_count' => $affectedRows,
+                        'server_orders' => $updatedOrders
+                    ]
                 ]);
 
             } catch (\Exception $e) {

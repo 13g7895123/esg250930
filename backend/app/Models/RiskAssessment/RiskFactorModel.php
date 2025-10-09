@@ -18,6 +18,7 @@ class RiskFactorModel extends Model
         'topic_id',
         'factor_name',
         'description',
+        'sort_order',
         'status'
     ];
 
@@ -133,5 +134,56 @@ class RiskFactorModel extends Model
                 ->where('status', 'active')
                 ->countAllResults(),
         ];
+    }
+
+    /**
+     * Reorder factors within a template
+     * Expects $factorOrders to be an array of objects with 'id' and 'sort_order' keys
+     */
+    public function reorderFactors($templateId, $factorOrders)
+    {
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        try {
+            // First verify all factors belong to this template
+            $factorIds = array_column($factorOrders, 'id');
+            $existingFactors = $this->whereIn('id', $factorIds)
+                ->where('template_id', $templateId)
+                ->findAll();
+
+            if (count($existingFactors) !== count($factorIds)) {
+                throw new \Exception("部分風險因子不存在或不屬於此範本");
+            }
+
+            // Prepare batch update data
+            $currentTime = date('Y-m-d H:i:s');
+            $batchData = [];
+
+            foreach ($factorOrders as $order) {
+                $batchData[] = [
+                    'id' => (int)$order['id'],
+                    'sort_order' => (int)$order['sort_order'],
+                    'updated_at' => $currentTime
+                ];
+            }
+
+            // Use CI4's updateBatch for efficient batch update
+            if (!empty($batchData)) {
+                $db->table($this->table)->updateBatch($batchData, 'id');
+            }
+
+            $db->transComplete();
+
+            if ($db->transStatus() === false) {
+                throw new \Exception('資料庫交易失敗');
+            }
+
+            return true;
+        } catch (\Exception $e) {
+            $db->transRollback();
+            log_message('error', 'RiskFactorModel::reorderFactors - ' . $e->getMessage());
+            return false;
+        }
     }
 }

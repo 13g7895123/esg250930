@@ -405,6 +405,31 @@
           </button>
         </template>
 
+        <!-- Custom Category Name Cell with Text and Tooltip -->
+        <template #cell-category_name="{ item }">
+          <TextWithTooltip
+            :text="item.category_name || '-'"
+            :truncate-length="0"
+            custom-class="text-base font-medium text-gray-900 dark:text-white"
+          />
+        </template>
+
+        <!-- Custom Description Cell with CSS Tooltip -->
+        <template #cell-description="{ item }">
+          <div class="relative group inline-block">
+            <span class="text-base text-gray-500 dark:text-gray-400 cursor-help">
+              {{ truncateText(stripHtml(item.description || ''), 10) }}
+            </span>
+            <!-- Custom CSS Tooltip -->
+            <div
+              v-if="item.description && stripHtml(item.description).length > 10"
+              class="absolute left-0 top-full mt-2 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-[9999] whitespace-nowrap text-sm font-normal max-w-md"
+            >
+              {{ stripHtml(item.description) }}
+            </div>
+          </div>
+        </template>
+
         <!-- Custom Actions Cell -->
         <template #cell-actions="{ item }">
           <div class="flex items-center space-x-2">
@@ -546,14 +571,49 @@
           </button>
         </template>
 
-        <!-- Custom Description Cell with HTML Rendering and Truncation -->
+        <!-- Custom Factor Name Cell with Text and Tooltip -->
+        <template #cell-factor_name="{ item }">
+          <TextWithTooltip
+            :text="item.factor_name || '-'"
+            :truncate-length="0"
+            custom-class="text-base font-medium text-gray-900 dark:text-white"
+          />
+        </template>
+
+        <!-- Custom Category Name Cell with Text and Tooltip -->
+        <template #cell-category_name="{ item }">
+          <TextWithTooltip
+            :text="item.category_name || '-'"
+            :truncate-length="0"
+            custom-class="text-base text-gray-500 dark:text-gray-400"
+          />
+        </template>
+
+        <!-- Custom Topic Name Cell with Text and Tooltip -->
+        <template #cell-topic_name="{ item }">
+          <TextWithTooltip
+            v-if="item.topic_name"
+            :text="item.topic_name"
+            :truncate-length="0"
+            custom-class="text-base text-gray-500 dark:text-gray-400"
+          />
+          <span v-else class="text-base text-gray-400 dark:text-gray-500">-</span>
+        </template>
+
+        <!-- Custom Description Cell with HTML Rendering and CSS Tooltip -->
         <template #cell-description="{ item }">
-          <div
-            v-html="truncateHtmlDescription(item.description)"
-            class="text-base text-gray-500 dark:text-gray-400 cursor-help"
-            @mouseenter="showTooltip($event, item)"
-            @mouseleave="hideTooltip"
-          ></div>
+          <div class="relative group inline-block">
+            <div
+              v-html="truncateHtmlDescription(item.description)"
+              class="text-base text-gray-500 dark:text-gray-400 cursor-help"
+            ></div>
+            <!-- Custom CSS Tooltip -->
+            <div
+              v-if="item.description && stripHtml(item.description).length > 10"
+              class="absolute left-0 top-full mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-[9999] min-w-[300px] max-w-[500px] whitespace-normal text-sm font-normal prose prose-sm dark:prose-invert max-w-none"
+              v-html="item.description"
+            ></div>
+          </div>
         </template>
 
         <!-- Custom Actions Cell -->
@@ -742,6 +802,40 @@
           </button>
         </template>
 
+        <!-- Custom Topic Name Cell with Text and Tooltip -->
+        <template #cell-topic_name="{ item }">
+          <TextWithTooltip
+            :text="item.topic_name || '-'"
+            :truncate-length="0"
+            custom-class="text-base font-medium text-gray-900 dark:text-white"
+          />
+        </template>
+
+        <!-- Custom Category Name Cell with Text and Tooltip -->
+        <template #cell-category_name="{ item }">
+          <TextWithTooltip
+            :text="item.category_name || '-'"
+            :truncate-length="0"
+            custom-class="text-base text-gray-500 dark:text-gray-400"
+          />
+        </template>
+
+        <!-- Custom Description Cell with CSS Tooltip -->
+        <template #cell-description="{ item }">
+          <div class="relative group inline-block">
+            <span class="text-base text-gray-500 dark:text-gray-400 cursor-help">
+              {{ truncateText(stripHtml(item.description || ''), 10) }}
+            </span>
+            <!-- Custom CSS Tooltip -->
+            <div
+              v-if="item.description && stripHtml(item.description).length > 10"
+              class="absolute left-0 top-full mt-2 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-[9999] whitespace-nowrap text-sm font-normal max-w-md"
+            >
+              {{ stripHtml(item.description) }}
+            </div>
+          </div>
+        </template>
+
         <!-- Custom Actions Cell -->
         <template #cell-actions="{ item }">
           <div class="flex items-center space-x-2">
@@ -873,28 +967,6 @@
       @close="showDeleteRiskTopicModal = false"
       @confirm="confirmDeleteRiskTopic"
     />
-
-    <!-- Tooltip for Risk Factor Description (rendered at body level to avoid overflow issues) -->
-    <Teleport to="body">
-      <div
-        v-if="tooltipData.visible && tooltipData.content"
-        :style="{
-          position: 'fixed',
-          left: tooltipData.x + 'px',
-          top: tooltipData.y + 'px',
-          zIndex: 9999
-        }"
-        class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl p-4 max-w-2xl w-96 max-h-96 overflow-y-auto"
-        @mouseenter="keepTooltipOpen"
-        @mouseleave="hideTooltip"
-      >
-        <div
-          class="text-sm text-gray-700 dark:text-gray-300 prose prose-sm dark:prose-invert max-w-none"
-          v-html="tooltipData.content"
-        ></div>
-        <div class="absolute -top-2 left-4 w-4 h-4 bg-white dark:bg-gray-800 border-l border-t border-gray-200 dark:border-gray-700 transform rotate-45"></div>
-      </div>
-    </Teleport>
   </div>
 </template>
 
@@ -1005,15 +1077,6 @@ const formData = ref({
 // Template refs for focus management
 const versionNameInput = ref(null)
 
-// Tooltip state for risk factor description
-const tooltipData = ref({
-  visible: false,
-  content: '',
-  x: 0,
-  y: 0
-})
-let tooltipTimeout = null
-
 // Notification system using SweetAlert
 const { showSuccess, showError, showLoading, closeAll } = useNotification()
 
@@ -1054,24 +1117,12 @@ const riskCategoryColumns = ref([
   {
     key: 'category_name',
     label: '類別名稱',
-    sortable: true,
-    cellClass: 'text-base font-medium text-gray-900 dark:text-white'
+    sortable: true
   },
   {
     key: 'description',
     label: '描述',
-    sortable: false,
-    cellClass: 'text-base text-gray-500 dark:text-gray-400 cursor-help',
-    formatter: (value) => {
-      if (!value) return '-'
-      const text = value.replace(/<[^>]*>/g, '') // Strip HTML tags for plain text
-      return text.length > 10 ? text.substring(0, 10) + '...' : text
-    },
-    tooltip: (row) => {
-      // Strip HTML for tooltip to show plain text
-      const text = (row.description || '').replace(/<[^>]*>/g, '')
-      return text
-    }
+    sortable: false
   },
   {
     key: 'created_at',
@@ -1093,72 +1144,22 @@ const riskFactorColumns = ref([
   {
     key: 'factor_name',
     label: '因子名稱',
-    sortable: true,
-    cellClass: 'text-base font-medium text-gray-900 dark:text-white cursor-help',
-    formatter: (value) => {
-      if (!value) return '-'
-      return value.length > 6 ? value.substring(0, 6) + '...' : value
-    },
-    tooltip: (row) => row.factor_name || ''
+    sortable: true
   },
   {
     key: 'category_name',
     label: '所屬類別',
-    sortable: true,
-    cellClass: 'text-base text-gray-500 dark:text-gray-400'
+    sortable: true
   },
   {
     key: 'topic_name',
     label: '所屬主題',
-    sortable: true,
-    cellClass: 'text-base text-gray-500 dark:text-gray-400 cursor-help',
-    formatter: (value) => {
-      if (!value) return '-'
-      return value.length > 6 ? value.substring(0, 6) + '...' : value
-    },
-    tooltip: (row) => row.topic_name || ''
+    sortable: true
   },
   {
     key: 'description',
     label: '描述',
-    sortable: false,
-    cellClass: 'text-base text-gray-500 dark:text-gray-400 cursor-help',
-    isHtml: true,
-    formatter: (value) => {
-      if (!value) return '-'
-      // For HTML content, strip tags for length check but preserve HTML for display
-      const textOnly = value.replace(/<[^>]*>/g, '')
-      if (textOnly.length <= 10) return value
-
-      // Find a good truncation point that doesn't break HTML tags
-      let truncated = ''
-      let textLength = 0
-      const htmlRegex = /<[^>]*>|[^<]+/g
-      let match
-
-      while ((match = htmlRegex.exec(value)) !== null && textLength < 10) {
-        const piece = match[0]
-        if (piece.startsWith('<')) {
-          truncated += piece // Keep HTML tags intact
-        } else {
-          const remaining = 10 - textLength
-          if (piece.length <= remaining) {
-            truncated += piece
-            textLength += piece.length
-          } else {
-            truncated += piece.substring(0, remaining) + '...'
-            textLength = 10
-          }
-        }
-      }
-
-      return truncated
-    },
-    tooltip: (row) => {
-      // Convert HTML to text format for tooltip (strip tags to show readable text)
-      const text = (row.description || '').replace(/<[^>]*>/g, '')
-      return text
-    }
+    sortable: false
   },
   {
     key: 'created_at',
@@ -1180,35 +1181,17 @@ const riskTopicColumns = ref([
   {
     key: 'topic_name',
     label: '主題名稱',
-    sortable: true,
-    cellClass: 'text-base font-medium text-gray-900 dark:text-white cursor-help',
-    formatter: (value) => {
-      if (!value) return '-'
-      return value.length > 6 ? value.substring(0, 6) + '...' : value
-    },
-    tooltip: (row) => row.topic_name || ''
+    sortable: true
   },
   {
     key: 'category_name',
     label: '所屬類別',
-    sortable: true,
-    cellClass: 'text-base text-gray-500 dark:text-gray-400'
+    sortable: true
   },
   {
     key: 'description',
     label: '描述',
-    sortable: false,
-    cellClass: 'text-base text-gray-500 dark:text-gray-400 cursor-help',
-    formatter: (value) => {
-      if (!value) return '-'
-      const text = value.replace(/<[^>]*>/g, '') // Strip HTML tags for plain text
-      return text.length > 10 ? text.substring(0, 10) + '...' : text
-    },
-    tooltip: (row) => {
-      // Strip HTML for tooltip to show plain text
-      const text = (row.description || '').replace(/<[^>]*>/g, '')
-      return text
-    }
+    sortable: false
   },
   {
     key: 'created_at',
@@ -1269,40 +1252,17 @@ const formatDate = (date) => {
   }).format(dateObj)
 }
 
-// Tooltip methods for risk factor description
-const showTooltip = (event, item) => {
-  const content = item.description
-  if (!content) return
-
-  // Clear any existing timeout
-  if (tooltipTimeout) {
-    clearTimeout(tooltipTimeout)
-  }
-
-  // Get the element's position
-  const rect = event.target.getBoundingClientRect()
-
-  // Position tooltip below the element
-  tooltipData.value = {
-    visible: true,
-    content: content,
-    x: rect.left,
-    y: rect.bottom + 8 // 8px gap below the element
-  }
+// Strip HTML tags from string
+const stripHtml = (html) => {
+  if (!html) return ''
+  return html.replace(/<[^>]*>/g, '')
 }
 
-const hideTooltip = () => {
-  // Add a small delay to allow mouse to move to tooltip
-  tooltipTimeout = setTimeout(() => {
-    tooltipData.value.visible = false
-  }, 100)
-}
-
-const keepTooltipOpen = () => {
-  // Cancel hide timeout when mouse enters tooltip
-  if (tooltipTimeout) {
-    clearTimeout(tooltipTimeout)
-  }
+// Truncate text to specified length
+const truncateText = (text, maxLength) => {
+  if (!text) return '-'
+  if (text.length <= maxLength) return text
+  return text.substring(0, maxLength) + '...'
 }
 
 const editTemplate = (template) => {
@@ -1344,7 +1304,9 @@ const confirmCopy = async () => {
   } catch (error) {
     closeAll()
     console.error('Copy template error:', error)
-    await showError(error?.message || '複製範本時發生錯誤，請稍後再試')
+    // 使用 API 回傳的錯誤訊息
+    const errorMessage = error.error?.message || error.message || '複製範本時發生錯誤，請稍後再試'
+    await showError(errorMessage)
   }
 }
 
@@ -1372,7 +1334,9 @@ const confirmDelete = async () => {
   } catch (error) {
     closeAll()
     console.error('Delete template error:', error)
-    await showError(error?.message || '刪除範本時發生錯誤，請稍後再試')
+    // 使用 API 回傳的錯誤訊息
+    const errorMessage = error.error?.message || error.message || '刪除範本時發生錯誤，請稍後再試'
+    await showError(errorMessage)
   }
 }
 
@@ -1811,6 +1775,9 @@ const submitForm = async () => {
 
   isSubmitting.value = true
 
+  // 顯示 loading
+  showLoading(showAddModal.value ? '正在新增範本...' : '正在更新範本...')
+
   try {
     if (showAddModal.value) {
       // Add new template
@@ -1818,6 +1785,7 @@ const submitForm = async () => {
         versionName: formData.value.versionName
       })
 
+      closeAll() // 關閉 loading
       await showSuccess('新增成功', `範本「${formData.value.versionName}」已成功建立`)
     } else if (showEditModal.value) {
       // Update existing template
@@ -1825,14 +1793,28 @@ const submitForm = async () => {
         versionName: formData.value.versionName
       })
 
+      closeAll() // 關閉 loading
       await showSuccess('更新成功', `範本「${formData.value.versionName}」已成功更新`)
     }
 
     closeModals()
   } catch (error) {
     console.error('Form submission error:', error)
+    console.log('Error structure:', {
+      'error': error,
+      'error.error': error.error,
+      'error.error?.message': error.error?.message,
+      'error.message': error.message,
+      'error.data': error.data,
+      'error.data?.message': error.data?.message
+    })
 
-    await showError(showAddModal.value ? '新增失敗' : '更新失敗', '操作時發生錯誤，請稍後再試')
+    closeAll() // 關閉 loading
+
+    // 使用 API 回傳的錯誤訊息
+    const errorMessage = error.error?.message || error.message || '操作時發生錯誤，請稍後再試'
+    console.log('Extracted error message:', errorMessage)
+    await showError(showAddModal.value ? '新增失敗' : '更新失敗', errorMessage)
   } finally {
     isSubmitting.value = false
   }

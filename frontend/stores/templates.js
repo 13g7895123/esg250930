@@ -227,7 +227,16 @@ export const useTemplatesStore = defineStore('templates', () => {
     } catch (err) {
       // Rollback optimistic update
       Object.assign(template, originalData)
-      
+
+      console.log('[Store] Update template error:', err)
+      console.log('[Store] Error structure:', {
+        'err': err,
+        'err.error': err.error,
+        'err.error?.message': err.error?.message,
+        'err.message': err.message,
+        'err.data': err.data
+      })
+
       handleError(err, 'Failed to update template')
       throw err
     } finally {

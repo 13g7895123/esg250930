@@ -78,6 +78,15 @@ class ApiClient {
    * Handle enhanced error responses from the backend
    */
   handleEnhancedError(error, requestId, duration, endpoint) {
+    console.log('[API Client] Raw error received:', error)
+    console.log('[API Client] Error properties:', {
+      'error.data': error.data,
+      'error.status': error.status,
+      'error.statusCode': error.statusCode,
+      'error.message': error.message,
+      'error.statusText': error.statusText
+    })
+
     const baseError = {
       success: false,
       data: null,
@@ -92,7 +101,7 @@ class ApiClient {
 
     // Handle enhanced backend error format
     if (error.data && typeof error.data === 'object') {
-      return {
+      const enhancedError = {
         ...baseError,
         error: {
           code: error.data.error?.code || error.status || 'UNKNOWN_ERROR',
@@ -107,10 +116,12 @@ class ApiClient {
           ...error.data.meta
         }
       }
+      console.log('[API Client] Enhanced error created:', enhancedError)
+      return enhancedError
     }
 
     // Handle standard errors
-    return {
+    const standardError = {
       ...baseError,
       error: {
         code: error.status || error.statusCode || 'NETWORK_ERROR',
@@ -120,6 +131,8 @@ class ApiClient {
         suggestion: 'Please check your internet connection and try again.'
       }
     }
+    console.log('[API Client] Standard error created:', standardError)
+    return standardError
   }
 
   // Templates API

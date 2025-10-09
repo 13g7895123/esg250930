@@ -1798,25 +1798,43 @@ class QuestionManagementController extends BaseController
             $updatedOrders = [];
 
             try {
+                // 首先批量驗證所有內容是否存在且屬於此評估記錄
+                $contentIds = array_column($input['orders'], 'id');
+                $validContents = $this->contentModel
+                    ->whereIn('id', $contentIds)
+                    ->where('assessment_id', $assessmentId)
+                    ->findAll();
+
+                // 檢查是否所有內容都有效
+                if (count($validContents) !== count($contentIds)) {
+                    $validIds = array_column($validContents, 'id');
+                    $invalidIds = array_diff($contentIds, $validIds);
+                    throw new \Exception("題項內容 ID " . implode(', ', $invalidIds) . " 不存在或不屬於此評估記錄");
+                }
+
+                // 使用 CI4 的 updateBatch() 方法進行批次更新
+                $currentTime = date('Y-m-d H:i:s');
+                $batchData = [];
+
                 foreach ($input['orders'] as $order) {
-                    // 驗證內容是否屬於此評估記錄
-                    $content = $this->contentModel->where('id', $order['id'])
-                                                  ->where('assessment_id', $assessmentId)
-                                                  ->first();
+                    $batchData[] = [
+                        'id' => (int)$order['id'],
+                        'sort_order' => (int)$order['sort_order'],
+                        'updated_at' => $currentTime
+                    ];
 
-                    if (!$content) {
-                        throw new \Exception("題項內容 ID {$order['id']} 不存在或不屬於此評估記錄");
-                    }
-
-                    // 更新排序
-                    $this->contentModel->update($order['id'], ['sort_order' => $order['sort_order']]);
-
-                    // 記錄更新的順序
                     $updatedOrders[] = [
-                        'id' => $order['id'],
-                        'sort_order' => $order['sort_order']
+                        'id' => (int)$order['id'],
+                        'sort_order' => (int)$order['sort_order']
                     ];
                 }
+
+                // 使用 Query Builder 的 updateBatch() 方法
+                // 這會自動生成 CASE WHEN SQL 語句，並且只更新指定 ID 的記錄
+                // 由於我們已經驗證所有 ID 都屬於此 assessment，這是安全的
+                $affectedRows = $db->table('question_contents')->updateBatch($batchData, 'id');
+
+                log_message('info', "CI4 updateBatch executed for assessment {$assessmentId}: {$affectedRows} rows affected, " . count($updatedOrders) . " items updated");
 
                 $db->transComplete();
 

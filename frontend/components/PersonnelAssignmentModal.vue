@@ -185,26 +185,20 @@
                         >
                         </span>
                       </h5>
-                      <span
-                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 cursor-help relative group"
-                        :title="getCategoryName(content.categoryId || content.category_id)"
-                      >
-                        {{ truncateText(getCategoryName(content.categoryId || content.category_id), 6) }}
-                      </span>
-                      <span
+                      <BadgeWithTooltip
+                        :text="getCategoryName(content.categoryId || content.category_id)"
+                        variant="category"
+                      />
+                      <BadgeWithTooltip
                         v-if="getTopicName(content.topicId)"
-                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 cursor-help relative group"
-                        :title="getTopicName(content.topicId)"
-                      >
-                        {{ truncateText(getTopicName(content.topicId), 6) }}
-                      </span>
-                      <span
+                        :text="getTopicName(content.topicId)"
+                        variant="topic"
+                      />
+                      <BadgeWithTooltip
                         v-if="getFactorName(content.factorId)"
-                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 cursor-help relative group"
-                        :title="getFactorName(content.factorId)"
-                      >
-                        {{ truncateText(getFactorName(content.factorId), 6) }}
-                      </span>
+                        :text="getFactorName(content.factorId)"
+                        variant="factor"
+                      />
                     </div>
                     <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                       {{ content.description }}
@@ -316,26 +310,20 @@
                   {{ truncateText(getFactorDescription(item.factor_id), 20) || item.content_description }}
                 </p>
                 <div class="flex items-center gap-1 mt-1">
-                  <span
-                    class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 cursor-help"
-                    :title="getCategoryName(item.category_id)"
-                  >
-                    {{ truncateText(getCategoryName(item.category_id), 6) }}
-                  </span>
-                  <span
+                  <BadgeWithTooltip
+                    :text="getCategoryName(item.category_id)"
+                    variant="category"
+                  />
+                  <BadgeWithTooltip
                     v-if="getTopicName(item.topic_id)"
-                    class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 cursor-help"
-                    :title="getTopicName(item.topic_id)"
-                  >
-                    {{ truncateText(getTopicName(item.topic_id), 6) }}
-                  </span>
-                  <span
+                    :text="getTopicName(item.topic_id)"
+                    variant="topic"
+                  />
+                  <BadgeWithTooltip
                     v-if="getFactorName(item.factor_id)"
-                    class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 cursor-help"
-                    :title="getFactorName(item.factor_id)"
-                  >
-                    {{ truncateText(getFactorName(item.factor_id), 6) }}
-                  </span>
+                    :text="getFactorName(item.factor_id)"
+                    variant="factor"
+                  />
                 </div>
               </div>
             </template>
