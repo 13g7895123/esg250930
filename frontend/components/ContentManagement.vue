@@ -982,10 +982,16 @@
     >
       <div class="p-4">
         <div class="mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <div class="flex items-center">
+          <div class="flex items-center mb-2">
             <InformationCircleIcon class="w-5 h-5 text-blue-500 mr-2" />
-            <span class="text-blue-800 dark:text-blue-200">此功能用於檢測當前的排序狀態，確認資料的 ID、風險因子描述與 sort_order 是否正確。</span>
+            <span class="text-blue-800 dark:text-blue-200 font-semibold">排序檢測說明</span>
           </div>
+          <ul class="text-sm text-blue-700 dark:text-blue-300 ml-7 space-y-1">
+            <li>• 此功能用於檢測當前的排序狀態，確認資料的 ID、風險因子描述與 sort_order 是否正確</li>
+            <li>• 可以拖曳排序測試功能，拖曳後會即時更新 sort_order 數值</li>
+            <li>• 備註欄位僅供前端測試使用，不會儲存到資料庫</li>
+            <li>• 在此 Modal 中的操作不會影響實際資料</li>
+          </ul>
         </div>
 
         <!-- Sort Debug Table -->
@@ -993,37 +999,70 @@
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-800">
               <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">
+                  拖曳
+                </th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   順序
                 </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   ID
                 </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   風險因子描述
                 </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   sort_order
+                </th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  備註
                 </th>
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
               <tr
-                v-for="(item, index) in sortedContentData"
+                v-for="(item, index) in debugItems"
                 :key="item.id"
                 :class="index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'"
+                @dragover="handleDebugDragOver($event, item)"
+                @dragleave="handleDebugDragLeave"
+                @drop="handleDebugDrop($event, item)"
               >
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                <!-- Drag Handle -->
+                <td class="px-4 py-4 whitespace-nowrap">
+                  <div
+                    class="cursor-move text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    draggable="true"
+                    @dragstart="handleDebugDragStart($event, item)"
+                    @dragend="handleDebugDragEnd"
+                  >
+                    <Bars3Icon class="w-5 h-5" />
+                  </div>
+                </td>
+                <!-- Order -->
+                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                   {{ index + 1 }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                <!-- ID -->
+                <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                   {{ item.id }}
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                <!-- Description -->
+                <td class="px-4 py-4 text-sm text-gray-700 dark:text-gray-300">
                   {{ (item.a_content || item.description || '無描述').substring(0, 5) }}{{ (item.a_content || item.description || '').length > 5 ? '...' : '' }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                <!-- Sort Order -->
+                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                   {{ item.sort_order || item.order || 0 }}
+                </td>
+                <!-- Notes -->
+                <td class="px-4 py-4">
+                  <input
+                    v-model="debugNotes[item.id]"
+                    type="text"
+                    placeholder="輸入備註..."
+                    class="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:text-gray-100"
+                  />
                 </td>
               </tr>
             </tbody>
@@ -1032,7 +1071,7 @@
 
         <!-- Summary -->
         <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
-          總計：{{ sortedContentData.length }} 筆資料
+          總計：{{ debugItems.length }} 筆資料
         </div>
       </div>
     </Modal>
@@ -1168,6 +1207,12 @@ const showAllErrorRecords = ref(false)
 // Drag and drop state
 const draggedItem = ref(null)
 const dragOverItem = ref(null)
+
+// Debug modal drag state
+const debugDraggedItem = ref(null)
+const debugDragOverItem = ref(null)
+const debugItems = ref([])
+const debugNotes = ref({})
 
 // Tooltip state for a_content
 const tooltipData = ref({
@@ -1962,6 +2007,99 @@ const handleDrop = async (event, targetItem) => {
   draggedItem.value = null
   dragOverItem.value = null
 }
+
+// Debug Modal Drag and Drop Handlers
+const handleDebugDragStart = (event, item) => {
+  debugDraggedItem.value = item
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('text/html', event.target)
+  event.target.closest('tr')?.classList.add('opacity-50')
+}
+
+const handleDebugDragEnd = (event) => {
+  event.target.closest('tr')?.classList.remove('opacity-50')
+  debugDraggedItem.value = null
+  debugDragOverItem.value = null
+}
+
+const handleDebugDragOver = (event, item) => {
+  event.preventDefault()
+  debugDragOverItem.value = item
+  const row = event.target.closest('tr')
+  if (row && debugDraggedItem.value && debugDraggedItem.value.id !== item.id) {
+    row.classList.add('border-t-2', 'border-purple-500')
+  }
+}
+
+const handleDebugDragLeave = (event) => {
+  const row = event.target.closest('tr')
+  if (row) {
+    row.classList.remove('border-t-2', 'border-purple-500')
+  }
+}
+
+const handleDebugDrop = (event, targetItem) => {
+  event.preventDefault()
+
+  // Remove visual feedback
+  const allRows = event.target.closest('table')?.querySelectorAll('tr')
+  allRows?.forEach(row => {
+    row.classList.remove('border-t-2', 'border-purple-500', 'opacity-50')
+  })
+
+  if (!debugDraggedItem.value || debugDraggedItem.value.id === targetItem.id) {
+    debugDraggedItem.value = null
+    debugDragOverItem.value = null
+    return
+  }
+
+  // Create a new order array based on the drop
+  const items = [...debugItems.value]
+  const draggedIndex = items.findIndex(item => item.id === debugDraggedItem.value.id)
+  const targetIndex = items.findIndex(item => item.id === targetItem.id)
+
+  if (draggedIndex === -1 || targetIndex === -1) {
+    return
+  }
+
+  // Remove dragged item from its original position
+  const [removed] = items.splice(draggedIndex, 1)
+
+  // Calculate correct insertion index
+  const insertIndex = targetIndex
+
+  // Insert it at the correct position
+  items.splice(insertIndex, 0, removed)
+
+  // Update sort_order for all items to reflect their new positions
+  debugItems.value = items.map((item, index) => ({
+    ...item,
+    sort_order: index + 1,
+    order: index + 1
+  }))
+
+  console.log('=== Debug Modal Drag and Drop ===')
+  console.log('Dragged item:', debugDraggedItem.value.id, 'from index:', draggedIndex)
+  console.log('Target item:', targetItem.id, 'at index:', targetIndex)
+  console.log('New order:', debugItems.value.map((item, idx) => `${idx}: ID ${item.id}, sort_order: ${item.sort_order}`))
+
+  debugDraggedItem.value = null
+  debugDragOverItem.value = null
+}
+
+// Watch for modal open to initialize debug items
+watch(showSortDebugModal, (newVal) => {
+  if (newVal) {
+    // Initialize debug items with current sorted data
+    debugItems.value = sortedContentData.value.map((item, index) => ({
+      ...item,
+      sort_order: item.sort_order || item.order || index + 1,
+      order: item.sort_order || item.order || index + 1
+    }))
+    // Initialize empty notes
+    debugNotes.value = {}
+  }
+})
 
 // Dropdown and Modal Methods
 const toggleExportImportDropdown = () => {
