@@ -86,6 +86,15 @@
             />
             重新整理
           </button>
+
+          <!-- Sort Debug Button -->
+          <button
+            @click="showSortDebugModal = true"
+            class="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200"
+          >
+            <QueueListIcon class="w-4 h-4 mr-2" />
+            排序檢測
+          </button>
         </div>
       </template>
 
@@ -963,6 +972,71 @@
       </div>
     </Modal>
 
+    <!-- Sort Debug Modal -->
+    <Modal
+      :model-value="showSortDebugModal"
+      title="排序檢測"
+      size="3xl"
+      @update:model-value="(value) => showSortDebugModal = value"
+      @close="showSortDebugModal = false"
+    >
+      <div class="p-4">
+        <div class="mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div class="flex items-center">
+            <InformationCircleIcon class="w-5 h-5 text-blue-500 mr-2" />
+            <span class="text-blue-800 dark:text-blue-200">此功能用於檢測當前的排序狀態，確認資料的 ID、風險因子描述與 sort_order 是否正確。</span>
+          </div>
+        </div>
+
+        <!-- Sort Debug Table -->
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-800">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  順序
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  ID
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  風險因子描述
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  sort_order
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+              <tr
+                v-for="(item, index) in sortedContentData"
+                :key="item.id"
+                :class="index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'"
+              >
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                  {{ index + 1 }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {{ item.id }}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                  {{ (item.a_content || item.description || '無描述').substring(0, 5) }}{{ (item.a_content || item.description || '').length > 5 ? '...' : '' }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                  {{ item.sort_order || item.order || 0 }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Summary -->
+        <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
+          總計：{{ sortedContentData.length }} 筆資料
+        </div>
+      </div>
+    </Modal>
+
   </div>
 </template>
 
@@ -982,7 +1056,8 @@ import {
   DocumentArrowUpIcon,
   ArrowDownTrayIcon,
   ChevronDownIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  QueueListIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -1066,6 +1141,7 @@ const showAddCategoryModal = ref(false)
 const showEditCategoryModal = ref(false)
 const showRiskFactorModal = ref(false)
 const showRiskTopicModal = ref(false)
+const showSortDebugModal = ref(false)
 const contentToDelete = ref(null)
 const editingContent = ref(null)
 const editingCategory = ref(null)
