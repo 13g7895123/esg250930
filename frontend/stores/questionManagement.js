@@ -297,6 +297,41 @@ export const useQuestionManagementStore = defineStore('questionManagement', () =
   }
 
   /**
+   * 重新排序問題內容
+   */
+  const reorderQuestionContent = async (assessmentId, newOrder) => {
+    loading.value = true
+    clearError()
+
+    try {
+      // 將新的順序轉換為 API 需要的格式
+      const orders = newOrder.map((item, index) => ({
+        id: item.id,
+        sort_order: index + 1
+      }))
+
+      const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/contents/reorder`, {
+        method: 'PUT',
+        body: { orders }
+      })
+
+      if (response.success) {
+        // 更新本地狀態中的排序
+        questionContent.value[assessmentId] = newOrder
+
+        return response
+      } else {
+        throw new Error(response.message || '更新排序失敗')
+      }
+    } catch (err) {
+      handleError(err, 'Failed to reorder question content')
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
    * 載入問題架構（分類、主題、因子）
    */
   const fetchQuestionStructure = async (assessmentId) => {
@@ -436,6 +471,7 @@ export const useQuestionManagementStore = defineStore('questionManagement', () =
     addQuestionContent,
     updateQuestionContent,
     deleteQuestionContent,
+    reorderQuestionContent,
     fetchQuestionStructure,
     initialize,
     refreshAssessment,

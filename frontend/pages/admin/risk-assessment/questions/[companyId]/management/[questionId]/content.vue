@@ -150,8 +150,27 @@ const deleteQuestionContent = async (contentId) => {
   }
 }
 
-const reorderQuestionContent = (newOrder) => {
-  // TODO: Implement API call for reordering when needed
+const reorderQuestionContent = async (newOrder) => {
+  const { showSuccess, showError } = useNotification()
+
+  // 保存當前滾動位置
+  const scrollPosition = window.scrollY || document.documentElement.scrollTop
+
+  try {
+    await questionManagementStore.reorderQuestionContent(questionId, newOrder)
+
+    await showSuccess('排序成功', '題目順序已成功更新')
+
+    // 等待 DOM 更新後恢復滾動位置
+    await nextTick()
+    window.scrollTo({ top: scrollPosition, behavior: 'instant' })
+  } catch (error) {
+    console.error('Failed to reorder question content:', error)
+    await showError('排序失敗', error?.message || '無法更新題目順序，請稍後再試')
+
+    // 重新載入資料以恢復正確的順序
+    await questionManagementStore.refreshAssessment(questionId)
+  }
 }
 
 // Category management methods - Categories are now managed through structure API

@@ -1732,6 +1732,94 @@ class QuestionManagementController extends BaseController
     }
 
     /**
+     * 重新排序題項內容
+     * PUT /api/v1/question-management/assessment/{assessmentId}/contents/reorder
+     *
+     * @param int|null $assessmentId 評估記錄ID
+     * @return ResponseInterface
+     */
+    public function reorderContents($assessmentId = null)
+    {
+        try {
+            if (!$assessmentId) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '評估記錄ID為必填項目'
+                ]);
+            }
+
+            // 驗證評估記錄是否存在
+            $assessment = $this->assessmentModel->find($assessmentId);
+            if (!$assessment) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '找不到指定的評估記錄'
+                ]);
+            }
+
+            // 驗證請求資料
+            $rules = [
+                'orders' => 'required|array',
+                'orders.*.id' => 'required|integer',
+                'orders.*.sort_order' => 'required|integer'
+            ];
+
+            // 取得輸入資料（處理 PUT form data 和 JSON）
+            $input = $this->request->getJSON(true) ?? $this->request->getRawInput();
+            if (!$this->validate($rules, $input)) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '驗證失敗',
+                    'errors' => $this->validator->getErrors()
+                ]);
+            }
+
+            $db = \Config\Database::connect();
+            $db->transStart();
+
+            try {
+                foreach ($input['orders'] as $order) {
+                    // 驗證內容是否屬於此評估記錄
+                    $content = $this->contentModel->where('id', $order['id'])
+                                                  ->where('assessment_id', $assessmentId)
+                                                  ->first();
+
+                    if (!$content) {
+                        throw new \Exception("題項內容 ID {$order['id']} 不存在或不屬於此評估記錄");
+                    }
+
+                    // 更新排序
+                    $this->contentModel->update($order['id'], ['sort_order' => $order['sort_order']]);
+                }
+
+                $db->transComplete();
+
+                if ($db->transStatus() === false) {
+                    throw new \Exception('資料庫交易失敗');
+                }
+
+                log_message('info', "Successfully reordered question contents for assessment {$assessmentId}");
+
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => '成功更新題項內容排序'
+                ]);
+
+            } catch (\Exception $e) {
+                $db->transRollback();
+                throw $e;
+            }
+
+        } catch (\Exception $e) {
+            log_message('error', 'QuestionManagementController::reorderContents - ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '更新題項內容排序時發生錯誤: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * 取得特定用戶對特定內容的回答
      * GET /api/v1/question-management/assessment/{assessmentId}/user/{userId}/responses/{contentId}
      *

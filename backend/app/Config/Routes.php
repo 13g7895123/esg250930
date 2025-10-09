@@ -260,6 +260,9 @@ $routes->group('api/v1/question-management', function($routes) {
     $routes->options('assessment/(:num)/import-excel', function() {
         return service('response')->setStatusCode(200);
     });
+    $routes->options('assessment/(:num)/contents/reorder', function() {
+        return service('response')->setStatusCode(200);
+    });
 
     // Assessment Structure Management
     $routes->get('assessment/(:num)/structure', 'Api\V1\QuestionManagement\QuestionManagementController::getAssessmentStructure/$1');
@@ -303,6 +306,7 @@ $routes->group('api/v1/question-management', function($routes) {
     $routes->post('assessment/(:num)/contents', 'Api\V1\QuestionManagement\QuestionManagementController::createContent/$1');
     $routes->put('contents/(:num)', 'Api\V1\QuestionManagement\QuestionManagementController::updateContent/$1');
     $routes->delete('contents/(:num)', 'Api\V1\QuestionManagement\QuestionManagementController::deleteContent/$1');
+    $routes->put('assessment/(:num)/contents/reorder', 'Api\V1\QuestionManagement\QuestionManagementController::reorderContents/$1');
 
     // Content Import/Export
     $routes->post('assessment/(:num)/export-excel', 'Api\V1\QuestionManagement\QuestionManagementController::exportExcel/$1');
