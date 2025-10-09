@@ -2064,13 +2064,17 @@ const confirmCopy = async () => {
 }
 
 const submitForm = async () => {
+  const { $notify } = useNuxtApp()
   const template = availableTemplates.value.find(t => t.id === parseInt(formData.value.templateId))
-  
+
   console.log('=== 表單提交 ===')
   console.log('表單資料:', formData.value)
   console.log('選中的範本:', template)
   console.log('公司ID:', companyId.value)
-  
+
+  // 顯示載入動畫
+  $notify.loading('處理中...請稍候')
+
   try {
     if (showAddModal.value) {
       // Add new item
@@ -2079,7 +2083,7 @@ const submitForm = async () => {
         templateVersion: template ? template.version_name : '',
         year: parseInt(formData.value.year)
       }
-      
+
       console.log('新增項目資料:', itemData)
       const newItem = await addQuestionManagementItem(companyId.value, itemData)
       console.log('新增後返回的項目:', newItem)
@@ -2105,6 +2109,9 @@ const submitForm = async () => {
 
       // Reload data after adding
       await loadQuestionManagementData()
+
+      // 關閉載入動畫
+      $notify.close()
       await showSuccess('題項管理已成功新增')
     } else if (showEditModal.value) {
       // Update existing item
@@ -2124,13 +2131,18 @@ const submitForm = async () => {
 
       // Reload data after updating
       await loadQuestionManagementData()
+
+      // 關閉載入動畫
+      $notify.close()
       await showSuccess('題項管理已成功更新')
     }
   } catch (error) {
     console.error('Error in submitForm:', error)
+    // 關閉載入動畫
+    $notify.close()
     await showError(error?.message || '操作失敗，請稍後再試')
   }
-  
+
   console.log('=== 表單提交結束 ===')
   closeModals()
 }
