@@ -407,6 +407,32 @@ class CompanyAssessmentController extends BaseController
 
             log_message('info', 'Assessment 更新成功');
 
+            // 如果範本變更，自動同步範本架構和量表
+            if ($templateChanged) {
+                log_message('info', '範本已變更，開始自動同步架構和量表...');
+                log_message('info', 'Assessment ID: ' . $id);
+                log_message('info', '新範本ID: ' . $data['template_id']);
+
+                try {
+                    // 建立 QuestionManagementController 實例並呼叫 syncFromTemplate
+                    $qmController = new \App\Controllers\Api\V1\QuestionManagement\QuestionManagementController();
+                    $syncResult = $qmController->syncFromTemplate($id);
+
+                    // 檢查同步結果
+                    $syncResponse = json_decode($syncResult->getBody(), true);
+                    if ($syncResponse && $syncResponse['success']) {
+                        log_message('info', '範本同步成功: ' . json_encode($syncResponse['data']));
+                    } else {
+                        log_message('error', '範本同步回傳失敗狀態: ' . json_encode($syncResponse));
+                    }
+                } catch (\Exception $e) {
+                    // 記錄錯誤但不影響 assessment 更新
+                    // assessment 已經成功更新，同步失敗可以稍後重試
+                    log_message('error', '範本自動同步失敗: ' . $e->getMessage());
+                    log_message('error', '同步錯誤堆疊: ' . $e->getTraceAsString());
+                }
+            }
+
             $updatedAssessment = $this->assessmentModel->getAssessmentWithTemplate($id);
 
             log_message('info', '更新後的 Assessment 資料: ' . json_encode($updatedAssessment));

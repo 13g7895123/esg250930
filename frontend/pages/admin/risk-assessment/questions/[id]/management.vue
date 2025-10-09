@@ -2108,83 +2108,19 @@ const submitForm = async () => {
       await showSuccess('題項管理已成功新增')
     } else if (showEditModal.value) {
       // Update existing item
-      const oldTemplateId = editingItem.value.templateId
-      const newTemplateId = parseInt(formData.value.templateId)
-
-      // === 範本變更檢測日誌 ===
-      console.log('=== 範本變更檢測 ===')
-      console.log('oldTemplateId:', oldTemplateId, '(type:', typeof oldTemplateId, ')')
-      console.log('newTemplateId:', newTemplateId, '(type:', typeof newTemplateId, ')')
-      console.log('是否相等 (==):', oldTemplateId == newTemplateId)
-      console.log('是否相等 (===):', oldTemplateId === newTemplateId)
-      console.log('template 物件:', template)
-      console.log('=================')
-
       const itemData = {
-        templateId: newTemplateId,
+        templateId: parseInt(formData.value.templateId),
         templateVersion: template ? template.version_name : '',
         year: parseInt(formData.value.year)
       }
 
       console.log('編輯項目資料:', itemData)
       console.log('編輯的項目:', editingItem.value)
+
+      // 更新 assessment - 後端會自動檢測範本變更並同步
       await updateQuestionManagementItem(companyId.value, editingItem.value.id, itemData)
 
-      // If template changed, copy new template content
-      // 確保類型一致的比較
-      const oldId = parseInt(oldTemplateId)
-      const newId = parseInt(newTemplateId)
-
-      console.log('標準化後比較:', { oldId, newId, 相同: oldId === newId })
-
-      if (oldId !== newId && template) {
-        console.log('✅ 範本已變更，開始同步...')
-        console.log('範本已變更，重新從範本同步內容到資料庫...')
-        try {
-          // 呼叫後端 API 從範本複製架構到題項管理
-          console.log('=== 準備呼叫同步 API ===')
-          console.log('API URL:', `/api/v1/question-management/assessment/${editingItem.value.id}/sync-from-template`)
-          console.log('Assessment ID:', editingItem.value.id)
-
-          const syncResponse = await $fetch(`/api/v1/question-management/assessment/${editingItem.value.id}/sync-from-template`, {
-            method: 'POST'
-          })
-
-          console.log('=== API 回應成功 ===')
-          console.log('syncResponse:', syncResponse)
-
-          if (syncResponse.success) {
-            console.log('範本架構複製成功:', syncResponse.data)
-
-            // 清除 store 中該 assessment 的所有快取資料
-            console.log('清除 store 快取...')
-            const questionManagementStore = useQuestionManagementStore()
-            await questionManagementStore.clearAssessmentCache(editingItem.value.id)
-
-            // 重新載入該 assessment 的所有資料
-            console.log('重新載入 assessment 資料...')
-            await questionManagementStore.fetchAllQuestionData(editingItem.value.id)
-          } else {
-            console.error('範本架構複製失敗:', syncResponse.message)
-          }
-        } catch (error) {
-          console.error('=== API 呼叫失敗 ===')
-          console.error('錯誤訊息:', error.message)
-          console.error('錯誤詳情:', error)
-          if (error.data) {
-            console.error('API 錯誤回應:', error.data)
-          }
-          if (error.statusCode) {
-            console.error('HTTP 狀態碼:', error.statusCode)
-          }
-        }
-      } else {
-        console.log('❌ 範本未變更或無範本資料，跳過同步')
-        console.log('跳過原因:', {
-          範本ID相同: oldId === newId,
-          無範本資料: !template
-        })
-      }
+      console.log('Assessment 更新完成（範本變更檢測和同步由後端自動處理）')
 
       // Reload data after updating
       await loadQuestionManagementData()
