@@ -100,16 +100,18 @@
 
       <!-- Custom Actions Cell -->
       <template #cell-actions="{ item }">
-        <div class="flex items-center space-x-2">
-          <!-- Drag Handle with functional drag-and-drop -->
+        <div
+          class="flex items-center space-x-2"
+          @dragover.prevent="handleDragOver($event, item)"
+          @dragleave="handleDragLeave"
+          @drop="handleDrop($event, item)"
+        >
+          <!-- Drag Handle -->
           <div
             class="relative group cursor-move drag-handle"
             draggable="true"
             @dragstart="handleDragStart($event, item)"
             @dragend="handleDragEnd"
-            @dragover.prevent="handleDragOver($event, item)"
-            @dragleave="handleDragLeave"
-            @drop="handleDrop($event, item)"
           >
             <div class="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded-lg transition-colors duration-200">
               <Bars3Icon class="w-4 h-4" />
@@ -1955,8 +1957,9 @@ const handleDragLeave = (event) => {
 const handleDrop = async (event, targetItem) => {
   event.preventDefault()
 
-  // Remove visual feedback
-  const allRows = document.querySelectorAll('tr')
+  // Remove visual feedback - use closest table to limit scope
+  const table = event.target.closest('table')
+  const allRows = table ? table.querySelectorAll('tr') : document.querySelectorAll('tr')
   allRows.forEach(row => {
     row.classList.remove('border-t-2', 'border-primary-500', 'opacity-50')
   })
@@ -1995,7 +1998,7 @@ const handleDrop = async (event, targetItem) => {
     order: index + 1  // Keep 'order' for compatibility
   }))
 
-  console.log('=== Drag and Drop Debug ===')
+  console.log('=== Main Table Drag and Drop ===')
   console.log('Dragged item:', draggedItem.value.id, 'from index:', draggedIndex)
   console.log('Target item:', targetItem.id, 'at index:', targetIndex)
   console.log('Insert at index:', insertIndex)
