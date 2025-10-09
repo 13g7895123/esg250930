@@ -281,14 +281,18 @@
     <!-- Add/Edit Modal -->
     <div
       v-if="showAddModal || showEditModal"
-      class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+      class="fixed inset-0 bg-black bg-opacity-50 z-50"
       @click="closeModals"
     >
       <div
-        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl flex flex-col"
-        style="max-height: 90vh;"
+        class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full px-4"
+        style="max-height: 90vh; max-width: calc(100vw - 2rem);"
         @click.stop
       >
+        <div
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl mx-auto flex flex-col"
+          style="max-height: 90vh;"
+        >
         <div class="p-6 overflow-y-auto flex-1 min-h-0">
           <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
             {{ showAddModal ? '新增題目' : '編輯題目' }}
@@ -397,19 +401,25 @@
             </div>
           </form>
         </div>
+        </div>
       </div>
     </div>
 
     <!-- Import Modal with Drag and Drop -->
     <div
       v-if="showImportModal"
-      class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+      class="fixed inset-0 bg-black bg-opacity-50 z-50"
       @click="closeImportModal"
     >
       <div
-        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl"
+        class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full px-4"
+        style="max-height: 90vh; max-width: calc(100vw - 2rem);"
         @click.stop
       >
+        <div
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl mx-auto flex flex-col"
+          style="max-height: 90vh;"
+        >
         <div class="p-6">
           <!-- Header -->
           <div class="flex items-center justify-between mb-6">
@@ -486,20 +496,25 @@
             </ul>
           </div>
         </div>
+        </div>
       </div>
     </div>
 
     <!-- Import History Modal (Point 46 - DataTable版本) -->
     <div
       v-if="showDebugModal && !showBatchDetails"
-      class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+      class="fixed inset-0 bg-black bg-opacity-50 z-50"
       @click="showDebugModal = false"
     >
       <div
-        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl overflow-hidden flex flex-col"
-        style="max-height: 90vh;"
+        class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full px-4"
+        style="max-height: 90vh; max-width: calc(100vw - 2rem);"
         @click.stop
       >
+        <div
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl mx-auto overflow-hidden flex flex-col"
+          style="max-height: 90vh;"
+        >
         <!-- Header -->
         <div class="p-6 border-b border-gray-200 dark:border-gray-700">
           <div class="flex items-center justify-between mb-4">
@@ -639,20 +654,25 @@
             關閉
           </button>
         </div>
+        </div>
       </div>
     </div>
 
     <!-- Batch Details Modal (Point 46) -->
     <div
       v-if="showBatchDetails && selectedBatchDetails"
-      class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+      class="fixed inset-0 bg-black bg-opacity-50 z-50"
       @click="closeBatchDetails"
     >
       <div
-        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl overflow-hidden flex flex-col"
-        style="max-height: 90vh;"
+        class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full px-4"
+        style="max-height: 90vh; max-width: calc(100vw - 2rem);"
         @click.stop
       >
+        <div
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl mx-auto overflow-hidden flex flex-col"
+          style="max-height: 90vh;"
+        >
         <!-- Header -->
         <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
@@ -780,6 +800,7 @@
           >
             關閉
           </button>
+        </div>
         </div>
       </div>
     </div>

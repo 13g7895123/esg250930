@@ -237,14 +237,18 @@
     >
       <div
         v-if="showSearch"
-        class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start justify-center pt-20"
+        class="fixed inset-0 bg-black bg-opacity-50 z-50"
         @click="closeSearch"
       >
         <div
-          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg mx-4 flex flex-col"
-          style="max-height: 90vh;"
+          class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full px-4"
+          style="max-height: 90vh; max-width: calc(100vw - 2rem);"
           @click.stop
         >
+          <div
+            class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg mx-auto flex flex-col"
+            style="max-height: 90vh;"
+          >
           <div class="p-4 overflow-y-auto flex-1 min-h-0">
             <input
               ref="searchInput"
@@ -253,6 +257,7 @@
               :placeholder="t('common.search') + '...'"
               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
             />
+          </div>
           </div>
         </div>
       </div>

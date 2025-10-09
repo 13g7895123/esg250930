@@ -5,7 +5,8 @@
         <span class="font-bold text-gray-900 dark:text-white text-xl">對外正面影響</span>
         <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 px-2 py-1 rounded text-base font-medium flex items-center">H-1</span>
         <div
-          class="relative group w-5 h-5 ml-2 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-serif font-bold cursor-pointer hover:scale-110 transition-transform duration-200"
+          class="relative group w-5 h-5 ml-2 text-white rounded-full flex items-center justify-center text-sm font-serif font-bold cursor-pointer hover:scale-110 transition-transform duration-200"
+          style="background-color: #059669;"
           @click="$emit('edit-info', 'H1')"
         >
           <span class="italic">i</span>
@@ -41,7 +42,7 @@
           :disabled="disabled"
           rows="4"
           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          placeholder="請說明正面影響"
+          :placeholder="descriptionPlaceholder"
         ></textarea>
       </div>
     </div>
@@ -59,6 +60,10 @@ defineProps({
   infoText: {
     type: String,
     default: ''
+  },
+  descriptionPlaceholder: {
+    type: String,
+    default: '請說明正面影響'
   }
 })
 

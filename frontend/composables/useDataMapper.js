@@ -35,8 +35,9 @@ export const useDataMapper = () => {
 
       // ===== Section C: 風險事件 =====
       hasRiskEvent:
-        apiData.has_risk_event ||
-        'no',
+        apiData.has_risk_event !== undefined && apiData.has_risk_event !== null
+          ? apiData.has_risk_event
+          : '',
       riskEventDescription:
         apiData.c_placeholder ||
         apiData.risk_event_description ||
@@ -44,8 +45,9 @@ export const useDataMapper = () => {
 
       // ===== Section D: 對應作為 =====
       hasCounterAction:
-        apiData.has_counter_action ||
-        'yes',
+        apiData.has_counter_action !== undefined && apiData.has_counter_action !== null
+          ? apiData.has_counter_action
+          : '',
       counterActionDescription:
         apiData.d_placeholder_1 ||
         apiData.counter_action_description ||
@@ -251,9 +253,9 @@ export const useDataMapper = () => {
     return {
       riskFactorDescription: '',
       referenceText: '',
-      hasRiskEvent: 'no',
+      hasRiskEvent: '',
       riskEventDescription: '',
-      hasCounterAction: 'yes',
+      hasCounterAction: '',
       counterActionDescription: '',
       counterActionCost: '',
       risk: {

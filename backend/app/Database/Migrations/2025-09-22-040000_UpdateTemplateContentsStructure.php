@@ -8,43 +8,61 @@ class UpdateTemplateContentsStructure extends Migration
 {
     public function up()
     {
-        // Add topic_id and risk_factor_id columns
-        $fields = [
-            'topic_id' => [
+        // Check if columns already exist before adding
+        $db = \Config\Database::connect();
+        $existingFields = $db->getFieldNames('template_contents');
+
+        $fields = [];
+
+        if (!in_array('topic_id', $existingFields)) {
+            $fields['topic_id'] = [
                 'type' => 'BIGINT',
                 'constraint' => 20,
                 'unsigned' => true,
                 'null' => true,
                 'comment' => '所屬風險主題ID',
                 'after' => 'category_id'
-            ],
-            'risk_factor_id' => [
+            ];
+        }
+
+        if (!in_array('risk_factor_id', $existingFields)) {
+            $fields['risk_factor_id'] = [
                 'type' => 'BIGINT',
                 'constraint' => 20,
                 'unsigned' => true,
                 'null' => true,
                 'comment' => '所屬風險因子ID',
                 'after' => 'topic_id'
-            ]
-        ];
+            ];
+        }
 
-        $this->forge->addColumn('template_contents', $fields);
+        if (!empty($fields)) {
+            $this->forge->addColumn('template_contents', $fields);
+            echo "✅ 已為 template_contents 表添加欄位: " . implode(', ', array_keys($fields)) . "\n";
+        } else {
+            echo "ℹ️  template_contents 表的 topic_id 和 risk_factor_id 欄位已存在，跳過添加\n";
+        }
 
-        // Add foreign key constraints
-        $this->forge->addForeignKey('topic_id', 'risk_topics', 'id', 'SET NULL', 'CASCADE', 'template_contents');
-        $this->forge->addForeignKey('risk_factor_id', 'risk_factors', 'id', 'SET NULL', 'CASCADE', 'template_contents');
+        // Add foreign key constraints (only if columns were just added or if they don't have constraints yet)
+        if (isset($fields['topic_id'])) {
+            $this->forge->addForeignKey('topic_id', 'risk_topics', 'id', 'SET NULL', 'CASCADE', 'template_contents');
+        }
+        if (isset($fields['risk_factor_id'])) {
+            $this->forge->addForeignKey('risk_factor_id', 'risk_factors', 'id', 'SET NULL', 'CASCADE', 'template_contents');
+        }
 
-        // Migrate existing data: move topic to description if description is empty
-        $this->db->query("
-            UPDATE template_contents
-            SET description = CONCAT(COALESCE(topic, ''), CASE WHEN description IS NOT NULL AND description != '' THEN CONCAT(': ', description) ELSE '' END)
-            WHERE topic IS NOT NULL AND topic != ''
-        ");
+        // Migrate existing data: move topic to description if description is empty (only if topic column still exists)
+        if (in_array('topic', $existingFields)) {
+            $this->db->query("
+                UPDATE template_contents
+                SET description = CONCAT(COALESCE(topic, ''), CASE WHEN description IS NOT NULL AND description != '' THEN CONCAT(': ', description) ELSE '' END)
+                WHERE topic IS NOT NULL AND topic != ''
+            ");
 
-        // Remove the topic column
-        $this->forge->dropColumn('template_contents', 'topic');
-
-        echo "已更新 template_contents 表結構：添加 topic_id 和 risk_factor_id 欄位，移除 topic 欄位\n";
+            // Remove the topic column
+            $this->forge->dropColumn('template_contents', 'topic');
+            echo "已移除 template_contents 表的 topic 欄位\n";
+        }
     }
 
     public function down()

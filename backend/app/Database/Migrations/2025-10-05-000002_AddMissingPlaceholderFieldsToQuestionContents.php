@@ -8,31 +8,45 @@ class AddMissingPlaceholderFieldsToQuestionContents extends Migration
 {
     public function up()
     {
-        // Add missing F1, G1, H1 placeholder fields to question_contents
-        $fields = [
-            'f1_placeholder_1' => [
+        // Check if columns already exist before adding
+        $db = \Config\Database::connect();
+        $fields = $db->getFieldNames('question_contents');
+
+        $fieldsToAdd = [];
+
+        if (!in_array('f1_placeholder_1', $fields)) {
+            $fieldsToAdd['f1_placeholder_1'] = [
                 'type' => 'TEXT',
                 'null' => true,
                 'comment' => 'F-1 機會描述占位符 (Section F1-1)',
                 'after' => 'e2_placeholder'
-            ],
-            'g1_placeholder_1' => [
+            ];
+        }
+
+        if (!in_array('g1_placeholder_1', $fields)) {
+            $fieldsToAdd['g1_placeholder_1'] = [
                 'type' => 'TEXT',
                 'null' => true,
                 'comment' => 'G-1 對外負面衝擊評分說明占位符 (Section G1-1)',
                 'after' => 'f2_placeholder'
-            ],
-            'h1_placeholder_1' => [
+            ];
+        }
+
+        if (!in_array('h1_placeholder_1', $fields)) {
+            $fieldsToAdd['h1_placeholder_1'] = [
                 'type' => 'TEXT',
                 'null' => true,
                 'comment' => 'H-1 對外正面影響評分說明占位符 (Section H1-1)',
                 'after' => 'g1_placeholder_1'
-            ]
-        ];
+            ];
+        }
 
-        $this->forge->addColumn('question_contents', $fields);
-
-        echo "✅ 已為 question_contents 表添加缺失的 F1, G1, H1 占位符欄位\n";
+        if (!empty($fieldsToAdd)) {
+            $this->forge->addColumn('question_contents', $fieldsToAdd);
+            echo "✅ 已為 question_contents 表添加缺失的占位符欄位: " . implode(', ', array_keys($fieldsToAdd)) . "\n";
+        } else {
+            echo "ℹ️  question_contents 表的所有占位符欄位已存在，跳過添加\n";
+        }
     }
 
     public function down()

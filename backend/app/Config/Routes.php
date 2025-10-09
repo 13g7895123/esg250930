@@ -79,6 +79,14 @@ $routes->group('api/v1', function($routes) {
 
     // Local Companies CRUD routes
     $routes->resource('local-companies', ['controller' => 'Api\V1\LocalCompaniesController']);
+
+    // External Access Verification CORS preflight options
+    $routes->options('external-access/verify', function() {
+        return service('response')->setStatusCode(200);
+    });
+
+    // External Access Verification routes
+    $routes->get('external-access/verify', 'Api\V1\ExternalAccessController::verifyAccess');
 });
 
 // V1 Risk Assessment API Routes (New Structure)

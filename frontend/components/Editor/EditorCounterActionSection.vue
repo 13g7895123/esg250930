@@ -4,14 +4,14 @@
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center space-x-3">
         <span class="font-bold text-gray-900 text-xl">
-          公司報導年度是否有相關對應作為
+          <span class="text-red-500">*</span>公司報導年度是否有相關對應作為
         </span>
         <span class="bg-gray-200 text-gray-800 px-2 py-1 rounded text-base font-medium">
           D
         </span>
       </div>
       <button
-        v-if="!readonly"
+        v-if="!readonly && !hideRecordButton"
         class="px-3 py-1 text-white text-base rounded-full"
         style="background-color: #059669;"
       >
@@ -70,7 +70,7 @@
 
       <!-- 對應措施描述 -->
       <div>
-        <label class="text-gray-600 mt-6 mb-1">*請描述</label>
+        <label class="text-gray-600 mt-6 mb-1">請描述</label>
         <textarea
           v-model="localDescription"
           rows="3"
@@ -78,7 +78,7 @@
             'w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent',
             readonly ? 'bg-gray-50 text-gray-600 cursor-not-allowed' : ''
           ]"
-          placeholder="導入TNFD請專業，進一步了解致利納於自然資源保護性"
+          :placeholder="descriptionPlaceholder"
           :readonly="readonly"
           :disabled="readonly"
         />
@@ -86,7 +86,7 @@
 
       <!-- 對策費用 -->
       <div>
-        <label class="text-gray-600 mt-6 mb-1">*上述對策費用</label>
+        <label class="text-gray-600 mt-6 mb-1">上述對策費用</label>
         <textarea
           v-model="localCost"
           rows="2"
@@ -94,7 +94,7 @@
             'w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-green-500 focus:border-transparent',
             readonly ? 'bg-gray-50 text-gray-600 cursor-not-allowed' : ''
           ]"
-          placeholder="顧問費用約80萬(可初估)"
+          :placeholder="costPlaceholder"
           :readonly="readonly"
           :disabled="readonly"
         />
@@ -143,6 +143,30 @@ const props = defineProps({
   readonly: {
     type: Boolean,
     default: false
+  },
+
+  /**
+   * 是否隱藏紀錄按鈕 (answer 模式)
+   */
+  hideRecordButton: {
+    type: Boolean,
+    default: false
+  },
+
+  /**
+   * 描述欄位的 placeholder
+   */
+  descriptionPlaceholder: {
+    type: String,
+    default: '導入TNFD請專業，進一步了解致利納於自然資源保護性'
+  },
+
+  /**
+   * 費用欄位的 placeholder
+   */
+  costPlaceholder: {
+    type: String,
+    default: '顧問費用約80萬(可初估)'
   }
 })
 

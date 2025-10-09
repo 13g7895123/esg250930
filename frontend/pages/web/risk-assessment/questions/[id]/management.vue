@@ -66,8 +66,8 @@
             <span class="text-gray-800 dark:text-gray-200">{{ externalUserStore.userId || 'null' }}</span>
           </div>
           <div class="bg-white dark:bg-gray-800 p-2 rounded border">
-            <span class="font-medium text-gray-600 dark:text-gray-400">comId (should be userInfo.data.com_id)：</span>
-            <span class="text-blue-600 dark:text-blue-400 font-medium">{{ externalUserStore.comId || 'null' }}</span>
+            <span class="font-medium text-gray-600 dark:text-gray-400">companyId (should be userInfo.user.com_id)：</span>
+            <span class="text-blue-600 dark:text-blue-400 font-medium">{{ externalUserStore.companyId || 'null' }}</span>
           </div>
         </div>
       </div>
@@ -88,7 +88,7 @@
             <div v-if="mappingIssues.some(issue => issue.includes('內部用戶ID'))" class="mt-2">
               <span class="font-medium text-blue-600 dark:text-blue-400">🔄 自動修復：</span>
               <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                系統將自動調用人員同步API ({{ `/api/v1/personnel/companies/${externalUserStore.comId}/sync` }}) 來載入人員資料
+                系統將自動調用人員同步API ({{ `/api/v1/personnel/companies/${externalUserStore.companyId}/sync` }}) 來載入人員資料
               </p>
             </div>
           </div>
@@ -468,7 +468,7 @@ onMounted(async () => {
   console.log('外部用戶名稱:', externalUserStore.userName)
   console.log('外部用戶ID:', externalUserStore.userId)
   console.log('外部用戶Email:', externalUserStore.userEmail)
-  console.log('外部用戶公司ID (comId):', externalUserStore.comId)
+  console.log('外部用戶公司ID (companyId):', externalUserStore.companyId)
 
   console.log('=== 篩選參數檢查 ===')
   console.log('篩選狀態:', externalUserStore.userId ? '✅ 已啟用使用者篩選' : '⚠️ 顯示所有資料')

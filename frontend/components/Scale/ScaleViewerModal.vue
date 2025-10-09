@@ -5,15 +5,21 @@
       v-if="modelValue"
       :class="[
         'fixed z-50',
-        isCompactMode ? '' : 'inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4'
+        isCompactMode ? '' : 'inset-0 bg-black bg-opacity-50'
       ]"
       :style="isCompactMode ? { top: modalPosition.y + 'px', left: modalPosition.x + 'px' } : {}"
       @click.self="!isCompactMode && closeModal()"
     >
       <div
+        v-if="!isCompactMode"
+        class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full px-4"
+        style="max-height: 90vh; max-width: calc(100vw - 2rem);"
+        @click.stop
+      >
+      <div
         :class="[
           'bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden modal-draggable flex flex-col relative',
-          isCompactMode ? '' : 'w-full max-w-6xl'
+          isCompactMode ? '' : 'w-full max-w-6xl mx-auto'
         ]"
         :style="isCompactMode ? {
           width: modalSize.width + 'px',
@@ -302,6 +308,7 @@
             </button>
           </div>
         </div>
+      </div>
       </div>
     </div>
   </Teleport>

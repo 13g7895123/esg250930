@@ -101,12 +101,22 @@
         </div>
       </template>
 
-      <!-- Custom Status Cell -->
+      <!-- Custom Status Cell with Indicator Light -->
       <template #cell-status="{ item }">
-        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-              :class="item.response_count > 0 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'">
-          {{ item.response_count > 0 ? '已作答' : '未作答' }}
-        </span>
+        <div class="flex items-center justify-center">
+          <div class="relative group">
+            <!-- Status Indicator Light -->
+            <div
+              class="w-4 h-4 rounded-full transition-all duration-200"
+              :class="getResponseStatusClass(item)"
+            ></div>
+            <!-- Tooltip on hover -->
+            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+              {{ getResponseStatus(item).label }}
+              <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+            </div>
+          </div>
+        </div>
       </template>
 
       <!-- Empty Action Slot -->
@@ -578,6 +588,36 @@ const getMappingStatusClass = (item) => {
   }
 }
 
+// Response status indicator functions
+const getResponseStatus = (item) => {
+  if (item.response_count > 0) {
+    return {
+      color: 'yellow',
+      label: '已提交',
+      description: '使用者已提交答案'
+    }
+  } else {
+    return {
+      color: 'gray',
+      label: '未作答',
+      description: '尚未開始作答'
+    }
+  }
+}
+
+const getResponseStatusClass = (item) => {
+  const status = getResponseStatus(item)
+
+  switch (status.color) {
+    case 'yellow':
+      return 'bg-yellow-400 dark:bg-yellow-500'
+    case 'gray':
+      return 'bg-gray-300 dark:bg-gray-600'
+    default:
+      return 'bg-gray-300 dark:bg-gray-600'
+  }
+}
+
 // Page title will be set after companyName is resolved
 watch(companyName, (newValue) => {
   if (newValue) {
@@ -758,13 +798,9 @@ const startAnswer = (questionItem) => {
 
   console.log('開始作答題目:', questionItem)
 
-  // 導航到作答頁面，傳遞題目資訊
+  // 導航到作答頁面，不傳遞 query 參數，所有資訊從 URL ID 取得
   router.push({
-    path: `/web/risk-assessment/questions/${companyId}/answer/${questionId}/${questionItem.id}`,
-    query: {
-      title: questionItem.topic || questionItem.title || '未命名題目',
-      description: questionItem.description || ''
-    }
+    path: `/web/risk-assessment/questions/${companyId}/answer/${questionId}/${questionItem.id}`
   })
 }
 

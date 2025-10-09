@@ -282,12 +282,8 @@ const availableContentItems = computed(() => {
     }
   })
 
-  // Sort by risk category order (same as risk category management)
-  return contentWithAssignment.sort((a, b) => {
-    const orderA = getCategoryOrder(a.categoryId || a.category_id)
-    const orderB = getCategoryOrder(b.categoryId || b.category_id)
-    return orderA - orderB
-  })
+  // 直接使用後端回傳的資料順序，不再進行前端排序
+  return contentWithAssignment
 })
 
 const canAssign = computed(() => 

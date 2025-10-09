@@ -222,8 +222,8 @@ class QuestionContentModel extends Model
                     question_topics.topic_name,
                     question_factors.factor_name,
                     question_factors.description as factor_description,
-                    personnel_assignments.personnel_id,
-                    personnel_assignments.assignment_status,
+                    MAX(personnel_assignments.personnel_id) as personnel_id,
+                    MAX(personnel_assignments.assignment_status) as assignment_status,
                     (SELECT COUNT(*) FROM question_responses WHERE question_content_id = question_contents.id) as response_count
                 ')
                 ->join('question_categories', 'question_categories.id = question_contents.category_id', 'left')
@@ -261,7 +261,7 @@ class QuestionContentModel extends Model
         // 搜尋條件
         if (!empty($search)) {
             $builder->groupStart()
-                ->like('question_contents.description', $search)
+                ->like('question_factors.description', $search)
                 // ->orLike('question_contents.a_content', $search) // REMOVED: Field no longer exists
                 ->orLike('question_contents.b_content', $search)
                 ->groupEnd();

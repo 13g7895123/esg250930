@@ -8,6 +8,13 @@ class CreateImportHistoryTable extends Migration
 {
     public function up()
     {
+        // Check if table already exists
+        $db = \Config\Database::connect();
+        if ($db->tableExists('import_history')) {
+            echo "ℹ️  Table 'import_history' already exists, skipping creation\n";
+            return;
+        }
+
         $this->forge->addField([
             'id' => [
                 'type' => 'BIGINT',

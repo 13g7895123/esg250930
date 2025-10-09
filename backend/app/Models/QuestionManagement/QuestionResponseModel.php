@@ -178,7 +178,7 @@ class QuestionResponseModel extends Model
     {
         $builder = $this->select('
                 question_responses.*,
-                question_contents.description as question_description,
+                question_factors.description as question_description,
                 question_contents.is_required,
                 question_categories.category_name,
                 question_topics.topic_name,
@@ -260,12 +260,13 @@ class QuestionResponseModel extends Model
         $result = $this->select('
                 question_responses.*,
                 question_contents.title as question_title,
-                question_contents.description as question_description,
+                question_factors.description as question_description,
                 question_contents.scoring_method,
                 question_contents.weight,
                 question_contents.is_required
             ')
             ->join('question_contents', 'question_contents.id = question_responses.question_content_id')
+            ->join('question_factors', 'question_factors.id = question_contents.factor_id', 'left')
             ->where('question_responses.assessment_id', $assessmentId)
             ->where('question_responses.question_content_id', $questionContentId)
             ->first();

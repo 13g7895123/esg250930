@@ -294,11 +294,8 @@ const selectedUsers = computed(() =>
 )
 
 const sortedContentSummary = computed(() => {
-  return [...props.contentSummary].sort((a, b) => {
-    const orderA = getCategoryOrder(a.categoryId)
-    const orderB = getCategoryOrder(b.categoryId)
-    return orderA - orderB
-  }).map(content => {
+  // 直接使用後端回傳的資料順序，不再進行前端排序
+  return props.contentSummary.map(content => {
     // Check if ALL selected users are already assigned to this content
     const allUsersAssigned = selectedUserIds.value.length > 0 &&
       selectedUserIds.value.every(userId =>

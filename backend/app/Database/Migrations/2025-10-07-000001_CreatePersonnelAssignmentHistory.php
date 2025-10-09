@@ -13,6 +13,13 @@ class CreatePersonnelAssignmentHistory extends Migration
 {
     public function up()
     {
+        // Check if table already exists
+        $db = \Config\Database::connect();
+        if ($db->tableExists('personnel_assignment_history')) {
+            echo "ℹ️  Table 'personnel_assignment_history' already exists, skipping creation\n";
+            return;
+        }
+
         // 建立人員指派歷史表
         $this->forge->addField([
             'id' => [

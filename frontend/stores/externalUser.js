@@ -8,20 +8,34 @@ export const useExternalUserStore = defineStore('externalUser', () => {
   // Computed properties
   const hasUserInfo = computed(() => !!userInfo.value)
   const userName = computed(() => {
-    // 從 userInfo.data.user_name 取得用戶名稱
-    return userInfo.value?.data?.user_name || userInfo.value?.name || userInfo.value?.username || '未知用戶'
+    // 優先從 userInfo.user.user_name 取得用戶名稱，fallback 到其他路徑
+    return userInfo.value?.user?.user_name ||
+           userInfo.value?.data?.user_name ||
+           userInfo.value?.name ||
+           userInfo.value?.username ||
+           '未知用戶'
   })
   const externalId = computed(() => {
-    // 從 userInfo.data 取得外部用戶ID（原本的userId邏輯）
-    return userInfo.value?.data?.user_id || userInfo.value?.data?.id || userInfo.value?.id || null
+    // 優先從 userInfo.user.user_id 取得外部用戶ID，fallback 到其他路徑
+    return userInfo.value?.user?.user_id ||
+           userInfo.value?.data?.user_id ||
+           userInfo.value?.user?.id ||
+           userInfo.value?.data?.id ||
+           userInfo.value?.id ||
+           null
   })
   const userEmail = computed(() => {
-    // 從 userInfo.data 或直接從 userInfo 取得 email
-    return userInfo.value?.data?.email || userInfo.value?.email || null
+    // 優先從 userInfo.user.email 取得 email，fallback 到其他路徑
+    return userInfo.value?.user?.email ||
+           userInfo.value?.data?.email ||
+           userInfo.value?.email ||
+           null
   })
-  const comId = computed(() => {
-    // 從 userInfo.data 取得公司ID
-    return userInfo.value?.data?.com_id || null
+  const companyId = computed(() => {
+    // 優先從 userInfo.user.com_id 取得公司ID，fallback 到其他路徑
+    return userInfo.value?.user?.com_id ||
+           userInfo.value?.data?.com_id ||
+           null
   })
 
   // 新的 userId - 通過 externalId 查詢 external_personnel 表獲得的內部ID
@@ -54,13 +68,13 @@ export const useExternalUserStore = defineStore('externalUser', () => {
         console.log('⚠️ 未找到對應的內部用戶ID，嘗試同步人員資料...')
 
         // 如果找不到用戶，嘗試同步人員資料
-        const currentComId = comId.value
-        if (currentComId) {
-          console.log('📥 開始同步人員資料，Company ID:', currentComId)
+        const currentCompanyId = companyId.value
+        if (currentCompanyId) {
+          console.log('📥 開始同步人員資料，Company ID:', currentCompanyId)
 
           try {
             // 調用人員同步API
-            const syncResponse = await $fetch(`/api/v1/personnel/companies/${currentComId}/sync`, {
+            const syncResponse = await $fetch(`/api/v1/personnel/companies/${currentCompanyId}/sync`, {
               method: 'POST'
             })
 
@@ -91,7 +105,7 @@ export const useExternalUserStore = defineStore('externalUser', () => {
             return null
           }
         } else {
-          console.log('❌ 缺少 comId，無法執行人員同步')
+          console.log('❌ 缺少 companyId，無法執行人員同步')
           return null
         }
       }
@@ -112,10 +126,29 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     lastUpdated.value = new Date().toISOString()
 
     console.log('=== 用戶資訊已儲存到 Pinia Store ===')
-    console.log('原始用戶資訊:', data)
-    console.log('解析後用戶名稱 (data.user_name):', data?.data?.user_name)
-    console.log('解析後外部用戶ID (externalId):', externalId.value)
-    console.log('解析後公司ID (comId):', comId.value)
+    console.log('原始用戶資訊:', JSON.stringify(data, null, 2))
+    console.log('')
+    console.log('=== 資料結構檢測 ===')
+    console.log('userInfo.user:', data?.user)
+    console.log('userInfo.data:', data?.data)
+    console.log('')
+    console.log('=== 路徑測試 (user 路徑) ===')
+    console.log('userInfo.user.user_name:', data?.user?.user_name)
+    console.log('userInfo.user.email:', data?.user?.email)
+    console.log('userInfo.user.user_id:', data?.user?.user_id)
+    console.log('userInfo.user.com_id:', data?.user?.com_id)
+    console.log('')
+    console.log('=== 路徑測試 (data 路徑) ===')
+    console.log('userInfo.data.user_name:', data?.data?.user_name)
+    console.log('userInfo.data.email:', data?.data?.email)
+    console.log('userInfo.data.user_id:', data?.data?.user_id)
+    console.log('userInfo.data.com_id:', data?.data?.com_id)
+    console.log('')
+    console.log('=== Computed 結果 ===')
+    console.log('userName (computed):', userName.value)
+    console.log('userEmail (computed):', userEmail.value)
+    console.log('externalId (computed):', externalId.value)
+    console.log('companyId (computed):', companyId.value)
     console.log('Token:', tokenValue)
 
     // 查詢並設置內部用戶ID
@@ -238,7 +271,7 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     hasUserInfo,
     userName,
     userEmail,
-    comId,
+    companyId,
     externalId,
     userId, // userId 現在是 computed getter
 

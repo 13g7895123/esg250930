@@ -206,10 +206,15 @@
     <!-- Hover Text Edit Modal (僅 template 模式) -->
     <Teleport to="body" v-if="features.enableHoverTextEdit && showHoverEditModal">
       <div
-        class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
+        class="fixed inset-0 bg-black bg-opacity-50 z-50"
         @click.self="cancelHoverEdit"
       >
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 flex flex-col" style="max-height: 90vh;" @click.stop>
+        <div
+          class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full px-4"
+          style="max-height: 90vh; max-width: calc(100vw - 2rem);"
+          @click.stop
+        >
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md mx-auto flex flex-col" style="max-height: 90vh;">
           <div class="p-6 overflow-y-auto flex-1 min-h-0">
             <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
               編輯提示文字 - {{ editingSection }}
@@ -245,6 +250,7 @@
                 </button>
               </div>
             </form>
+          </div>
           </div>
         </div>
       </div>

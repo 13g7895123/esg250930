@@ -88,7 +88,7 @@
 - `GET /api/v1/question-management/assessment/${questionId}/responses`: 取得現有答案
 - `POST /api/v1/question-management/assessment/${questionId}/responses`: 儲存答案
 - `POST /api/v1/external-personnel/find-by-external-id`: 查詢內部用戶ID
-- `POST /api/v1/personnel/companies/${comId}/sync`: 同步人員資料
+- `POST /api/v1/personnel/companies/${companyId}/sync`: 同步人員資料
 
 ## 重要技術細節
 

@@ -20,16 +20,6 @@
           </div>
           <div class="flex items-center space-x-2">
             <button
-              @click="showAssignmentHistory = true"
-              class="px-3 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors duration-200"
-              title="查看指派歷史記錄"
-            >
-              <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              歷史記錄
-            </button>
-            <button
               @click="refreshPersonnelData"
               :disabled="isLoadingPersonnel"
               class="px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
@@ -603,14 +593,6 @@
       </div>
     </template>
   </Modal>
-
-  <!-- Assignment History Modal -->
-  <AssignmentHistoryModal
-    v-model="showAssignmentHistory"
-    :company-id="companyId"
-    :assessment-id="questionId"
-    @close="showAssignmentHistory = false"
-  />
 </template>
 
 <script setup>
@@ -622,7 +604,7 @@ import {
   MagnifyingGlassIcon
 } from '@heroicons/vue/24/outline'
 import { onMounted, watch } from 'vue'
-import AssignmentHistoryModal from './AssignmentHistoryModal.vue'
+import { usePersonnelAssignmentApi } from '~/composables/usePersonnelAssignmentApi'
 
 const props = defineProps({
   modelValue: {
@@ -655,7 +637,9 @@ const {
   isLoading: isApiLoading,
   availablePersonnel,
   getCompatibleAssignmentSummary,
-  getCompatibleAssignedPersonnel
+  getCompatibleAssignedPersonnel,
+  getAssignmentHistory,
+  assignments
 } = usePersonnelAssignmentApi()
 
 // Question structure management for categories, topics, and factors
@@ -672,10 +656,10 @@ const {
 const showIndividualAssignment = ref(false)
 const showBulkAssignment = ref(false)
 const showDataDebug = ref(false)
-const showAssignmentHistory = ref(false)
 const searchQuery = ref('')
 const filterBy = ref('all')
 const activeTab = ref('assignments')
+const historyRecords = ref([])
 
 // Loading state for current company
 const isLoadingPersonnel = computed(() => {
@@ -719,62 +703,75 @@ const filteredContentSummary = computed(() => {
     filtered = filtered.filter(content => content.assignmentCount === 0)
   }
 
-  // Sort by risk category order (same as risk category management)
-  return filtered.sort((a, b) => {
-    const orderA = getCategoryOrder(a.categoryId || a.category_id)
-    const orderB = getCategoryOrder(b.categoryId || b.category_id)
-    return orderA - orderB
-  })
+  // 直接使用後端回傳的資料順序，不再進行前端排序
+  return filtered
 })
 
 // Assignment history data and columns
-const { assignments } = usePersonnelAssignmentApi()
+// 從歷史表載入資料
+const loadHistory = async () => {
+  console.log('[loadHistory] Starting...', { companyId: props.companyId, questionId: props.questionId })
+
+  if (!props.companyId || !props.questionId) {
+    console.warn('[loadHistory] Skipping - missing companyId or questionId')
+    return
+  }
+
+  try {
+    console.log('[loadHistory] Calling getAssignmentHistory API...')
+    const history = await getAssignmentHistory(props.companyId, props.questionId)
+    console.log('[loadHistory] API response:', history)
+    historyRecords.value = history || []
+    console.log('[loadHistory] Set historyRecords.value, count:', historyRecords.value.length)
+  } catch (error) {
+    console.error('[loadHistory] Failed to load assignment history:', error)
+    historyRecords.value = []
+  }
+}
 
 const assignmentHistory = computed(() => {
-  if (!props.questionId) return []
+  console.log('[assignmentHistory computed] questionId:', props.questionId, 'historyRecords count:', historyRecords.value.length)
 
-  console.log('Computing assignmentHistory, total assignments:', assignments.value.length)
-  console.log('Filtering for companyId:', props.companyId, 'questionId:', props.questionId)
-  console.log('Sample assignment:', assignments.value[0])
+  if (!props.questionId) {
+    console.log('[assignmentHistory computed] No questionId, returning empty array')
+    return []
+  }
 
-  const filtered = assignments.value
-    .filter(a => parseInt(a.company_id) === parseInt(props.companyId) && parseInt(a.assessment_id) === parseInt(props.questionId))
+  if (!historyRecords.value || historyRecords.value.length === 0) {
+    console.log('[assignmentHistory computed] No history records, returning empty array')
+    return []
+  }
 
-  console.log('Filtered assignments count:', filtered.length)
-  console.log('questionContent count:', props.questionContent?.length || 0)
+  console.log('[assignmentHistory computed] Processing', historyRecords.value.length, 'records')
+  console.log('[assignmentHistory computed] Sample record:', historyRecords.value[0])
 
-  return filtered.map(assignment => {
-      // Find content details from questionContent
-      // Support both numeric and string IDs, and also check contentId field
-      const content = props.questionContent.find(c =>
-        c.id == assignment.question_content_id ||
-        c.contentId == assignment.question_content_id ||
-        String(c.id) === String(assignment.question_content_id)
-      )
+  const result = historyRecords.value.map(record => {
+    // Find content details from questionContent
+    const content = props.questionContent?.find(c =>
+      c.id == record.question_content_id ||
+      c.contentId == record.question_content_id ||
+      String(c.id) === String(record.question_content_id)
+    )
 
-      if (!content) {
-        console.warn('Content not found for assignment:', {
-          assignment_id: assignment.id,
-          question_content_id: assignment.question_content_id,
-          available_content_ids: props.questionContent.map(c => ({ id: c.id, contentId: c.contentId }))
-        })
-      }
+    return {
+      id: record.id,
+      personnel_name: record.personnel_name,
+      personnel_department: record.personnel_department,
+      personnel_position: record.personnel_position,
+      content_description: content?.description || content?.topic || `未命名題目 (ID: ${record.question_content_id})`,
+      category_id: content?.category_id || content?.categoryId,
+      topic_id: content?.topic_id || content?.topicId,
+      factor_id: content?.factor_id || content?.factorId || content?.risk_factor_id,
+      assignment_status: record.assignment_status,
+      action_type: record.action_type,
+      assigned_at: record.action_type === 'created' ? record.action_at : record.original_assigned_at,
+      accepted_at: record.accepted_at,
+      completed_at: record.completed_at
+    }
+  })
 
-      return {
-        id: assignment.id,
-        personnel_name: assignment.personnel_name,
-        personnel_department: assignment.personnel_department,
-        personnel_position: assignment.personnel_position,
-        content_description: content?.description || content?.topic || `未命名題目 (ID: ${assignment.question_content_id})`,
-        category_id: content?.category_id || content?.categoryId,
-        topic_id: content?.topic_id || content?.topicId,
-        factor_id: content?.factor_id || content?.factorId || content?.risk_factor_id,
-        assignment_status: assignment.assignment_status,
-        assigned_at: assignment.assigned_at,
-        accepted_at: assignment.accepted_at,
-        completed_at: assignment.completed_at
-      }
-    })
+  console.log('[assignmentHistory computed] Returning', result.length, 'processed records')
+  return result
 })
 
 const historyColumns = [
@@ -867,6 +864,8 @@ const removeUserFromContent = async (contentId, userId) => {
     })
 
     if (success) {
+      // 重新載入歷史記錄（移除會新增一條移除記錄到歷史表）
+      await loadHistory()
       emit('assignment-updated')
     }
   } catch (error) {
@@ -885,6 +884,8 @@ const removePersonFromAllContent = async (userId) => {
     )
 
     if (success) {
+      // 重新載入歷史記錄（移除會新增一條移除記錄到歷史表）
+      await loadHistory()
       emit('assignment-updated')
     }
   } catch (error) {
@@ -1055,7 +1056,8 @@ onMounted(async () => {
           loadAssignmentSummary(props.companyId, props.questionId),
           getCategories(props.questionId),
           getTopics(props.questionId),
-          getFactors(props.questionId)
+          getFactors(props.questionId),
+          loadHistory() // 載入歷史記錄
         ])
         console.log('[PersonnelAssignmentModal] Finished loading, assignments count:', assignments.value.length)
       } else {
@@ -1085,7 +1087,8 @@ watch([() => props.companyId, () => props.questionId], async ([newCompanyId, new
         loadAssignmentSummary(newCompanyId, newQuestionId),
         getCategories(newQuestionId),
         getTopics(newQuestionId),
-        getFactors(newQuestionId)
+        getFactors(newQuestionId),
+        loadHistory() // 載入歷史記錄
       ])
     } catch (error) {
       console.error('Error loading assignment summary or structure data:', error)

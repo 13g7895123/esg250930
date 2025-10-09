@@ -29,7 +29,7 @@
           v-if="features.showSaveButton"
           @click="$emit('save')"
           :disabled="isSaving"
-          class="px-4 py-2 bg-green-600 text-white rounded-2xl hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
+          class="px-4 py-2 text-white rounded-2xl disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 save-button"
         >
           <span v-if="isSaving" class="flex items-center">
             <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
@@ -93,5 +93,11 @@ const emit = defineEmits(['back', 'preview', 'save', 'fill-test-data'])
 </script>
 
 <style scoped>
-/* 按鈕樣式已使用 Tailwind CSS，無需額外樣式 */
+.save-button {
+  background-color: #059669;
+}
+
+.save-button:hover:not(:disabled) {
+  background-color: #047857;
+}
 </style>

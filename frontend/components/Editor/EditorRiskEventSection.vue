@@ -4,14 +4,14 @@
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center space-x-3">
         <span class="font-bold text-gray-900 text-xl">
-          公司報導年度是否有發生實際風險/負面衝擊事件
+          <span class="text-red-500">*</span>公司報導年度是否有發生實際風險/負面衝擊事件
         </span>
         <span class="bg-gray-200 text-gray-800 px-2 py-1 rounded text-base font-medium">
           C
         </span>
       </div>
       <button
-        v-if="!readonly"
+        v-if="!readonly && !hideRecordButton"
         class="px-3 py-1 text-white text-base rounded-full"
         style="background-color: #059669;"
       >
@@ -70,7 +70,7 @@
 
       <!-- 描述欄位 -->
       <div>
-        <label class="text-gray-600 mt-6 mb-1">*請描述</label>
+        <label class="text-gray-600 mt-6 mb-1">請描述</label>
         <textarea
           v-model="localDescription"
           rows="3"
@@ -116,6 +116,14 @@ const props = defineProps({
    * 是否唯讀 (preview 模式)
    */
   readonly: {
+    type: Boolean,
+    default: false
+  },
+
+  /**
+   * 是否隱藏紀錄按鈕 (answer 模式)
+   */
+  hideRecordButton: {
     type: Boolean,
     default: false
   },

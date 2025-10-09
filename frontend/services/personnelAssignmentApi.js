@@ -250,6 +250,123 @@ const getMockResponse = (endpoint, options) => {
     }
   }
 
+  // Mock assignment history - GET /companies/{companyId}/assessments/{assessmentId}/history
+  if (endpoint.match(/\/companies\/\d+\/assessments\/\d+\/history/) && (!options.method || options.method === 'GET')) {
+    const match = endpoint.match(/\/companies\/(\d+)\/assessments\/(\d+)\/history/)
+    const companyId = parseInt(match[1])
+    const assessmentId = parseInt(match[2])
+
+    console.log('Mock: Getting assignment history for company', companyId, 'assessment', assessmentId)
+
+    // Generate mock history data based on current assignments
+    const historyData = mockStorage.assignments
+      .filter(a => a.company_id === companyId && a.assessment_id === assessmentId)
+      .map((assignment, index) => ({
+        id: index + 1,
+        company_id: assignment.company_id,
+        assessment_id: assignment.assessment_id,
+        question_content_id: assignment.question_content_id,
+        personnel_id: assignment.personnel_id,
+        personnel_name: assignment.personnel_name,
+        personnel_department: assignment.personnel_department || '測試部門',
+        personnel_position: assignment.personnel_position || '測試職位',
+        assignment_status: assignment.assignment_status,
+        action_type: 'created',
+        action_at: assignment.assigned_at,
+        original_assigned_at: assignment.assigned_at,
+        accepted_at: assignment.accepted_at,
+        completed_at: assignment.completed_at
+      }))
+
+    console.log('Mock: Returning', historyData.length, 'history records')
+
+    return {
+      success: true,
+      message: '成功取得指派歷史 (模擬)',
+      data: historyData
+    }
+  }
+
+  // Mock content history - GET /companies/{companyId}/assessments/{assessmentId}/contents/{contentId}/history
+  if (endpoint.match(/\/companies\/\d+\/assessments\/\d+\/contents\/[^/]+\/history/) && (!options.method || options.method === 'GET')) {
+    const match = endpoint.match(/\/companies\/(\d+)\/assessments\/(\d+)\/contents\/([^/]+)\/history/)
+    const companyId = parseInt(match[1])
+    const assessmentId = parseInt(match[2])
+    const contentId = match[3]
+
+    const historyData = mockStorage.assignments
+      .filter(a =>
+        a.company_id === companyId &&
+        a.assessment_id === assessmentId &&
+        String(a.question_content_id) === String(contentId)
+      )
+      .map((assignment, index) => ({
+        id: index + 1,
+        question_content_id: assignment.question_content_id,
+        personnel_id: assignment.personnel_id,
+        personnel_name: assignment.personnel_name,
+        action_type: 'created',
+        action_at: assignment.assigned_at
+      }))
+
+    return {
+      success: true,
+      message: '成功取得題項歷史 (模擬)',
+      data: historyData
+    }
+  }
+
+  // Mock personnel history - GET /companies/{companyId}/assessments/{assessmentId}/personnel/{personnelId}/history
+  if (endpoint.match(/\/companies\/\d+\/assessments\/\d+\/personnel\/\d+\/history/) && (!options.method || options.method === 'GET')) {
+    const match = endpoint.match(/\/companies\/(\d+)\/assessments\/(\d+)\/personnel\/(\d+)\/history/)
+    const companyId = parseInt(match[1])
+    const assessmentId = parseInt(match[2])
+    const personnelId = parseInt(match[3])
+
+    const historyData = mockStorage.assignments
+      .filter(a =>
+        a.company_id === companyId &&
+        a.assessment_id === assessmentId &&
+        a.personnel_id === personnelId
+      )
+      .map((assignment, index) => ({
+        id: index + 1,
+        question_content_id: assignment.question_content_id,
+        personnel_name: assignment.personnel_name,
+        action_type: 'created',
+        action_at: assignment.assigned_at
+      }))
+
+    return {
+      success: true,
+      message: '成功取得人員歷史 (模擬)',
+      data: historyData
+    }
+  }
+
+  // Mock history statistics - GET /companies/{companyId}/assessments/{assessmentId}/history/statistics
+  if (endpoint.match(/\/companies\/\d+\/assessments\/\d+\/history\/statistics/) && (!options.method || options.method === 'GET')) {
+    const match = endpoint.match(/\/companies\/(\d+)\/assessments\/(\d+)\/history\/statistics/)
+    const companyId = parseInt(match[1])
+    const assessmentId = parseInt(match[2])
+
+    const relevantAssignments = mockStorage.assignments.filter(a =>
+      a.company_id === companyId && a.assessment_id === assessmentId
+    )
+
+    return {
+      success: true,
+      message: '成功取得歷史統計 (模擬)',
+      data: {
+        total_actions: relevantAssignments.length,
+        created_count: relevantAssignments.length,
+        removed_count: 0,
+        unique_personnel: new Set(relevantAssignments.map(a => a.personnel_id)).size,
+        unique_contents: new Set(relevantAssignments.map(a => a.question_content_id)).size
+      }
+    }
+  }
+
   // Default mock response
   return {
     success: false,
@@ -367,6 +484,67 @@ export const personnelAssignmentApi = {
       method: 'PUT',
       body: { status }
     })
+  },
+
+  /**
+   * 取得指派歷史記錄
+   * @param {number} companyId - 公司ID
+   * @param {number} assessmentId - 評估ID
+   * @param {Object} filters - 篩選條件
+   * @returns {Promise<Object>} API回應
+   */
+  async getAssignmentHistory(companyId, assessmentId, filters = {}) {
+    const queryParams = new URLSearchParams()
+    if (filters.personnel_id) queryParams.append('personnel_id', filters.personnel_id)
+    if (filters.question_content_id) queryParams.append('question_content_id', filters.question_content_id)
+    if (filters.action_type) queryParams.append('action_type', filters.action_type)
+    if (filters.start_date) queryParams.append('start_date', filters.start_date)
+    if (filters.end_date) queryParams.append('end_date', filters.end_date)
+
+    const queryString = queryParams.toString()
+    const endpoint = `/companies/${companyId}/assessments/${assessmentId}/history${queryString ? '?' + queryString : ''}`
+
+    return await apiRequest(endpoint, {
+      method: 'GET'
+    })
+  },
+
+  /**
+   * 取得題項內容的指派歷史
+   * @param {number} companyId - 公司ID
+   * @param {number} assessmentId - 評估ID
+   * @param {string} contentId - 題項內容ID
+   * @returns {Promise<Object>} API回應
+   */
+  async getContentHistory(companyId, assessmentId, contentId) {
+    return await apiRequest(`/companies/${companyId}/assessments/${assessmentId}/contents/${contentId}/history`, {
+      method: 'GET'
+    })
+  },
+
+  /**
+   * 取得人員的指派歷史
+   * @param {number} companyId - 公司ID
+   * @param {number} assessmentId - 評估ID
+   * @param {number} personnelId - 人員ID
+   * @returns {Promise<Object>} API回應
+   */
+  async getPersonnelHistory(companyId, assessmentId, personnelId) {
+    return await apiRequest(`/companies/${companyId}/assessments/${assessmentId}/personnel/${personnelId}/history`, {
+      method: 'GET'
+    })
+  },
+
+  /**
+   * 取得歷史統計資訊
+   * @param {number} companyId - 公司ID
+   * @param {number} assessmentId - 評估ID
+   * @returns {Promise<Object>} API回應
+   */
+  async getHistoryStatistics(companyId, assessmentId) {
+    return await apiRequest(`/companies/${companyId}/assessments/${assessmentId}/history/statistics`, {
+      method: 'GET'
+    })
   }
 }
 
@@ -480,63 +658,6 @@ export const migrateLocalStorageToApi = {
         console.error('Error clearing localStorage data:', error)
       }
     }
-  },
-
-  /**
-   * 取得指派歷史記錄
-   * @param {number} companyId - 公司ID
-   * @param {number} assessmentId - 評估ID
-   * @param {Object} filters - 篩選條件
-   */
-  async getAssignmentHistory(companyId, assessmentId, filters = {}) {
-    const queryParams = new URLSearchParams()
-    if (filters.personnel_id) queryParams.append('personnel_id', filters.personnel_id)
-    if (filters.question_content_id) queryParams.append('question_content_id', filters.question_content_id)
-    if (filters.action_type) queryParams.append('action_type', filters.action_type)
-    if (filters.start_date) queryParams.append('start_date', filters.start_date)
-    if (filters.end_date) queryParams.append('end_date', filters.end_date)
-
-    const queryString = queryParams.toString()
-    const endpoint = `/companies/${companyId}/assessments/${assessmentId}/history${queryString ? '?' + queryString : ''}`
-
-    return await apiRequest(endpoint, {
-      method: 'GET'
-    })
-  },
-
-  /**
-   * 取得題項內容的指派歷史
-   * @param {number} companyId - 公司ID
-   * @param {number} assessmentId - 評估ID
-   * @param {string} contentId - 題項內容ID
-   */
-  async getContentHistory(companyId, assessmentId, contentId) {
-    return await apiRequest(`/companies/${companyId}/assessments/${assessmentId}/contents/${contentId}/history`, {
-      method: 'GET'
-    })
-  },
-
-  /**
-   * 取得人員的指派歷史
-   * @param {number} companyId - 公司ID
-   * @param {number} assessmentId - 評估ID
-   * @param {number} personnelId - 人員ID
-   */
-  async getPersonnelHistory(companyId, assessmentId, personnelId) {
-    return await apiRequest(`/companies/${companyId}/assessments/${assessmentId}/personnel/${personnelId}/history`, {
-      method: 'GET'
-    })
-  },
-
-  /**
-   * 取得歷史統計資訊
-   * @param {number} companyId - 公司ID
-   * @param {number} assessmentId - 評估ID
-   */
-  async getHistoryStatistics(companyId, assessmentId) {
-    return await apiRequest(`/companies/${companyId}/assessments/${assessmentId}/history/statistics`, {
-      method: 'GET'
-    })
   }
 }
 

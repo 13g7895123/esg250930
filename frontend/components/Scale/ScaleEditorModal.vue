@@ -2,13 +2,18 @@
   <Teleport to="body">
     <div
       v-if="modelValue"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+      class="fixed inset-0 z-50 bg-black bg-opacity-50"
       @click.self="closeModal"
     >
       <div
-        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-6xl overflow-y-auto flex flex-col"
-        style="max-height: 90vh;"
+        class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full px-4"
+        style="max-height: 90vh; max-width: calc(100vw - 2rem);"
+        @click.stop
       >
+        <div
+          class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-6xl mx-auto overflow-y-auto flex flex-col"
+          style="max-height: 90vh;"
+        >
         <!-- Modal Header -->
         <div class="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
           <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ title }}</h2>
@@ -262,6 +267,7 @@
             儲存
           </button>
         </div>
+      </div>
       </div>
     </div>
   </Teleport>

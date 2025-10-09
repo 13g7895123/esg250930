@@ -87,13 +87,13 @@ const buttonText = computed(() => {
 
   switch (props.mode) {
     case 'editor':
-      return '可能性量表'
+      return '量表檢視'
     case 'viewer':
-      return '檢視量表'
+      return '量表檢視'
     case 'viewer-compact':
-      return '可能性量表'
+      return '量表檢視'
     default:
-      return '可能性量表'
+      return '量表檢視'
   }
 })
 </script>

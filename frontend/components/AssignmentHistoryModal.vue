@@ -3,14 +3,19 @@
     <!-- Modal Overlay -->
     <div
       v-if="modelValue"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      class="fixed inset-0 bg-black bg-opacity-50 z-50"
       @click.self="closeModal"
     >
-      <!-- Modal Container -->
       <div
-        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl flex flex-col"
-        style="max-height: 90vh;"
+        class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full px-4"
+        style="max-height: 90vh; max-width: calc(100vw - 2rem);"
+        @click.stop
       >
+        <!-- Modal Container -->
+        <div
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl mx-auto flex flex-col"
+          style="max-height: 90vh;"
+        >
 
         <!-- Modal Header -->
         <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
@@ -147,6 +152,7 @@
             關閉
           </button>
         </div>
+      </div>
       </div>
     </div>
   </div>

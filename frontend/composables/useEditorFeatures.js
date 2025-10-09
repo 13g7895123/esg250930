@@ -100,10 +100,11 @@ export const useEditorFeatures = (mode) => {
 
       /**
        * 預設展開的 Section
-       * preview/answer 模式: Section A 展開, Section B 收折
+       * preview 模式: Section A 展開, Section B 收折
+       * answer 模式: Section A 和 B 都展開
        * 其他模式: 全部展開
        */
-      defaultExpandedSections: currentMode === 'preview' || currentMode === 'answer'
+      defaultExpandedSections: currentMode === 'preview'
         ? { sectionA: true, sectionB: false }
         : { sectionA: true, sectionB: true },
 

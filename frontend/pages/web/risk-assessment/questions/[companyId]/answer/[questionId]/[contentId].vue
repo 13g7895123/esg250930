@@ -5,6 +5,7 @@
     :content-id="contentId"
     :company-id="companyId"
     :question-data="questionData"
+    :question-template="questionTemplate"
     :is-loading="isLoading"
     :load-error="loadError"
     :save-function="saveAnswerData"
@@ -48,6 +49,7 @@ const { getBackPath } = useEditorFeatures(editorMode)
 const isLoading = ref(true)
 const loadError = ref('')
 const questionData = ref(null)
+const questionTemplate = ref(null) // 題目模板，用於 placeholder
 
 // 生命週期 - 初始化用戶資料和題目資料
 onMounted(async () => {
@@ -99,19 +101,65 @@ const loadQuestionData = async () => {
     console.log('Loading question data for answer form...')
 
     // 載入題目內容以取得 A 和 B 區段
+    console.log('📡 調用 API: /api/v1/question-management/contents/' + contentId)
     const contentResponse = await $fetch(`/api/v1/question-management/contents/${contentId}`)
+    console.log('📡 API 回應:', contentResponse)
+
     if (contentResponse.success && contentResponse.data?.content) {
       const content = contentResponse.data.content
+      console.log('📦 content 資料:', content)
+      console.log('📦 factor_description:', content.factor_description)
+      console.log('📦 b_content:', content.b_content)
 
-      // 儲存題目的結構資訊
+      const formData = backendToForm(content)
+      console.log('🔄 backendToForm 轉換後:', formData)
+
+      // 儲存題目模板（用於 placeholder）
+      questionTemplate.value = formData
+
+      // 儲存題目的結構資訊和 A/B 區段內容
+      // C-H 區段初始為空，題目內容作為 placeholder
       questionData.value = {
         category_name: content.category_name || '',
         topic_name: content.topic_name || '',
         factor_name: content.factor_name || '',
-        ...backendToForm(content)
+        // A 和 B 區段顯示題目內容
+        riskFactorDescription: formData.riskFactorDescription,
+        referenceText: formData.referenceText,
+        // C-H 區段初始為空
+        hasRiskEvent: '',
+        riskEventDescription: '',
+        hasCounterAction: '',
+        counterActionDescription: '',
+        counterActionCost: '',
+        risk: {
+          description: '',
+          probability: 1,
+          impactLevel: 1,
+          calculation: ''
+        },
+        opportunity: {
+          description: '',
+          probability: 1,
+          impactLevel: 3,
+          calculation: ''
+        },
+        negativeImpact: {
+          level: 'level-2',
+          description: ''
+        },
+        positiveImpact: {
+          level: 'level-2',
+          description: ''
+        },
+        hoverTexts: formData.hoverTexts
       }
 
       console.log('✅ 題目內容載入完成')
+      console.log('📋 questionTemplate:', questionTemplate.value)
+      console.log('📝 questionData:', questionData.value)
+    } else {
+      console.error('❌ API 回應格式錯誤或無資料')
     }
 
     // 載入現有答案（如果存在）
@@ -134,11 +182,22 @@ const loadQuestionData = async () => {
       console.log('找到現有答案:', existingAnswer)
 
       if (existingAnswer.response_fields) {
-        // 合併現有答案到題目資料
+        // 合併現有答案到題目資料（只更新 C-H 區段）
         const answerData = backendToForm(existingAnswer.response_fields, true)
+
+        // 只更新 C-H 區段的答案，保留 A 和 B 的題目內容
         questionData.value = {
           ...questionData.value,
-          ...answerData
+          // C-H 區段使用用戶答案
+          hasRiskEvent: answerData.hasRiskEvent,
+          riskEventDescription: answerData.riskEventDescription,
+          hasCounterAction: answerData.hasCounterAction,
+          counterActionDescription: answerData.counterActionDescription,
+          counterActionCost: answerData.counterActionCost,
+          risk: answerData.risk,
+          opportunity: answerData.opportunity,
+          negativeImpact: answerData.negativeImpact,
+          positiveImpact: answerData.positiveImpact
         }
         console.log('✅ 現有答案已載入到表單')
       }
