@@ -2535,33 +2535,23 @@ onMounted(() => {
   fetchLatestBatchSummary()
 })
 
-// Sorted content data - sort by category > topic > factor
+// Sorted content data - sort by sort_order only
 const sortedContentData = computed(() => {
   if (!props.contentData || props.contentData.length === 0) {
     return []
   }
 
   return [...props.contentData].sort((a, b) => {
-    // Get category names
-    const categoryA = getCategoryName(a.category_id) || ''
-    const categoryB = getCategoryName(b.category_id) || ''
+    // Sort by sort_order, then by id as fallback
+    const orderA = a.sort_order ?? a.order ?? 0
+    const orderB = b.sort_order ?? b.order ?? 0
 
-    // First, sort by category
-    const categoryCompare = categoryA.localeCompare(categoryB, 'zh-TW')
-    if (categoryCompare !== 0) return categoryCompare
-
-    // If categories are the same, sort by topic (if topics are enabled)
-    if (props.riskTopicsEnabled) {
-      const topicA = getTopicName(a.topic_id) || ''
-      const topicB = getTopicName(b.topic_id) || ''
-      const topicCompare = topicA.localeCompare(topicB, 'zh-TW')
-      if (topicCompare !== 0) return topicCompare
+    if (orderA !== orderB) {
+      return orderA - orderB
     }
 
-    // If topics are the same (or not enabled), sort by factor
-    const factorA = getRiskFactorName(a.risk_factor_id) || ''
-    const factorB = getRiskFactorName(b.risk_factor_id) || ''
-    return factorA.localeCompare(factorB, 'zh-TW')
+    // If sort_order is the same, sort by id
+    return (a.id ?? 0) - (b.id ?? 0)
   })
 })
 

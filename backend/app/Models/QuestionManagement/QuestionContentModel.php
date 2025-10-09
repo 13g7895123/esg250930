@@ -324,11 +324,8 @@ class QuestionContentModel extends Model
             log_message('info', "📋 No user filtering - returning all contents for assessment {$assessmentId}");
         }
 
-        // 排序：先按分類、主題、因子，再按內容排序
-        $builder->orderBy('question_categories.sort_order', 'ASC')
-            ->orderBy('question_topics.sort_order', 'ASC')
-            ->orderBy('question_factors.sort_order', 'ASC')
-            ->orderBy('question_contents.sort_order', 'ASC')
+        // 排序：只依據題項內容的 sort_order 欄位
+        $builder->orderBy('question_contents.sort_order', 'ASC')
             ->orderBy('question_contents.id', 'ASC');
 
         // 執行查詢並記錄除錯資訊
