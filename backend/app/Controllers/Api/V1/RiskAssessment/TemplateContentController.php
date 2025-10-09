@@ -475,20 +475,39 @@ class TemplateContentController extends BaseController
                 ]);
             }
 
-            $rules = [
-                'orders' => 'required|array',
-                'orders.*.id' => 'required|integer',
-                'orders.*.sort_order' => 'required|integer'
-            ];
-
             // Get input data (handles both PUT form data and JSON)
             $input = $this->request->getJSON(true) ?? $this->request->getRawInput();
-            if (!$this->validate($rules, $input)) {
+
+            // 手動驗證 orders 是否為陣列（CodeIgniter 4 validation 不支援 'array' 規則）
+            if (!isset($input['orders']) || !is_array($input['orders'])) {
                 return $this->response->setStatusCode(400)->setJSON([
                     'success' => false,
-                    'message' => '驗證失敗',
-                    'errors' => $this->validator->getErrors()
+                    'message' => '排序資料格式錯誤'
                 ]);
+            }
+
+            // 驗證陣列是否為空
+            if (empty($input['orders'])) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '排序資料不能為空'
+                ]);
+            }
+
+            // 驗證每個排序項目的格式
+            foreach ($input['orders'] as $index => $order) {
+                if (!isset($order['id']) || !is_numeric($order['id'])) {
+                    return $this->response->setStatusCode(400)->setJSON([
+                        'success' => false,
+                        'message' => "排序項目 {$index} 缺少有效的 id"
+                    ]);
+                }
+                if (!isset($order['sort_order']) || !is_numeric($order['sort_order'])) {
+                    return $this->response->setStatusCode(400)->setJSON([
+                        'success' => false,
+                        'message' => "排序項目 {$index} 缺少有效的 sort_order"
+                    ]);
+                }
             }
 
             $db = \Config\Database::connect();
@@ -500,7 +519,7 @@ class TemplateContentController extends BaseController
                     $content = $this->contentModel->where('id', $order['id'])
                                                   ->where('template_id', $templateId)
                                                   ->first();
-                    
+
                     if (!$content) {
                         throw new \Exception("範本內容 ID {$order['id']} 不存在或不屬於此範本");
                     }
