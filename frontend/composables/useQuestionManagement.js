@@ -194,9 +194,18 @@ export const useQuestionManagement = () => {
         assessment_year: itemData.year
       }
 
+      console.log('=== updateQuestionManagementItem 執行 ===')
+      console.log('companyId:', companyId)
+      console.log('itemId:', itemId)
+      console.log('itemData:', itemData)
+      console.log('apiData:', apiData)
+
       // Update via API
       const result = await api.riskAssessment.update(itemId, apiData)
       const response = result.data
+
+      console.log('API 回應:', response)
+      console.log('後端檢測到範本變更:', response.template_changed)
 
       if (response.success && response.data) {
         // Update local cache

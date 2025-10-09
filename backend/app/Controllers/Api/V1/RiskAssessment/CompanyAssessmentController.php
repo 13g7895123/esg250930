@@ -333,13 +333,20 @@ class CompanyAssessmentController extends BaseController
     public function update($id = null)
     {
         try {
+            log_message('info', '=== CompanyAssessmentController::update 被呼叫 ===');
+            log_message('info', 'Assessment ID: ' . ($id ?? 'null'));
+            log_message('info', 'Request Time: ' . date('Y-m-d H:i:s'));
+
             $assessment = $this->assessmentModel->find($id);
             if (!$assessment) {
+                log_message('warning', 'Assessment 不存在: ' . $id);
                 return $this->response->setStatusCode(404)->setJSON([
                     'success' => false,
                     'message' => '評估項目不存在'
                 ]);
             }
+
+            log_message('info', '原始 Assessment 資料: ' . json_encode($assessment));
 
             $input = $this->request->getJSON(true);
             if (empty($input)) {
@@ -373,9 +380,24 @@ class CompanyAssessmentController extends BaseController
                 'total_score', 'percentage_score', 'risk_level', 'notes'
             ]));
 
+            log_message('info', '請求輸入資料: ' . json_encode($input));
+            log_message('info', '準備更新的資料: ' . json_encode($data));
+
+            // 檢測範本是否變更
+            $templateChanged = false;
+            if (isset($data['template_id']) && $data['template_id'] != $assessment['template_id']) {
+                $templateChanged = true;
+                log_message('info', '檢測到範本變更！');
+                log_message('info', '舊範本ID: ' . $assessment['template_id']);
+                log_message('info', '新範本ID: ' . $data['template_id']);
+            } else {
+                log_message('info', '範本未變更（舊: ' . ($assessment['template_id'] ?? 'null') . '，新: ' . ($data['template_id'] ?? 'null') . '）');
+            }
+
             $success = $this->assessmentModel->update($id, $data);
-            
+
             if (!$success) {
+                log_message('error', '更新 Assessment 失敗: ' . json_encode($this->assessmentModel->errors()));
                 return $this->response->setStatusCode(500)->setJSON([
                     'success' => false,
                     'message' => '更新評估項目失敗',
@@ -383,12 +405,17 @@ class CompanyAssessmentController extends BaseController
                 ]);
             }
 
+            log_message('info', 'Assessment 更新成功');
+
             $updatedAssessment = $this->assessmentModel->getAssessmentWithTemplate($id);
+
+            log_message('info', '更新後的 Assessment 資料: ' . json_encode($updatedAssessment));
 
             return $this->response->setJSON([
                 'success' => true,
                 'message' => '評估項目更新成功',
-                'data' => $updatedAssessment
+                'data' => $updatedAssessment,
+                'template_changed' => $templateChanged
             ]);
 
         } catch (\Exception $e) {
