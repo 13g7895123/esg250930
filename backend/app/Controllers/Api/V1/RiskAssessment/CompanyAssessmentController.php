@@ -414,16 +414,15 @@ class CompanyAssessmentController extends BaseController
                 log_message('info', '新範本ID: ' . $data['template_id']);
 
                 try {
-                    // 建立 QuestionManagementController 實例並呼叫 syncFromTemplate
+                    // 建立 QuestionManagementController 實例並呼叫核心同步邏輯
                     $qmController = new \App\Controllers\Api\V1\QuestionManagement\QuestionManagementController();
-                    $syncResult = $qmController->syncFromTemplate($id);
+                    $syncResult = $qmController->performTemplateSync((int)$id);
 
                     // 檢查同步結果
-                    $syncResponse = json_decode($syncResult->getBody(), true);
-                    if ($syncResponse && $syncResponse['success']) {
-                        log_message('info', '範本同步成功: ' . json_encode($syncResponse['data']));
+                    if ($syncResult && $syncResult['success']) {
+                        log_message('info', '範本同步成功: ' . json_encode($syncResult['data']));
                     } else {
-                        log_message('error', '範本同步回傳失敗狀態: ' . json_encode($syncResponse));
+                        log_message('error', '範本同步回傳失敗狀態: ' . json_encode($syncResult));
                     }
                 } catch (\Exception $e) {
                     // 記錄錯誤但不影響 assessment 更新

@@ -119,42 +119,33 @@ class QuestionManagementController extends BaseController
      * @param int|null $assessmentId 評估記錄ID
      * @return ResponseInterface
      */
-    public function syncFromTemplate($assessmentId = null)
+    /**
+     * 執行範本同步的核心邏輯（可被其他 Controller 呼叫）
+     *
+     * @param int $assessmentId 評估記錄ID
+     * @return array 同步結果 ['success' => bool, 'message' => string, 'data' => array]
+     * @throws \Exception
+     */
+    public function performTemplateSync(int $assessmentId): array
     {
-        try {
-            log_message('info', '=== syncFromTemplate API 被呼叫 ===');
-            log_message('info', 'Assessment ID: ' . ($assessmentId ?? 'null'));
-            log_message('info', 'Request Time: ' . date('Y-m-d H:i:s'));
-            log_message('info', 'Request Method: ' . $this->request->getMethod());
+        log_message('info', '=== performTemplateSync 開始執行 ===');
+        log_message('info', 'Assessment ID: ' . $assessmentId);
+        log_message('info', 'Execution Time: ' . date('Y-m-d H:i:s'));
 
-            if (!$assessmentId) {
-                return $this->response->setStatusCode(400)->setJSON([
-                    'success' => false,
-                    'message' => '評估記錄ID為必填項目'
-                ]);
-            }
+        // 驗證評估記錄是否存在
+        $assessment = $this->assessmentModel->find($assessmentId);
+        if (!$assessment) {
+            throw new \RuntimeException('找不到指定的評估記錄: ' . $assessmentId);
+        }
 
-            // 驗證評估記錄是否存在
-            $assessment = $this->assessmentModel->find($assessmentId);
-            if (!$assessment) {
-                return $this->response->setStatusCode(404)->setJSON([
-                    'success' => false,
-                    'message' => '找不到指定的評估記錄'
-                ]);
-            }
+        $templateId = $assessment['template_id'];
 
-            $templateId = $assessment['template_id'];
+        log_message('info', 'Assessment 資料: ' . json_encode($assessment));
+        log_message('info', 'Template ID: ' . ($templateId ?? 'null'));
 
-            log_message('info', 'Assessment 資料: ' . json_encode($assessment));
-            log_message('info', 'Template ID: ' . ($templateId ?? 'null'));
-
-            if (!$templateId) {
-                log_message('warning', 'Assessment 未指定範本ID，終止同步');
-                return $this->response->setStatusCode(400)->setJSON([
-                    'success' => false,
-                    'message' => '評估記錄未指定範本ID'
-                ]);
-            }
+        if (!$templateId) {
+            throw new \RuntimeException('評估記錄未指定範本ID');
+        }
 
             // 開始資料庫事務
             $db = \Config\Database::connect();
@@ -287,55 +278,75 @@ class QuestionManagementController extends BaseController
                 }
             }
 
-            $db->transComplete();
+        $db->transComplete();
 
-            if ($db->transStatus() === false) {
-                // 記錄事務失敗
-                $dbError = $db->error();
-                log_message('error', 'QuestionManagementController::syncFromTemplate - Transaction failed');
-                log_message('error', 'Database error code: ' . ($dbError['code'] ?? 'N/A'));
-                log_message('error', 'Database error message: ' . ($dbError['message'] ?? 'N/A'));
+        if ($db->transStatus() === false) {
+            // 記錄事務失敗
+            $dbError = $db->error();
+            log_message('error', 'QuestionManagementController::performTemplateSync - Transaction failed');
+            log_message('error', 'Database error code: ' . ($dbError['code'] ?? 'N/A'));
+            log_message('error', 'Database error message: ' . ($dbError['message'] ?? 'N/A'));
 
-                return $this->response->setStatusCode(500)->setJSON([
+            throw new \RuntimeException('同步範本架構時發生資料庫錯誤: ' . ($dbError['message'] ?? '未知錯誤'));
+        }
+
+        log_message('info', '[performTemplateSync] 資料庫事務成功完成');
+        log_message('info', '[performTemplateSync] 同步結果統計:');
+        log_message('info', '  - 類別數量: ' . count($categoryIdMapping));
+        log_message('info', '  - 主題數量: ' . count($topicIdMapping));
+        log_message('info', '  - 因子數量: ' . count($factorIdMapping));
+        log_message('info', '  - 內容數量: ' . count($contentIdMapping));
+        log_message('info', '  - 可能性量表: ' . $probabilityScalesCopied);
+        log_message('info', '  - 影響量表: ' . $impactScalesCopied);
+
+        return [
+            'success' => true,
+            'message' => '成功從範本同步架構與量表',
+            'data' => [
+                'categories_copied' => count($categoryIdMapping),
+                'topics_copied' => count($topicIdMapping),
+                'factors_copied' => count($factorIdMapping),
+                'contents_copied' => count($contentIdMapping),
+                'probability_scales_copied' => $probabilityScalesCopied,
+                'probability_scale_rows_copied' => $probabilityScaleRowsCopied,
+                'probability_scale_columns_copied' => $probabilityScaleColumnsCopied,
+                'impact_scales_copied' => $impactScalesCopied,
+                'impact_scale_rows_copied' => $impactScaleRowsCopied,
+                'impact_scale_columns_copied' => $impactScaleColumnsCopied
+            ]
+        ];
+    }
+
+    /**
+     * 從範本同步架構與量表到題項管理（HTTP API 端點）
+     * POST /api/v1/question-management/assessment/{id}/sync-from-template
+     *
+     * @param int|null $assessmentId 評估記錄ID
+     * @return ResponseInterface
+     */
+    public function syncFromTemplate($assessmentId = null)
+    {
+        try {
+            log_message('info', '=== syncFromTemplate API 被呼叫 ===');
+            log_message('info', 'Assessment ID: ' . ($assessmentId ?? 'null'));
+            log_message('info', 'Request Time: ' . date('Y-m-d H:i:s'));
+            log_message('info', 'Request Method: ' . ($this->request ? $this->request->getMethod() : 'Internal'));
+
+            if (!$assessmentId) {
+                return $this->response->setStatusCode(400)->setJSON([
                     'success' => false,
-                    'message' => '同步範本架構時發生資料庫錯誤: ' . ($dbError['message'] ?? '未知錯誤')
+                    'message' => '評估記錄ID為必填項目'
                 ]);
             }
 
-            log_message('info', '[syncFromTemplate] 資料庫事務成功完成');
-            log_message('info', '[syncFromTemplate] 同步結果統計:');
-            log_message('info', '  - 類別數量: ' . count($categoryIdMapping));
-            log_message('info', '  - 主題數量: ' . count($topicIdMapping));
-            log_message('info', '  - 因子數量: ' . count($factorIdMapping));
-            log_message('info', '  - 內容數量: ' . count($contentIdMapping));
-            log_message('info', '  - 可能性量表: ' . $probabilityScalesCopied);
-            log_message('info', '  - 影響量表: ' . $impactScalesCopied);
+            // 呼叫核心同步邏輯
+            $result = $this->performTemplateSync((int)$assessmentId);
 
-            return $this->response->setJSON([
-                'success' => true,
-                'message' => '成功從範本同步架構與量表',
-                'data' => [
-                    'categories_copied' => count($categoryIdMapping),
-                    'topics_copied' => count($topicIdMapping),
-                    'factors_copied' => count($factorIdMapping),
-                    'contents_copied' => count($contentIdMapping),
-                    'probability_scales_copied' => $probabilityScalesCopied,
-                    'probability_scale_rows_copied' => $probabilityScaleRowsCopied,
-                    'probability_scale_columns_copied' => $probabilityScaleColumnsCopied,
-                    'impact_scales_copied' => $impactScalesCopied,
-                    'impact_scale_rows_copied' => $impactScaleRowsCopied,
-                    'impact_scale_columns_copied' => $impactScaleColumnsCopied
-                ]
-            ]);
+            return $this->response->setJSON($result);
 
         } catch (\Exception $e) {
             log_message('error', 'QuestionManagementController::syncFromTemplate - ' . $e->getMessage());
             log_message('error', 'Stack trace: ' . $e->getTraceAsString());
-
-            // 回滾事務（如果尚未完成）
-            if (isset($db) && $db->transStatus() !== false) {
-                $db->transRollback();
-            }
 
             return $this->response->setStatusCode(500)->setJSON([
                 'success' => false,
