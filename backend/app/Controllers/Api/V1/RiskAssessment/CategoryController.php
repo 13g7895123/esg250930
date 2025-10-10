@@ -262,4 +262,79 @@ class CategoryController extends BaseController
             ]);
         }
     }
+
+    /**
+     * Reorder categories
+     * PUT /api/v1/risk-assessment/templates/{templateId}/categories/reorder
+     */
+    public function reorder()
+    {
+        try {
+            // Get template ID from URI segment
+            $templateId = $this->request->uri->getSegment(5);
+
+            // Check if template exists
+            $template = $this->templateModel->find($templateId);
+            if (!$template) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '範本不存在'
+                ]);
+            }
+
+            // Get input data
+            $input = $this->request->getJSON(true) ?? $this->request->getRawInput();
+
+            if (!isset($input['orders']) || !is_array($input['orders'])) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '請提供有效的排序資料'
+                ]);
+            }
+
+            $db = \Config\Database::connect();
+            $db->transStart();
+
+            try {
+                foreach ($input['orders'] as $item) {
+                    if (!isset($item['id']) || !isset($item['sort_order'])) {
+                        continue;
+                    }
+
+                    // Verify category belongs to this template
+                    $category = $this->categoryModel
+                        ->where('template_id', $templateId)
+                        ->find($item['id']);
+
+                    if ($category) {
+                        $this->categoryModel->update($item['id'], [
+                            'sort_order' => $item['sort_order']
+                        ]);
+                    }
+                }
+
+                $db->transComplete();
+
+                if ($db->transStatus() === false) {
+                    throw new \Exception('更新排序失敗');
+                }
+
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => '風險分類排序更新成功'
+                ]);
+
+            } catch (\Exception $e) {
+                $db->transRollback();
+                throw $e;
+            }
+
+        } catch (\Exception $e) {
+            log_message('error', 'Category reorder error: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '更新風險分類排序失敗: ' . $e->getMessage()
+            ]);
+        }
+    }
 }

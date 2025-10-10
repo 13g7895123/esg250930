@@ -393,6 +393,9 @@
         empty-message="開始建立您的第一個風險類別"
         no-search-results-title="沒有找到符合的風險類別"
         no-search-results-message="請嘗試其他搜尋關鍵字"
+        :draggable="true"
+        order-field="sort_order"
+        @reorder="handleRiskCategoryReorder"
       >
         <!-- Actions Slot -->
         <template #actions>
@@ -559,6 +562,9 @@
         empty-message="開始建立您的第一個風險因子"
         no-search-results-title="沒有找到符合的風險因子"
         no-search-results-message="請嘗試其他搜尋關鍵字"
+        :draggable="true"
+        order-field="sort_order"
+        @reorder="handleRiskFactorReorder"
       >
         <!-- Actions Slot -->
         <template #actions>
@@ -790,6 +796,9 @@
         empty-message="開始建立您的第一個風險主題"
         no-search-results-title="沒有找到符合的風險主題"
         no-search-results-message="請嘗試其他搜尋關鍵字"
+        :draggable="true"
+        order-field="sort_order"
+        @reorder="handleRiskTopicReorder"
       >
         <!-- Actions Slot -->
         <template #actions>
@@ -1532,6 +1541,22 @@ const confirmDeleteRiskCategory = async () => {
   }
 }
 
+const handleRiskCategoryReorder = async (reorderedItems) => {
+  if (!managingTemplate.value?.id) return
+
+  try {
+    await templatesStore.reorderRiskCategories(managingTemplate.value.id, reorderedItems)
+    await showSuccess('排序更新成功', '風險類別的排序已成功更新')
+    // Refresh risk categories data after successful reorder
+    await templatesStore.fetchRiskCategories(managingTemplate.value.id)
+  } catch (error) {
+    console.error('排序風險類別錯誤:', error)
+    await showError('排序失敗', '更新風險類別排序時發生錯誤，請稍後再試')
+    // Refresh to restore original order
+    await templatesStore.fetchRiskCategories(managingTemplate.value.id)
+  }
+}
+
 const closeRiskCategoryModals = () => {
   showAddRiskCategoryModal.value = false
   showEditRiskCategoryModal.value = false
@@ -1652,6 +1677,22 @@ const confirmDeleteRiskFactor = async () => {
   }
 }
 
+const handleRiskFactorReorder = async (reorderedItems) => {
+  if (!managingTemplate.value?.id) return
+
+  try {
+    await templatesStore.reorderRiskFactors(managingTemplate.value.id, reorderedItems)
+    await showSuccess('排序更新成功', '風險因子的排序已成功更新')
+    // Refresh risk factors data after successful reorder
+    await templatesStore.fetchRiskFactors(managingTemplate.value.id)
+  } catch (error) {
+    console.error('排序風險因子錯誤:', error)
+    await showError('排序失敗', '更新風險因子排序時發生錯誤，請稍後再試')
+    // Refresh to restore original order
+    await templatesStore.fetchRiskFactors(managingTemplate.value.id)
+  }
+}
+
 const closeRiskFactorModals = () => {
   showAddRiskFactorModal.value = false
   showEditRiskFactorModal.value = false
@@ -1754,6 +1795,22 @@ const confirmDeleteRiskTopic = async () => {
   } catch (error) {
     console.error('刪除風險主題錯誤:', error)
     await showError('刪除失敗', '刪除風險主題時發生錯誤，請稍後再試')
+  }
+}
+
+const handleRiskTopicReorder = async (reorderedItems) => {
+  if (!managingTemplate.value?.id) return
+
+  try {
+    await templatesStore.reorderRiskTopics(managingTemplate.value.id, reorderedItems)
+    await showSuccess('排序更新成功', '風險主題的排序已成功更新')
+    // Refresh risk topics data after successful reorder
+    await templatesStore.fetchRiskTopics(managingTemplate.value.id)
+  } catch (error) {
+    console.error('排序風險主題錯誤:', error)
+    await showError('排序失敗', '更新風險主題排序時發生錯誤，請稍後再試')
+    // Refresh to restore original order
+    await templatesStore.fetchRiskTopics(managingTemplate.value.id)
   }
 }
 

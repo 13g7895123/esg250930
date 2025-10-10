@@ -104,6 +104,9 @@ $routes->group('api/v1/risk-assessment', function($routes) {
     $routes->options('templates/(:num)/categories/(:num)', function() {
         return service('response')->setStatusCode(200);
     });
+    $routes->options('templates/(:num)/categories/reorder', function() {
+        return service('response')->setStatusCode(200);
+    });
     $routes->options('templates/(:num)/contents', function() {
         return service('response')->setStatusCode(200);
     });
@@ -175,6 +178,7 @@ $routes->group('api/v1/risk-assessment', function($routes) {
     $routes->post('templates/(:num)/categories', 'Api\V1\RiskAssessment\CategoryController::create/$1');
     $routes->put('templates/(:num)/categories/(:num)', 'Api\V1\RiskAssessment\CategoryController::update/$1/$2');
     $routes->delete('templates/(:num)/categories/(:num)', 'Api\V1\RiskAssessment\CategoryController::delete/$1/$2');
+    $routes->put('templates/(:num)/categories/reorder', 'Api\V1\RiskAssessment\CategoryController::reorder/$1');
 
     // Template Topics routes - Put these BEFORE resource routes to avoid conflicts
     $routes->get('templates/(:num)/topics', 'Api\V1\RiskAssessment\RiskTopicController::index/$1');

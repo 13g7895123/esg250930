@@ -29,6 +29,9 @@
         <thead class="bg-gray-50 dark:bg-gray-700">
           <!-- Group Header Row (if groups exist and have multiple columns) -->
           <tr v-if="shouldShowGroupHeader" class="bg-gray-50 dark:bg-gray-700">
+            <!-- Drag Handle Header (only show if draggable) -->
+            <th v-if="draggable" class="px-6 py-3 border-b border-gray-300 dark:border-gray-600" rowspan="2" />
+
             <th v-if="selectable" class="px-6 py-3 border-b border-gray-300 dark:border-gray-600" rowspan="2">
               <input
                 type="checkbox"
@@ -83,6 +86,9 @@
 
           <!-- Column Header Row -->
           <tr v-if="!shouldShowGroupHeader || hasGroups">
+            <!-- Drag Handle Header (only show if draggable) -->
+            <th v-if="draggable && !shouldShowGroupHeader" class="px-6 py-3 text-left" />
+
             <!-- Select All Checkbox (only show if no group header) -->
             <th v-if="selectable && !shouldShowGroupHeader" class="px-6 py-3 text-left">
               <input
@@ -136,7 +142,7 @@
         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           <!-- Loading State -->
           <tr v-if="loading">
-            <td :colspan="selectable ? columns.length + 1 : columns.length" class="px-6 py-12">
+            <td :colspan="columns.length + (draggable ? 1 : 0) + (selectable ? 1 : 0)" class="px-6 py-12">
               <div class="flex flex-col items-center justify-center">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mb-4"></div>
                 <p class="text-gray-500 dark:text-gray-400">載入中...</p>
@@ -151,9 +157,29 @@
             :key="getRowKey(item, index)"
             :class="[
               'hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200',
-              selectedRows.includes(getRowKey(item, index)) ? 'bg-primary-50 dark:bg-primary-900/20' : ''
+              selectedRows.includes(getRowKey(item, index)) ? 'bg-primary-50 dark:bg-primary-900/20' : '',
+              draggable ? 'sortable-row' : ''
             ]"
+            :draggable="draggable"
+            @dragstart="draggable ? handleDragStart($event, item) : null"
+            @dragend="draggable ? handleDragEnd($event) : null"
+            @dragover="draggable ? handleDragOver($event, item) : null"
+            @dragleave="draggable ? handleDragLeave($event) : null"
+            @drop="draggable ? handleDrop($event, item) : null"
           >
+            <!-- Drag Handle -->
+            <td v-if="draggable" class="px-4 py-4">
+              <div class="relative group cursor-move drag-handle">
+                <div class="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded-lg transition-colors duration-200">
+                  <Bars3Icon class="w-4 h-4" />
+                </div>
+                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                  拖曳以排序
+                  <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+                </div>
+              </div>
+            </td>
+
             <!-- Select Checkbox -->
             <td v-if="selectable" class="px-6 py-4">
               <input
@@ -314,7 +340,8 @@ import {
   MagnifyingGlassIcon,
   ChevronUpIcon,
   ChevronDownIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  Bars3Icon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -327,7 +354,7 @@ const props = defineProps({
     type: Array,
     required: true
   },
-  
+
   // Table Configuration
   title: {
     type: String,
@@ -341,7 +368,7 @@ const props = defineProps({
     type: String,
     default: 'id'
   },
-  
+
   // Features
   searchable: {
     type: Boolean,
@@ -355,11 +382,19 @@ const props = defineProps({
     type: Boolean,
     default: true
   },
+  draggable: {
+    type: Boolean,
+    default: false
+  },
+  orderField: {
+    type: String,
+    default: 'sort_order'
+  },
   loading: {
     type: Boolean,
     default: false
   },
-  
+
   // Search
   searchPlaceholder: {
     type: String,
@@ -369,7 +404,7 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
-  
+
   // Pagination
   pageSize: {
     type: Number,
@@ -379,7 +414,7 @@ const props = defineProps({
     type: Array,
     default: () => [5, 10, 20, 50, 100, 999999]
   },
-  
+
   // Empty State
   emptyTitle: {
     type: String,
@@ -399,7 +434,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['search', 'sort', 'select', 'page-change'])
+const emit = defineEmits(['search', 'sort', 'select', 'page-change', 'reorder'])
 
 // Reactive data
 const searchQuery = ref('')
@@ -408,6 +443,10 @@ const currentPage = ref(1)
 const pageSize = ref(props.pageSize)
 const sortField = ref('')
 const sortOrder = ref('asc')
+
+// Drag and drop state
+const draggedItem = ref(null)
+const dragOverItem = ref(null)
 
 // Computed properties
 
@@ -667,6 +706,78 @@ const goToPage = (page) => {
 const handlePageSizeChange = () => {
   currentPage.value = 1
   emit('page-change', 1)
+}
+
+// Drag and Drop Methods
+const handleDragStart = (event, item) => {
+  draggedItem.value = item
+  event.dataTransfer.effectAllowed = 'move'
+  event.target.closest('tr').classList.add('opacity-50')
+}
+
+const handleDragEnd = (event) => {
+  event.target.closest('tr').classList.remove('opacity-50')
+  draggedItem.value = null
+  dragOverItem.value = null
+}
+
+const handleDragOver = (event, item) => {
+  event.preventDefault()
+  dragOverItem.value = item
+  const row = event.target.closest('tr')
+  if (row && draggedItem.value && draggedItem.value[props.rowKey] !== item[props.rowKey]) {
+    row.classList.add('border-t-2', 'border-primary-500')
+  }
+}
+
+const handleDragLeave = (event) => {
+  const row = event.target.closest('tr')
+  if (row) {
+    row.classList.remove('border-t-2', 'border-primary-500')
+  }
+}
+
+const handleDrop = (event, targetItem) => {
+  event.preventDefault()
+
+  // Remove visual feedback
+  const allRows = event.target.closest('table')?.querySelectorAll('tr')
+  allRows?.forEach(row => {
+    row.classList.remove('border-t-2', 'border-primary-500', 'opacity-50')
+  })
+
+  if (!draggedItem.value || draggedItem.value[props.rowKey] === targetItem[props.rowKey]) {
+    draggedItem.value = null
+    dragOverItem.value = null
+    return
+  }
+
+  // Use sortedData for reordering
+  const items = [...sortedData.value]
+  const draggedIndex = items.findIndex(item => item[props.rowKey] === draggedItem.value[props.rowKey])
+  const targetIndex = items.findIndex(item => item[props.rowKey] === targetItem[props.rowKey])
+
+  if (draggedIndex === -1 || targetIndex === -1) {
+    return
+  }
+
+  // Remove dragged item from its original position
+  const [removed] = items.splice(draggedIndex, 1)
+
+  // Insert it at the correct position
+  items.splice(targetIndex, 0, removed)
+
+  // Update sort_order for all items to reflect their new positions
+  const reorderedItems = items.map((item, index) => ({
+    ...item,
+    [props.orderField]: index + 1
+  }))
+
+  // Emit the reorder event with the new order
+  emit('reorder', reorderedItems)
+
+  draggedItem.value = null
+  dragOverItem.value = null
 }
 
 // Watch for data changes - only reset page when data length changes

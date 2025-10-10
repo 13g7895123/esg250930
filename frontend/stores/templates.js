@@ -515,6 +515,26 @@ export const useTemplatesStore = defineStore('templates', () => {
     }
   }
 
+  const reorderRiskCategories = async (templateId, orders) => {
+    try {
+      const response = await apiClient.categories.reorder(templateId, { orders })
+
+      if (response.success) {
+        // Update local order based on the orders array
+        if (riskCategories.value[templateId]) {
+          riskCategories.value[templateId] = orders.map((item, index) => ({
+            ...item,
+            sort_order: index + 1
+          }))
+        }
+        return response
+      }
+    } catch (err) {
+      handleError(err, 'Failed to reorder risk categories')
+      throw err
+    }
+  }
+
   // Risk Topics CRUD operations
   const fetchRiskTopics = async (templateId) => {
     try {
@@ -836,6 +856,7 @@ export const useTemplatesStore = defineStore('templates', () => {
     addRiskCategory,
     updateRiskCategory,
     deleteRiskCategory,
+    reorderRiskCategories,
 
     // Topic operations
     fetchRiskTopics,

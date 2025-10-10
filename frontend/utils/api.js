@@ -205,6 +205,14 @@ class ApiClient {
     // Delete category
     delete: (templateId, id) => {
       return this.request(`/templates/${templateId}/categories/${id}`, { method: 'DELETE' })
+    },
+
+    // Reorder categories
+    reorder: (templateId, data) => {
+      return this.request(`/templates/${templateId}/categories/reorder`, {
+        method: 'PUT',
+        body: data
+      })
     }
   }
 
