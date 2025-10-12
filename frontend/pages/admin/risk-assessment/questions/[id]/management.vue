@@ -972,7 +972,7 @@
     <Modal
       :model-value="showEditFactorModal"
       :title="editingStructureItem?.id ? '編輯風險因子' : '新增風險因子'"
-      size="md"
+      size="2xl"
       @update:model-value="(value) => showEditFactorModal = value"
       @close="showEditFactorModal = false"
     >
