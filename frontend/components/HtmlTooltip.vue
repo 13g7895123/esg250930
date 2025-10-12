@@ -42,6 +42,8 @@
 </template>
 
 <script setup>
+import { ref, computed, onUnmounted } from 'vue'
+
 const props = defineProps({
   // Tooltip 的 HTML 內容
   content: {
