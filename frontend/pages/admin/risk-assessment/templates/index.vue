@@ -1431,6 +1431,26 @@ const deleteRiskCategory = (category) => {
 const submitRiskCategoryForm = async () => {
   if (!managingTemplate.value?.id) return
 
+  // Check for duplicate data
+  const isDuplicate = currentTemplateRiskCategories.value.some(category => {
+    // Skip the current editing item when checking for duplicates
+    if (editingRiskCategory.value && category.id === editingRiskCategory.value.id) {
+      return false
+    }
+
+    // Check if category_name and description are exactly the same
+    return category.category_name.trim() === riskCategoryFormData.value.category_name.trim() &&
+           (category.description || '').trim() === (riskCategoryFormData.value.description || '').trim()
+  })
+
+  if (isDuplicate) {
+    await showError(
+      showAddRiskCategoryModal.value ? '新增失敗' : '更新失敗',
+      '已存在完全相同的風險類別資料，請修改後再試'
+    )
+    return
+  }
+
   try {
     if (showAddRiskCategoryModal.value) {
       await templatesStore.addRiskCategory(managingTemplate.value.id, riskCategoryFormData.value)
@@ -1579,6 +1599,28 @@ const submitRiskFactorForm = async () => {
     return
   }
 
+  // Check for duplicate data
+  const isDuplicate = currentTemplateRiskFactors.value.some(factor => {
+    // Skip the current editing item when checking for duplicates
+    if (editingRiskFactor.value && factor.id === editingRiskFactor.value.id) {
+      return false
+    }
+
+    // Check if factor_name, category_id, topic_id, and description are exactly the same
+    return factor.factor_name.trim() === riskFactorFormData.value.factor_name.trim() &&
+           String(factor.category_id) === String(riskFactorFormData.value.category_id) &&
+           String(factor.topic_id || '') === String(riskFactorFormData.value.topic_id || '') &&
+           (factor.description || '').trim() === (riskFactorFormData.value.description || '').trim()
+  })
+
+  if (isDuplicate) {
+    await showError(
+      showAddRiskFactorModal.value ? '新增失敗' : '更新失敗',
+      '已存在完全相同的風險因子資料，請修改後再試'
+    )
+    return
+  }
+
   try {
     if (showAddRiskFactorModal.value) {
       await templatesStore.addRiskFactor(managingTemplate.value.id, riskFactorFormData.value)
@@ -1711,6 +1753,27 @@ const deleteRiskTopic = (topic) => {
 
 const submitRiskTopicForm = async () => {
   if (!managingTemplate.value?.id) return
+
+  // Check for duplicate data
+  const isDuplicate = currentTemplateRiskTopics.value.some(topic => {
+    // Skip the current editing item when checking for duplicates
+    if (editingRiskTopic.value && topic.id === editingRiskTopic.value.id) {
+      return false
+    }
+
+    // Check if topic_name, category_id, and description are exactly the same
+    return topic.topic_name.trim() === riskTopicFormData.value.topic_name.trim() &&
+           String(topic.category_id) === String(riskTopicFormData.value.category_id) &&
+           (topic.description || '').trim() === (riskTopicFormData.value.description || '').trim()
+  })
+
+  if (isDuplicate) {
+    await showError(
+      showAddRiskTopicModal.value ? '新增失敗' : '更新失敗',
+      '已存在完全相同的風險主題資料，請修改後再試'
+    )
+    return
+  }
 
   try {
     if (showAddRiskTopicModal.value) {
