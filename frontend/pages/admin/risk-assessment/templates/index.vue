@@ -407,29 +407,22 @@
           </button>
         </template>
 
-        <!-- Custom Category Name Cell with Text and Tooltip -->
+        <!-- Custom Category Name Cell with HtmlTooltip -->
         <template #cell-category_name="{ item }">
-          <TextWithTooltip
-            :text="item.category_name || '-'"
-            :truncate-length="0"
-            custom-class="text-base font-medium text-gray-900 dark:text-white"
+          <HtmlTooltip
+            :content="item.category_name || '-'"
+            :truncate-length="20"
+            text-class="text-base font-medium text-gray-900 dark:text-white cursor-pointer"
           />
         </template>
 
-        <!-- Custom Description Cell with CSS Tooltip -->
+        <!-- Custom Description Cell with HtmlTooltip -->
         <template #cell-description="{ item }">
-          <div class="relative group inline-block">
-            <span class="text-base text-gray-500 dark:text-gray-400 cursor-help">
-              {{ truncateText(stripHtml(item.description || ''), 10) }}
-            </span>
-            <!-- Custom CSS Tooltip -->
-            <div
-              v-if="item.description && stripHtml(item.description).length > 10"
-              class="absolute left-0 top-full mt-2 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-[9999] whitespace-nowrap text-sm font-normal max-w-md"
-            >
-              {{ stripHtml(item.description) }}
-            </div>
-          </div>
+          <HtmlTooltip
+            :content="item.description || '-'"
+            :truncate-length="10"
+            text-class="text-base text-gray-500 dark:text-gray-400 cursor-pointer"
+          />
         </template>
 
         <!-- Custom Actions Cell -->
@@ -802,38 +795,31 @@
           </button>
         </template>
 
-        <!-- Custom Topic Name Cell with Text and Tooltip -->
+        <!-- Custom Topic Name Cell with HtmlTooltip -->
         <template #cell-topic_name="{ item }">
-          <TextWithTooltip
-            :text="item.topic_name || '-'"
-            :truncate-length="0"
-            custom-class="text-base font-medium text-gray-900 dark:text-white"
+          <HtmlTooltip
+            :content="item.topic_name || '-'"
+            :truncate-length="20"
+            text-class="text-base font-medium text-gray-900 dark:text-white cursor-pointer"
           />
         </template>
 
-        <!-- Custom Category Name Cell with Text and Tooltip -->
+        <!-- Custom Category Name Cell with HtmlTooltip -->
         <template #cell-category_name="{ item }">
-          <TextWithTooltip
-            :text="item.category_name || '-'"
-            :truncate-length="0"
-            custom-class="text-base text-gray-500 dark:text-gray-400"
+          <HtmlTooltip
+            :content="item.category_name || '-'"
+            :truncate-length="20"
+            text-class="text-base text-gray-500 dark:text-gray-400 cursor-pointer"
           />
         </template>
 
-        <!-- Custom Description Cell with CSS Tooltip -->
+        <!-- Custom Description Cell with HtmlTooltip -->
         <template #cell-description="{ item }">
-          <div class="relative group inline-block">
-            <span class="text-base text-gray-500 dark:text-gray-400 cursor-help">
-              {{ truncateText(stripHtml(item.description || ''), 10) }}
-            </span>
-            <!-- Custom CSS Tooltip -->
-            <div
-              v-if="item.description && stripHtml(item.description).length > 10"
-              class="absolute left-0 top-full mt-2 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-[9999] whitespace-nowrap text-sm font-normal max-w-md"
-            >
-              {{ stripHtml(item.description) }}
-            </div>
-          </div>
+          <HtmlTooltip
+            :content="item.description || '-'"
+            :truncate-length="10"
+            text-class="text-base text-gray-500 dark:text-gray-400 cursor-pointer"
+          />
         </template>
 
         <!-- Custom Actions Cell -->
