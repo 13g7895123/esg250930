@@ -575,49 +575,43 @@
           </button>
         </template>
 
-        <!-- Custom Factor Name Cell with Text and Tooltip -->
+        <!-- Custom Factor Name Cell with HtmlTooltip -->
         <template #cell-factor_name="{ item }">
-          <TextWithTooltip
-            :text="item.factor_name || '-'"
-            :truncate-length="0"
-            custom-class="text-base font-medium text-gray-900 dark:text-white"
+          <HtmlTooltip
+            :content="item.factor_name || '-'"
+            :truncate-length="30"
+            text-class="text-base font-medium text-gray-900 dark:text-white cursor-pointer"
           />
         </template>
 
-        <!-- Custom Category Name Cell with Text and Tooltip -->
+        <!-- Custom Category Name Cell with HtmlTooltip -->
         <template #cell-category_name="{ item }">
-          <TextWithTooltip
-            :text="item.category_name || '-'"
-            :truncate-length="0"
-            custom-class="text-base text-gray-500 dark:text-gray-400"
+          <HtmlTooltip
+            :content="item.category_name || '-'"
+            :truncate-length="20"
+            text-class="text-base text-gray-500 dark:text-gray-400 cursor-pointer"
           />
         </template>
 
-        <!-- Custom Topic Name Cell with Text and Tooltip -->
+        <!-- Custom Topic Name Cell with HtmlTooltip -->
         <template #cell-topic_name="{ item }">
-          <TextWithTooltip
+          <HtmlTooltip
             v-if="item.topic_name"
-            :text="item.topic_name"
-            :truncate-length="0"
-            custom-class="text-base text-gray-500 dark:text-gray-400"
+            :content="item.topic_name"
+            :truncate-length="20"
+            text-class="text-base text-gray-500 dark:text-gray-400 cursor-pointer"
           />
           <span v-else class="text-base text-gray-400 dark:text-gray-500">-</span>
         </template>
 
-        <!-- Custom Description Cell with HTML Rendering and CSS Tooltip -->
+        <!-- Custom Description Cell with HtmlTooltip -->
         <template #cell-description="{ item }">
-          <div class="relative group inline-block">
-            <div
-              v-html="truncateHtmlDescription(item.description)"
-              class="text-base text-gray-500 dark:text-gray-400 cursor-help"
-            ></div>
-            <!-- Custom CSS Tooltip -->
-            <div
-              v-if="item.description && stripHtml(item.description).length > 10"
-              class="absolute left-0 top-full mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-[9999] min-w-[300px] max-w-[500px] whitespace-normal text-sm font-normal prose prose-sm dark:prose-invert max-w-none"
-              v-html="item.description"
-            ></div>
-          </div>
+          <HtmlTooltip
+            :content="item.description || '-'"
+            :truncate-length="30"
+            text-class="text-base text-gray-500 dark:text-gray-400 cursor-pointer"
+            max-width="min-w-[300px] max-w-[500px]"
+          />
         </template>
 
         <!-- Custom Actions Cell -->
@@ -1136,12 +1130,6 @@ const riskCategoryColumns = ref([
 // Risk Factor DataTable columns configuration
 const riskFactorColumns = ref([
   {
-    key: 'sort_order',
-    label: '排序',
-    sortable: true,
-    cellClass: 'text-center text-gray-600 dark:text-gray-400 font-medium'
-  },
-  {
     key: 'factor_name',
     label: '因子名稱',
     sortable: true
@@ -1200,37 +1188,6 @@ const riskTopicColumns = ref([
 const getTextLength = (html) => {
   if (!html) return 0
   return html.replace(/<[^>]*>/g, '').length
-}
-
-const truncateHtmlDescription = (html) => {
-  if (!html) return '-'
-
-  const textOnly = html.replace(/<[^>]*>/g, '')
-  if (textOnly.length <= 10) return html
-
-  // Find a good truncation point that doesn't break HTML tags
-  let truncated = ''
-  let textLength = 0
-  const htmlRegex = /<[^>]*>|[^<]+/g
-  let match
-
-  while ((match = htmlRegex.exec(html)) !== null && textLength < 10) {
-    const piece = match[0]
-    if (piece.startsWith('<')) {
-      truncated += piece // Keep HTML tags intact
-    } else {
-      const remaining = 10 - textLength
-      if (piece.length <= remaining) {
-        truncated += piece
-        textLength += piece.length
-      } else {
-        truncated += piece.substring(0, remaining) + '...'
-        textLength = 10
-      }
-    }
-  }
-
-  return truncated
 }
 
 const formatDate = (date) => {
