@@ -731,6 +731,8 @@
         no-search-results-title="沒有找到符合的風險因子"
         no-search-results-message="請嘗試其他搜尋關鍵字"
         :loading="structureLoading"
+        :draggable="true"
+        @drag-end="handleQuestionFactorDragEnd"
       >
         <!-- Actions Slot -->
         <template #actions>
@@ -792,6 +794,35 @@
               <TrashIcon class="w-4 h-4" />
             </button>
           </div>
+        </template>
+
+        <!-- Custom Factor Name Cell with HtmlTooltip -->
+        <template #cell-factor_name="{ item }">
+          <HtmlTooltip
+            :content="item.factor_name || '-'"
+            :truncate-length="6"
+            text-class="text-base font-medium text-gray-900 dark:text-white cursor-pointer"
+          />
+        </template>
+
+        <!-- Custom Category Name Cell with HtmlTooltip -->
+        <template #cell-category_name="{ item }">
+          <HtmlTooltip
+            :content="item.category_name || '-'"
+            :truncate-length="6"
+            text-class="text-base text-gray-500 dark:text-gray-400 cursor-pointer"
+          />
+        </template>
+
+        <!-- Custom Topic Name Cell with HtmlTooltip -->
+        <template #cell-topic_name="{ item }">
+          <HtmlTooltip
+            v-if="item.topic_name"
+            :content="item.topic_name"
+            :truncate-length="6"
+            text-class="text-base text-gray-500 dark:text-gray-400 cursor-pointer"
+          />
+          <span v-else class="text-base text-gray-400 dark:text-gray-500">-</span>
         </template>
 
         <!-- Custom Description Cell with HTML rendering and truncation -->
@@ -1143,7 +1174,8 @@ const {
   deleteTopic,
   createFactor,
   updateFactor,
-  deleteFactor
+  deleteFactor,
+  reorderFactors
 } = useQuestionStructure()
 
 // 直接使用後端回傳的資料順序，不再進行前端排序
@@ -1512,6 +1544,35 @@ const deleteQuestionFactor = (item) => {
   deletingStructureItem.value = item
   structureEditType.value = 'factor'
   showDeleteConfirmModal.value = true
+}
+
+// Handle factor drag and drop reorder
+const handleQuestionFactorDragEnd = async ({ draggedItem, targetItem }) => {
+  if (!managingQuestion.value?.id) return
+
+  try {
+    const factors = [...sortedQuestionFactors.value]
+    const draggedIndex = factors.findIndex(f => f.id === draggedItem.id)
+    const targetIndex = factors.findIndex(f => f.id === targetItem.id)
+
+    if (draggedIndex === -1 || targetIndex === -1) return
+
+    // Reorder array
+    const [removed] = factors.splice(draggedIndex, 1)
+    factors.splice(targetIndex, 0, removed)
+
+    // Format orders for API
+    const orders = factors.map((factor, index) => ({
+      id: factor.id,
+      sort_order: index + 1
+    }))
+
+    await reorderFactors(managingQuestion.value.id, orders)
+    await loadQuestionStructureData(managingQuestion.value.id)
+  } catch (error) {
+    console.error('風險因子排序錯誤:', error)
+    await showError('排序失敗', '更新風險因子排序時發生錯誤，請稍後再試')
+  }
 }
 
 // Save structure item
