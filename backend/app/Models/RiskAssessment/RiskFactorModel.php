@@ -80,6 +80,7 @@ class RiskFactorModel extends Model
             ->join('risk_categories', 'risk_categories.id = risk_factors.category_id')
             ->join('risk_topics', 'risk_topics.id = risk_factors.topic_id', 'left')
             ->where('risk_factors.template_id', $templateId)
+            ->orderBy('risk_factors.sort_order', 'ASC')
             ->orderBy('risk_factors.id', 'ASC');
 
         // Search condition
@@ -102,6 +103,7 @@ class RiskFactorModel extends Model
         $builder = $this->where('template_id', $templateId)
             ->where('category_id', $categoryId)
             ->where('status', 'active')
+            ->orderBy('sort_order', 'ASC')
             ->orderBy('id', 'ASC');
 
         if ($topicId !== null) {
@@ -119,6 +121,7 @@ class RiskFactorModel extends Model
         return $this->where('template_id', $templateId)
             ->where('topic_id', $topicId)
             ->where('status', 'active')
+            ->orderBy('sort_order', 'ASC')
             ->orderBy('id', 'ASC')
             ->findAll();
     }
@@ -142,8 +145,7 @@ class RiskFactorModel extends Model
      */
     public function reorderFactors($templateId, $factorOrders)
     {
-        $db = \Config\Database::connect();
-        $db->transStart();
+        $this->db->transStart();
 
         try {
             // First verify all factors belong to this template
@@ -170,18 +172,18 @@ class RiskFactorModel extends Model
 
             // Use CI4's updateBatch for efficient batch update
             if (!empty($batchData)) {
-                $db->table($this->table)->updateBatch($batchData, 'id');
+                $this->db->table($this->table)->updateBatch($batchData, 'id');
             }
 
-            $db->transComplete();
+            $this->db->transComplete();
 
-            if ($db->transStatus() === false) {
+            if ($this->db->transStatus() === false) {
                 throw new \Exception('資料庫交易失敗');
             }
 
             return true;
         } catch (\Exception $e) {
-            $db->transRollback();
+            $this->db->transRollback();
             log_message('error', 'RiskFactorModel::reorderFactors - ' . $e->getMessage());
             return false;
         }

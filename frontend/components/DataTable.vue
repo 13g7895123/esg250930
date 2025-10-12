@@ -151,15 +151,8 @@
             :key="getRowKey(item, index)"
             :class="[
               'hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200',
-              selectedRows.includes(getRowKey(item, index)) ? 'bg-primary-50 dark:bg-primary-900/20' : '',
-              draggable ? 'sortable-row' : ''
+              selectedRows.includes(getRowKey(item, index)) ? 'bg-primary-50 dark:bg-primary-900/20' : ''
             ]"
-            :draggable="draggable"
-            @dragstart="draggable ? handleDragStart($event, item) : null"
-            @dragend="draggable ? handleDragEnd($event) : null"
-            @dragover="draggable ? handleDragOver($event, item) : null"
-            @dragleave="draggable ? handleDragLeave($event) : null"
-            @drop="draggable ? handleDrop($event, item) : null"
           >
             <!-- Select Checkbox -->
             <td v-if="selectable" class="px-6 py-4">
@@ -343,8 +336,7 @@ import {
   MagnifyingGlassIcon,
   ChevronUpIcon,
   ChevronDownIcon,
-  DocumentTextIcon,
-  Bars3Icon
+  DocumentTextIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -384,14 +376,6 @@ const props = defineProps({
   sortable: {
     type: Boolean,
     default: true
-  },
-  draggable: {
-    type: Boolean,
-    default: false
-  },
-  orderField: {
-    type: String,
-    default: 'sort_order'
   },
   loading: {
     type: Boolean,
@@ -452,7 +436,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['search', 'sort', 'select', 'page-change', 'reorder'])
+const emit = defineEmits(['search', 'sort', 'select', 'page-change'])
 
 // Get slots for checking if actions slot exists
 const slots = useSlots()
@@ -464,10 +448,6 @@ const currentPage = ref(1)
 const pageSize = ref(props.pageSize)
 const sortField = ref('')
 const sortOrder = ref('asc')
-
-// Drag and drop state
-const draggedItem = ref(null)
-const dragOverItem = ref(null)
 
 // Computed properties
 
@@ -774,78 +754,6 @@ const goToPage = (page) => {
 const handlePageSizeChange = () => {
   currentPage.value = 1
   emit('page-change', 1)
-}
-
-// Drag and Drop Methods
-const handleDragStart = (event, item) => {
-  draggedItem.value = item
-  event.dataTransfer.effectAllowed = 'move'
-  event.target.closest('tr').classList.add('opacity-50')
-}
-
-const handleDragEnd = (event) => {
-  event.target.closest('tr').classList.remove('opacity-50')
-  draggedItem.value = null
-  dragOverItem.value = null
-}
-
-const handleDragOver = (event, item) => {
-  event.preventDefault()
-  dragOverItem.value = item
-  const row = event.target.closest('tr')
-  if (row && draggedItem.value && draggedItem.value[props.rowKey] !== item[props.rowKey]) {
-    row.classList.add('border-t-2', 'border-primary-500')
-  }
-}
-
-const handleDragLeave = (event) => {
-  const row = event.target.closest('tr')
-  if (row) {
-    row.classList.remove('border-t-2', 'border-primary-500')
-  }
-}
-
-const handleDrop = (event, targetItem) => {
-  event.preventDefault()
-
-  // Remove visual feedback
-  const allRows = event.target.closest('table')?.querySelectorAll('tr')
-  allRows?.forEach(row => {
-    row.classList.remove('border-t-2', 'border-primary-500', 'opacity-50')
-  })
-
-  if (!draggedItem.value || draggedItem.value[props.rowKey] === targetItem[props.rowKey]) {
-    draggedItem.value = null
-    dragOverItem.value = null
-    return
-  }
-
-  // Use sortedData for reordering
-  const items = [...sortedData.value]
-  const draggedIndex = items.findIndex(item => item[props.rowKey] === draggedItem.value[props.rowKey])
-  const targetIndex = items.findIndex(item => item[props.rowKey] === targetItem[props.rowKey])
-
-  if (draggedIndex === -1 || targetIndex === -1) {
-    return
-  }
-
-  // Remove dragged item from its original position
-  const [removed] = items.splice(draggedIndex, 1)
-
-  // Insert it at the correct position
-  items.splice(targetIndex, 0, removed)
-
-  // Update sort_order for all items to reflect their new positions
-  const reorderedItems = items.map((item, index) => ({
-    ...item,
-    [props.orderField]: index + 1
-  }))
-
-  // Emit the reorder event with the new order
-  emit('reorder', reorderedItems)
-
-  draggedItem.value = null
-  dragOverItem.value = null
 }
 
 // Watch for data changes - only reset page when data length changes

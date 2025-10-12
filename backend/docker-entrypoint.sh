@@ -6,6 +6,19 @@ echo "Setting up file permissions..."
 chown -R www-data:www-data /var/www/html/writable
 chmod -R 775 /var/www/html/writable
 
+# Create required writable subdirectories
+echo "Creating required writable subdirectories..."
+mkdir -p /var/www/html/writable/cache
+mkdir -p /var/www/html/writable/debugbar
+mkdir -p /var/www/html/writable/logs
+mkdir -p /var/www/html/writable/session
+mkdir -p /var/www/html/writable/uploads
+mkdir -p /var/www/html/writable/question_structure
+
+# Ensure correct permissions for all subdirectories
+chown -R www-data:www-data /var/www/html/writable
+chmod -R 775 /var/www/html/writable
+
 # Update .env file with environment variables
 echo "Configuring environment..."
 cd /var/www/html
