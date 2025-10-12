@@ -1375,6 +1375,13 @@ const questionFactorColumns = [
     cellClass: 'text-base text-gray-900 dark:text-white'
   },
   {
+    key: 'sort_order',
+    label: '排序',
+    sortable: true,
+    cellClass: 'text-base text-center text-gray-900 dark:text-white',
+    formatter: (value) => value || '-'
+  },
+  {
     key: 'factor_name',
     label: '因子名稱',
     sortable: true,
