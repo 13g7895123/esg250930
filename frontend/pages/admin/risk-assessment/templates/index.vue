@@ -393,6 +393,8 @@
         empty-message="開始建立您的第一個風險類別"
         no-search-results-title="沒有找到符合的風險類別"
         no-search-results-message="請嘗試其他搜尋關鍵字"
+        :draggable="true"
+        @drag-end="handleCategoryDragEnd"
       >
         <!-- Actions Slot -->
         <template #actions>
@@ -559,6 +561,8 @@
         empty-message="開始建立您的第一個風險因子"
         no-search-results-title="沒有找到符合的風險因子"
         no-search-results-message="請嘗試其他搜尋關鍵字"
+        :draggable="true"
+        @drag-end="handleFactorDragEnd"
       >
         <!-- Actions Slot -->
         <template #actions>
@@ -790,6 +794,8 @@
         empty-message="開始建立您的第一個風險主題"
         no-search-results-title="沒有找到符合的風險主題"
         no-search-results-message="請嘗試其他搜尋關鍵字"
+        :draggable="true"
+        @drag-end="handleTopicDragEnd"
       >
         <!-- Actions Slot -->
         <template #actions>
@@ -1532,6 +1538,34 @@ const closeRiskCategoryModals = () => {
   }
 }
 
+const handleCategoryDragEnd = async ({ draggedItem, targetItem }) => {
+  if (!managingTemplate.value?.id) return
+
+  try {
+    const categories = [...currentTemplateRiskCategories.value]
+    const draggedIndex = categories.findIndex(c => c.id === draggedItem.id)
+    const targetIndex = categories.findIndex(c => c.id === targetItem.id)
+
+    if (draggedIndex === -1 || targetIndex === -1) return
+
+    // Reorder array
+    const [removed] = categories.splice(draggedIndex, 1)
+    categories.splice(targetIndex, 0, removed)
+
+    // Format orders for API
+    const orders = categories.map((category, index) => ({
+      id: category.id,
+      sort_order: index + 1
+    }))
+
+    await templatesStore.reorderRiskCategories(managingTemplate.value.id, orders)
+    await templatesStore.fetchRiskCategories(managingTemplate.value.id)
+  } catch (error) {
+    console.error('風險類別排序錯誤:', error)
+    await showError('排序失敗', '更新風險類別排序時發生錯誤，請稍後再試')
+  }
+}
+
 // Risk Factor Management Functions
 const currentTemplateRiskFactors = computed(() => {
   if (!managingTemplate.value?.id) return []
@@ -1655,6 +1689,34 @@ const closeRiskFactorModals = () => {
   }
 }
 
+const handleFactorDragEnd = async ({ draggedItem, targetItem }) => {
+  if (!managingTemplate.value?.id) return
+
+  try {
+    const factors = [...currentTemplateRiskFactors.value]
+    const draggedIndex = factors.findIndex(f => f.id === draggedItem.id)
+    const targetIndex = factors.findIndex(f => f.id === targetItem.id)
+
+    if (draggedIndex === -1 || targetIndex === -1) return
+
+    // Reorder array
+    const [removed] = factors.splice(draggedIndex, 1)
+    factors.splice(targetIndex, 0, removed)
+
+    // Format orders for API
+    const orders = factors.map((factor, index) => ({
+      id: factor.id,
+      sort_order: index + 1
+    }))
+
+    await templatesStore.reorderRiskFactors(managingTemplate.value.id, orders)
+    await templatesStore.fetchRiskFactors(managingTemplate.value.id)
+  } catch (error) {
+    console.error('風險因子排序錯誤:', error)
+    await showError('排序失敗', '更新風險因子排序時發生錯誤，請稍後再試')
+  }
+}
+
 // Risk Topic Management Functions
 const currentTemplateRiskTopics = computed(() => {
   if (!managingTemplate.value?.id) return []
@@ -1755,6 +1817,34 @@ const closeRiskTopicModals = () => {
     topic_name: '',
     category_id: '',
     description: ''
+  }
+}
+
+const handleTopicDragEnd = async ({ draggedItem, targetItem }) => {
+  if (!managingTemplate.value?.id) return
+
+  try {
+    const topics = [...currentTemplateRiskTopics.value]
+    const draggedIndex = topics.findIndex(t => t.id === draggedItem.id)
+    const targetIndex = topics.findIndex(t => t.id === targetItem.id)
+
+    if (draggedIndex === -1 || targetIndex === -1) return
+
+    // Reorder array
+    const [removed] = topics.splice(draggedIndex, 1)
+    topics.splice(targetIndex, 0, removed)
+
+    // Format orders for API
+    const orders = topics.map((topic, index) => ({
+      id: topic.id,
+      sort_order: index + 1
+    }))
+
+    await templatesStore.reorderRiskTopics(managingTemplate.value.id, orders)
+    await templatesStore.fetchRiskTopics(managingTemplate.value.id)
+  } catch (error) {
+    console.error('風險主題排序錯誤:', error)
+    await showError('排序失敗', '更新風險主題排序時發生錯誤，請稍後再試')
   }
 }
 
