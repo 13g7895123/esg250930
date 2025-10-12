@@ -86,7 +86,7 @@
 
       <!-- 對策費用 -->
       <div>
-        <label class="text-gray-600 mt-6 mb-1">上述對策費用</label>
+        <label class="text-gray-600 mt-6 mb-1">上述對策費用(可初估)</label>
         <textarea
           v-model="localCost"
           rows="2"

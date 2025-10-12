@@ -80,10 +80,10 @@
 
         <!-- Form Sections -->
         <div class="space-y-6">
-          <!-- Section A: 風險因子議題描述 -->
+          <!-- Section A: 風險因子描述 -->
           <EditorSection
             section-id="A"
-            title="風險因子議題描述"
+            title="風險因子描述"
             :collapsible="computedFeatures.collapsibleSections"
             v-model:expanded="expandedSections.sectionA"
           >
@@ -91,9 +91,9 @@
               v-if="!isSectionABReadonly"
               v-model="formData.riskFactorDescription"
               :show-html-info="false"
-              placeholder="請輸入風險因子議題描述..."
+              placeholder="請輸入風險因子描述..."
             />
-            <div v-else class="prose max-w-none text-gray-700 dark:text-gray-300" v-html="formData.riskFactorDescription || '請填寫風險因子議題描述...'">
+            <div v-else class="prose max-w-none text-gray-700 dark:text-gray-300" v-html="formData.riskFactorDescription || '請填寫風險因子描述...'">
             </div>
           </EditorSection>
 

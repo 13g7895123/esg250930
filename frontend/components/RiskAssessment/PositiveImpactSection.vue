@@ -11,7 +11,7 @@
         >
           <span class="italic">i</span>
           <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20 max-w-xs">
-            {{ infoText || '對外正面影響說明：企業對外部環境可能產生的正面影響' }}
+            {{ infoText || '根據公司與該議題相關性【A】、【B】內容及上述機會情境【D】、 【F-1】內容，綜合評估公司之營運對此議題可能造成的「外部」正面影響（對外部經濟、環境、人群(包含其人權)之正面影響），並盡可能簡述其評分說明' }}
             <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800 dark:border-t-gray-700"></div>
           </div>
         </div>

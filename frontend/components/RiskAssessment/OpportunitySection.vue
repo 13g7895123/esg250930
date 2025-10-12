@@ -11,7 +11,7 @@
         >
           <span class="italic">i</span>
           <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-20 max-w-xs">
-            {{ infoText || '相關機會說明：企業可能的機會評估相關資訊' }}
+            {{ infoText || '請從【A~D】欄位涵蓋的內容，盤點與公司未來較可能發生之潛在機會情境' }}
             <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800 dark:border-t-gray-700"></div>
           </div>
         </div>
@@ -34,7 +34,7 @@
       <!-- F-2 說明文字（在框框外面） -->
       <div class="mb-3">
         <p class="text-xl font-bold text-gray-900 dark:text-white">
-          <span class="text-red-500">*</span>請依上述公司盤點之機會情境評估一旦發生機會對公司之財務影響
+          <span class="text-red-500">*</span>請評估上述機會情境發生時，對公司營運、獲利與聲譽可能造成的正面效益，並將其盡可能量化為可評估的財務金額
           <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 px-2 py-1 rounded text-base font-medium ml-2">F-2</span>
         </p>
       </div>
