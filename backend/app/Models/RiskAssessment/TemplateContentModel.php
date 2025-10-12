@@ -36,7 +36,9 @@ class TemplateContentModel extends Model
         'f2_select_1',
         'f2_select_2',
         'f2_placeholder',
+        'g1_select',         // G 對外負面衝擊評分
         'g1_placeholder_1',
+        'h1_select',         // H 對外正面影響評分
         'h1_placeholder_1',
         // 資訊圖示懸浮文字欄位
         'e1_info',
