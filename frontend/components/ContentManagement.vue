@@ -229,15 +229,10 @@
 
       <!-- Custom A Content Cell (Risk Factor Description with HTML rendering) -->
       <template #cell-a_content="{ item }">
-        <div
-          class="relative group"
-          @mouseenter="showTooltip($event, item)"
-          @mouseleave="hideTooltip"
-        >
-          <div class="text-base text-gray-500 dark:text-gray-400 cursor-pointer truncate">
-            {{ stripHtmlTags(getRiskFactorDescription(item.risk_factor_id) || item.factor_description || item.a_content || item.aContent || '', 20) }}
-          </div>
-        </div>
+        <HtmlTooltip
+          :content="getRiskFactorDescription(item.risk_factor_id) || item.factor_description || item.a_content || item.aContent || ''"
+          :truncate-length="20"
+        />
       </template>
 
       <!-- Custom Created At Cell -->
@@ -267,28 +262,6 @@
       @change="handleFileImport"
       class="hidden"
     />
-
-    <!-- Tooltip for A Content (rendered at body level to avoid overflow issues) -->
-    <Teleport to="body">
-      <div
-        v-if="tooltipData.visible && tooltipData.content"
-        :style="{
-          position: 'fixed',
-          left: tooltipData.x + 'px',
-          top: tooltipData.y + 'px',
-          zIndex: 9999
-        }"
-        class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl p-4 max-w-2xl w-96 max-h-96 overflow-y-auto"
-        @mouseenter="keepTooltipOpen"
-        @mouseleave="hideTooltip"
-      >
-        <div
-          class="text-sm text-gray-700 dark:text-gray-300 prose prose-sm dark:prose-invert max-w-none"
-          v-html="tooltipData.content"
-        ></div>
-        <div class="absolute -top-2 left-4 w-4 h-4 bg-white dark:bg-gray-800 border-l border-t border-gray-200 dark:border-gray-700 transform rotate-45"></div>
-      </div>
-    </Teleport>
 
     <!-- Add/Edit Modal -->
     <div
@@ -1202,15 +1175,6 @@ const showDuplicateModal = ref(false)
 const draggedItem = ref(null)
 const dragOverItem = ref(null)
 
-// Tooltip state for a_content
-const tooltipData = ref({
-  visible: false,
-  content: '',
-  x: 0,
-  y: 0
-})
-let tooltipTimeout = null
-
 const formData = ref({
   categoryId: '',
   topicId: '',
@@ -1406,25 +1370,6 @@ const getRiskFactorDescription = (riskFactorId) => {
   return factor ? factor.description : ''
 }
 
-// Helper method to strip HTML tags and truncate text
-const stripHtmlTags = (html, maxLength = 100) => {
-  if (!html) return ''
-
-  // Create a temporary div to parse HTML
-  const tmp = document.createElement('div')
-  tmp.innerHTML = html
-
-  // Get text content (strips all HTML tags)
-  const text = tmp.textContent || tmp.innerText || ''
-
-  // Truncate if needed
-  if (text.length > maxLength) {
-    return text.substring(0, maxLength) + '...'
-  }
-
-  return text
-}
-
 // Helper method to format date time
 const formatDateTime = (dateTime) => {
   if (!dateTime) return ''
@@ -1524,43 +1469,6 @@ const textToHtml = (text) => {
     .replace(/\n/g, '<br>') // Line breaks
 
   return `<p>${html}</p>`
-}
-
-// Tooltip methods for a_content display
-const showTooltip = (event, item) => {
-  // Get description from question_factors table via risk_factor_id
-  const content = getRiskFactorDescription(item.risk_factor_id) || item.factor_description || item.a_content || item.aContent
-  if (!content) return
-
-  // Clear any existing timeout
-  if (tooltipTimeout) {
-    clearTimeout(tooltipTimeout)
-  }
-
-  // Get the element's position
-  const rect = event.target.getBoundingClientRect()
-
-  // Position tooltip below the element
-  tooltipData.value = {
-    visible: true,
-    content: content,
-    x: rect.left,
-    y: rect.bottom + 8 // 8px gap below the element
-  }
-}
-
-const hideTooltip = () => {
-  // Add a small delay to allow mouse to move to tooltip
-  tooltipTimeout = setTimeout(() => {
-    tooltipData.value.visible = false
-  }, 100)
-}
-
-const keepTooltipOpen = () => {
-  // Cancel hide timeout when mouse enters tooltip
-  if (tooltipTimeout) {
-    clearTimeout(tooltipTimeout)
-  }
 }
 
 // Helper method for factor option text
@@ -2805,9 +2713,6 @@ watch(() => props.contentData, async (newValue) => {
 
 // Cleanup on unmount
 onUnmounted(() => {
-  if (tooltipTimeout) {
-    clearTimeout(tooltipTimeout)
-  }
   document.removeEventListener('click', handleClickOutside)
 })
 </script>
