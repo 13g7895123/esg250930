@@ -590,6 +590,14 @@ class TemplateController extends ResourceController
                 if (!empty($category['description'])) {
                     $richText = $htmlToRichText->convert($category['description']);
                     $sheet->setCellValue($col . $row, $richText);
+
+                    // Apply background color if detected
+                    $bgColor = $htmlToRichText->getDetectedBackgroundColor();
+                    if ($bgColor) {
+                        $sheet->getStyle($col . $row)->getFill()
+                            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                            ->getStartColor()->setRGB($bgColor);
+                    }
                 }
                 $col++;
 
@@ -610,6 +618,14 @@ class TemplateController extends ResourceController
                     if (!empty($topic['description'])) {
                         $richText = $htmlToRichText->convert($topic['description']);
                         $sheet->setCellValue($col . $row, $richText);
+
+                        // Apply background color if detected
+                        $bgColor = $htmlToRichText->getDetectedBackgroundColor();
+                        if ($bgColor) {
+                            $sheet->getStyle($col . $row)->getFill()
+                                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                                ->getStartColor()->setRGB($bgColor);
+                        }
                     }
                     $col++;
                 }
@@ -621,6 +637,14 @@ class TemplateController extends ResourceController
                 if (!empty($factor['description'])) {
                     $richText = $htmlToRichText->convert($factor['description']);
                     $sheet->setCellValue($col . $row, $richText);
+
+                    // Apply background color if detected
+                    $bgColor = $htmlToRichText->getDetectedBackgroundColor();
+                    if ($bgColor) {
+                        $sheet->getStyle($col . $row)->getFill()
+                            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                            ->getStartColor()->setRGB($bgColor);
+                    }
                 }
 
                 $row++;

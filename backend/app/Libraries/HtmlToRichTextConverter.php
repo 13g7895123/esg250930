@@ -14,6 +14,11 @@ use PhpOffice\PhpSpreadsheet\Style\Color;
 class HtmlToRichTextConverter
 {
     /**
+     * 偵測到的背景色（用於整個儲存格）
+     */
+    private ?string $detectedBackgroundColor = null;
+
+    /**
      * 將 HTML 轉換為 Excel RichText
      *
      * @param string $html HTML 內容
@@ -30,12 +35,25 @@ class HtmlToRichTextConverter
             return $html;
         }
 
+        // 重置偵測到的背景色
+        $this->detectedBackgroundColor = null;
+
         $richText = new RichText();
 
         // 解析 HTML 並轉換為 RichText 片段
         $this->parseHtml($html, $richText);
 
         return $richText;
+    }
+
+    /**
+     * 取得偵測到的背景色
+     *
+     * @return string|null 十六進位顏色代碼
+     */
+    public function getDetectedBackgroundColor(): ?string
+    {
+        return $this->detectedBackgroundColor;
     }
 
     /**
@@ -220,6 +238,14 @@ class HtmlToRichTextConverter
                         $color = $this->parseColor($value);
                         if ($color) {
                             $style['color'] = $color;
+                        }
+                        break;
+
+                    case 'background-color':
+                        // 解析背景色
+                        $bgColor = $this->parseColor($value);
+                        if ($bgColor) {
+                            $this->detectedBackgroundColor = $bgColor;
                         }
                         break;
 
