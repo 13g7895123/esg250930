@@ -1553,10 +1553,30 @@ const saveQuestionCategory = async () => {
     return
   }
 
-  try {
-    const data = { ...editingStructureItem.value }
-    const isEditing = !!data.id
+  const data = { ...editingStructureItem.value }
+  const isEditing = !!data.id
 
+  // Check for duplicate data
+  const isDuplicate = questionCategories.value?.some(category => {
+    // Skip the current editing item when checking for duplicates
+    if (isEditing && category.id === data.id) {
+      return false
+    }
+
+    // Check if category_name and description are exactly the same
+    return category.category_name.trim() === data.category_name.trim() &&
+           (category.description || '').trim() === (data.description || '').trim()
+  })
+
+  if (isDuplicate) {
+    await showError(
+      '資料重複',
+      '已存在完全相同的風險類別資料（類別名稱和描述皆相同），請修改後再試'
+    )
+    return
+  }
+
+  try {
     if (data.id) {
       // Update existing category
       await updateCategory(data.id, data)
@@ -1582,7 +1602,6 @@ const saveQuestionCategory = async () => {
     console.error('Error saving category:', error)
 
     // Show error notification
-    const isEditing = !!editingStructureItem.value.id
     await showError(
       isEditing ? '更新失敗' : '新增失敗',
       error.message || '操作時發生錯誤，請稍後再試'
@@ -1596,10 +1615,31 @@ const saveQuestionTopic = async () => {
     return
   }
 
-  try {
-    const data = { ...editingStructureItem.value }
-    const isEditing = !!data.id
+  const data = { ...editingStructureItem.value }
+  const isEditing = !!data.id
 
+  // Check for duplicate data
+  const isDuplicate = questionTopics.value?.some(topic => {
+    // Skip the current editing item when checking for duplicates
+    if (isEditing && topic.id === data.id) {
+      return false
+    }
+
+    // Check if topic_name, category_id, and description are exactly the same
+    return topic.topic_name.trim() === data.topic_name.trim() &&
+           String(topic.category_id) === String(data.category_id) &&
+           (topic.description || '').trim() === (data.description || '').trim()
+  })
+
+  if (isDuplicate) {
+    await showError(
+      '資料重複',
+      '已存在完全相同的風險主題資料（主題名稱、所屬類別和描述皆相同），請修改後再試'
+    )
+    return
+  }
+
+  try {
     if (data.id) {
       // Update existing topic
       await updateTopic(data.id, data)
@@ -1625,7 +1665,6 @@ const saveQuestionTopic = async () => {
     console.error('Error saving topic:', error)
 
     // Show error notification
-    const isEditing = !!editingStructureItem.value.id
     await showError(
       isEditing ? '更新失敗' : '新增失敗',
       error.message || '操作時發生錯誤，請稍後再試'
@@ -1639,10 +1678,32 @@ const saveQuestionFactor = async () => {
     return
   }
 
-  try {
-    const data = { ...editingStructureItem.value }
-    const isEditing = !!data.id
+  const data = { ...editingStructureItem.value }
+  const isEditing = !!data.id
 
+  // Check for duplicate data
+  const isDuplicate = questionFactors.value?.some(factor => {
+    // Skip the current editing item when checking for duplicates
+    if (isEditing && factor.id === data.id) {
+      return false
+    }
+
+    // Check if factor_name, category_id, topic_id, and description are exactly the same
+    return factor.factor_name.trim() === data.factor_name.trim() &&
+           String(factor.category_id) === String(data.category_id) &&
+           String(factor.topic_id || '') === String(data.topic_id || '') &&
+           (factor.description || '').trim() === (data.description || '').trim()
+  })
+
+  if (isDuplicate) {
+    await showError(
+      '資料重複',
+      '已存在完全相同的風險因子資料（因子名稱、所屬類別、所屬主題和描述皆相同），請修改後再試'
+    )
+    return
+  }
+
+  try {
     if (data.id) {
       // Update existing factor
       await updateFactor(data.id, data)
@@ -1668,7 +1729,6 @@ const saveQuestionFactor = async () => {
     console.error('Error saving factor:', error)
 
     // Show error notification
-    const isEditing = !!editingStructureItem.value.id
     await showError(
       isEditing ? '更新失敗' : '新增失敗',
       error.message || '操作時發生錯誤，請稍後再試'
