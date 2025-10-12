@@ -59,7 +59,7 @@
             <label class="text-xs font-medium text-gray-600 dark:text-gray-300">文字</label>
             <UPopover
               v-model:open="isTextColorPopoverOpen"
-              :popper="{ placement: 'bottom', strategy: 'absolute', offsetDistance: 8 }"
+              :popper="{ placement: 'bottom', strategy: 'fixed', offsetDistance: 8 }"
               mode="click"
               :ui="{
                 width: 'w-auto',
@@ -108,7 +108,7 @@
             <label class="text-xs font-medium text-gray-600 dark:text-gray-300">背景</label>
             <UPopover
               v-model:open="isBackgroundColorPopoverOpen"
-              :popper="{ placement: 'bottom', strategy: 'absolute', offsetDistance: 8 }"
+              :popper="{ placement: 'bottom', strategy: 'fixed', offsetDistance: 8 }"
               mode="click"
               :ui="{
                 width: 'w-auto',
