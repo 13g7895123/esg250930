@@ -209,7 +209,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, computed, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, computed, watch } from 'vue'
 import { ColorPicker } from 'vue-color-kit'
 import 'vue-color-kit/dist/vue-color-kit.css'
 
@@ -505,11 +505,15 @@ const saveSelection = () => {
 // 從選取的文字中取得當前顏色
 const updateColorFromSelection = () => {
   const selection = window.getSelection()
-  if (!selection.rangeCount || selection.toString().length === 0) return
+
+  // 確認選取範圍是否在編輯器內
+  if (!editorRef.value || !selection.rangeCount) return
+
+  // 檢查選取是否在編輯器元素內
+  const range = selection.getRangeAt(0)
+  if (!editorRef.value.contains(range.commonAncestorContainer)) return
 
   try {
-    // 取得選取範圍的第一個節點
-    const range = selection.getRangeAt(0)
     let node = range.startContainer
 
     // 如果是文字節點，取得其父元素
@@ -525,16 +529,30 @@ const updateColorFromSelection = () => {
       const color = computedStyle.color
       if (color && color !== 'rgb(0, 0, 0)' && color !== 'rgba(0, 0, 0, 0)') {
         textColor.value = rgbToHex(color)
+      } else {
+        // 如果沒有特殊顏色，重置為預設黑色
+        textColor.value = '#000000'
       }
 
       // 更新背景顏色
       const bgColor = computedStyle.backgroundColor
       if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
         backgroundColor.value = rgbToHex(bgColor)
+      } else {
+        // 如果沒有特殊背景色，重置為預設白色
+        backgroundColor.value = '#FFFFFF'
       }
     }
   } catch (error) {
     console.warn('無法取得選取文字的顏色:', error)
+  }
+}
+
+// 處理選取變更事件（在文件層級監聽）
+const handleSelectionChange = () => {
+  // 只在編輯器不是唯讀模式時處理
+  if (!props.readonly) {
+    updateColorFromSelection()
   }
 }
 
@@ -747,6 +765,19 @@ onMounted(async () => {
   // 初始化編輯器內容
   if (editorRef.value) {
     editorRef.value.innerHTML = props.modelValue || props.placeholder
+  }
+
+  // 監聽文件層級的選取變更事件（符合最佳實踐）
+  // 根據研究，selectionchange 事件只能綁定在 document 上
+  if (!props.readonly) {
+    document.addEventListener('selectionchange', handleSelectionChange)
+  }
+})
+
+onBeforeUnmount(() => {
+  // 清除事件監聽器，避免記憶體洩漏
+  if (!props.readonly) {
+    document.removeEventListener('selectionchange', handleSelectionChange)
   }
 })
 </script>
