@@ -579,7 +579,7 @@
         <template #cell-factor_name="{ item }">
           <HtmlTooltip
             :content="item.factor_name || '-'"
-            :truncate-length="30"
+            :truncate-length="6"
             text-class="text-base font-medium text-gray-900 dark:text-white cursor-pointer"
           />
         </template>
@@ -588,7 +588,7 @@
         <template #cell-category_name="{ item }">
           <HtmlTooltip
             :content="item.category_name || '-'"
-            :truncate-length="20"
+            :truncate-length="6"
             text-class="text-base text-gray-500 dark:text-gray-400 cursor-pointer"
           />
         </template>
@@ -598,7 +598,7 @@
           <HtmlTooltip
             v-if="item.topic_name"
             :content="item.topic_name"
-            :truncate-length="20"
+            :truncate-length="6"
             text-class="text-base text-gray-500 dark:text-gray-400 cursor-pointer"
           />
           <span v-else class="text-base text-gray-400 dark:text-gray-500">-</span>
