@@ -956,17 +956,94 @@ class QuestionStructureController extends BaseController
     }
 
     /**
-     * Import structure from Excel with RichText support
-     * POST /api/v1/question-management/assessment/{assessmentId}/import-structure
+     * Export structure to Excel with RichText support
+     * POST /api/v1/question-management/assessment/{assessmentId}/export-structure
+     *
+     * @param int|null $assessmentId 評估記錄ID（由路由參數傳入）
+     * @return ResponseInterface
      */
-    public function importStructure()
+    public function exportStructure($assessmentId = null)
     {
         try {
-            $assessmentId = $this->request->uri->getSegment(4);
+            // 驗證評估記錄ID
+            if (!$assessmentId) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '評估記錄ID為必填項目'
+                ]);
+            }
+
+            // Get the assessment with company info
+            // 注意：company_assessments.company_id 對應 local_companies.external_id
+            $db = \Config\Database::connect();
+            $query = $db->query("
+                SELECT ca.*, lc.company_name
+                FROM company_assessments ca
+                LEFT JOIN local_companies lc ON ca.company_id = lc.external_id
+                WHERE ca.id = ?
+            ", [$assessmentId]);
+            $assessment = $query->getRowArray();
+
+            if (!$assessment) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '評估不存在'
+                ]);
+            }
+
+            // Get structure configuration
+            $hasTopicLayer = $assessment['enable_topic_layer'] ?? true;
+
+            // Fetch structure data
+            $categories = $this->categoryModel->where('assessment_id', $assessmentId)->findAll();
+            $topics = $hasTopicLayer ? $this->topicModel->where('assessment_id', $assessmentId)->findAll() : [];
+            $factors = $this->factorModel->where('assessment_id', $assessmentId)->findAll();
+
+            // Generate filename
+            $timestamp = date('Y-m-d');
+            $companyName = $assessment['company_name'] ?? '公司';
+            $filename = "{$companyName}_架構_{$timestamp}.xlsx";
+
+            // Use shared export service to generate Excel
+            $exportService = new \App\Services\StructureExportService();
+            $result = $exportService->exportToExcel($categories, $topics, $factors, $hasTopicLayer, $filename);
+
+            // Return file
+            return $this->response
+                ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                ->setHeader('Content-Disposition', 'attachment;filename="' . $result['filename'] . '"')
+                ->setHeader('Cache-Control', 'max-age=0')
+                ->setBody($result['content']);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Question structure export error: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '匯出失敗：' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Import structure from Excel with RichText support
+     * POST /api/v1/question-management/assessment/{assessmentId}/import-structure
+     *
+     * @param int|null $assessmentId 評估記錄ID（由路由參數傳入）
+     * @return ResponseInterface
+     */
+    public function importStructure($assessmentId = null)
+    {
+        try {
+            // 驗證評估記錄ID
+            if (!$assessmentId) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '評估記錄ID為必填項目'
+                ]);
+            }
 
             // Get the assessment
-            $assessmentModel = new \App\Models\RiskAssessment\CompanyAssessmentModel();
-            $assessment = $assessmentModel->find($assessmentId);
+            $assessment = $this->assessmentModel->find($assessmentId);
 
             if (!$assessment) {
                 return $this->response->setStatusCode(404)->setJSON([

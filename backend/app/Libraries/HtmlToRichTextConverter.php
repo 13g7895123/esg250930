@@ -19,6 +19,16 @@ class HtmlToRichTextConverter
     private ?string $detectedBackgroundColor = null;
 
     /**
+     * 背景色出現次數（用於判斷是否為全域背景色）
+     */
+    private int $backgroundColorCount = 0;
+
+    /**
+     * 文字片段總數（用於判斷背景色覆蓋率）
+     */
+    private int $totalTextRunCount = 0;
+
+    /**
      * 將 HTML 轉換為 Excel RichText
      *
      * @param string $html HTML 內容
@@ -35,13 +45,19 @@ class HtmlToRichTextConverter
             return $html;
         }
 
-        // 重置偵測到的背景色
+        // 重置偵測到的背景色和計數器
         $this->detectedBackgroundColor = null;
+        $this->backgroundColorCount = 0;
+        $this->totalTextRunCount = 0;
 
         $richText = new RichText();
 
         // 解析 HTML 並轉換為 RichText 片段
         $this->parseHtml($html, $richText);
+
+        // 只要檢測到背景色就套用到整個儲存格
+        // 注意：由於 Excel RichText 不支援字元級別的背景色，
+        // 即使只有部分文字有背景色，也只能套用到整個儲存格
 
         return $richText;
     }
@@ -245,6 +261,8 @@ class HtmlToRichTextConverter
                         // 解析背景色
                         $bgColor = $this->parseColor($value);
                         if ($bgColor) {
+                            // 儲存背景色資訊到 style 中，稍後在 addTextRun 中處理
+                            $style['background-color'] = $bgColor;
                             $this->detectedBackgroundColor = $bgColor;
                         }
                         break;
@@ -317,6 +335,16 @@ class HtmlToRichTextConverter
      */
     private function addTextRun(RichText $richText, string $text, array $style = []): void
     {
+        // 只計算實際有內容的文字片段（不包括純換行符）
+        if (trim($text) !== '') {
+            $this->totalTextRunCount++;
+
+            // 如果這個文字片段有背景色，增加計數
+            if (!empty($style['background-color'])) {
+                $this->backgroundColorCount++;
+            }
+        }
+
         if (empty($style)) {
             // 無樣式，添加普通文字
             $richText->createText($text);
@@ -353,6 +381,9 @@ class HtmlToRichTextConverter
             if (!empty($style['color'])) {
                 $font->setColor(new Color($style['color']));
             }
+
+            // 注意：Excel RichText 不支援字元級別的背景色
+            // background-color 只用於追蹤，實際套用在儲存格層級
         }
     }
 }

@@ -517,161 +517,20 @@ class TemplateController extends ResourceController
             $topics = $hasTopicLayer ? $topicModel->where('template_id', $templateId)->findAll() : [];
             $factors = $factorModel->where('template_id', $templateId)->findAll();
 
-            // Create Excel file
-            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-            $sheet = $spreadsheet->getActiveSheet();
-            $sheet->setTitle('架構資料');
-
-            // Initialize converters
-            $htmlToRichText = new \App\Libraries\HtmlToRichTextConverter();
-
-            // Set headers
-            $headers = ['風險類別名稱', '風險類別描述'];
-            if ($hasTopicLayer) {
-                $headers[] = '風險主題名稱';
-                $headers[] = '風險主題描述';
-            }
-            $headers[] = '風險因子名稱';
-            $headers[] = '風險因子描述';
-
-            $col = 'A';
-            foreach ($headers as $header) {
-                $cell = $sheet->getCell($col . '1');
-                $cell->setValue($header);
-                $cell->getStyle()->applyFromArray([
-                    'fill' => [
-                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => '4F46E5']
-                    ],
-                    'font' => [
-                        'bold' => true,
-                        'color' => ['rgb' => 'FFFFFF'],
-                        'size' => 12
-                    ],
-                    'alignment' => [
-                        'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                        'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
-                    ]
-                ]);
-                $col++;
-            }
-
-            // Set column widths
-            $sheet->getColumnDimension('A')->setWidth(20); // 類別名稱
-            $sheet->getColumnDimension('B')->setWidth(40); // 類別描述
-            if ($hasTopicLayer) {
-                $sheet->getColumnDimension('C')->setWidth(20); // 主題名稱
-                $sheet->getColumnDimension('D')->setWidth(40); // 主題描述
-                $sheet->getColumnDimension('E')->setWidth(20); // 因子名稱
-                $sheet->getColumnDimension('F')->setWidth(40); // 因子描述
-            } else {
-                $sheet->getColumnDimension('C')->setWidth(20); // 因子名稱
-                $sheet->getColumnDimension('D')->setWidth(40); // 因子描述
-            }
-
-            // Fill data rows
-            $row = 2;
-            foreach ($factors as $factor) {
-                // Find category
-                $category = null;
-                foreach ($categories as $cat) {
-                    if ($cat['id'] == $factor['category_id']) {
-                        $category = $cat;
-                        break;
-                    }
-                }
-
-                $col = 'A';
-
-                // Category name
-                $sheet->setCellValue($col++ . $row, $category['category_name'] ?? '');
-
-                // Category description (RichText)
-                if (!empty($category['description'])) {
-                    $richText = $htmlToRichText->convert($category['description']);
-                    $sheet->setCellValue($col . $row, $richText);
-
-                    // Apply background color if detected
-                    $bgColor = $htmlToRichText->getDetectedBackgroundColor();
-                    if ($bgColor) {
-                        $sheet->getStyle($col . $row)->getFill()
-                            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-                            ->getStartColor()->setRGB($bgColor);
-                    }
-                }
-                $col++;
-
-                if ($hasTopicLayer) {
-                    // Find topic
-                    $topic = null;
-                    foreach ($topics as $t) {
-                        if ($t['id'] == $factor['topic_id']) {
-                            $topic = $t;
-                            break;
-                        }
-                    }
-
-                    // Topic name
-                    $sheet->setCellValue($col++ . $row, $topic['topic_name'] ?? '');
-
-                    // Topic description (RichText)
-                    if (!empty($topic['description'])) {
-                        $richText = $htmlToRichText->convert($topic['description']);
-                        $sheet->setCellValue($col . $row, $richText);
-
-                        // Apply background color if detected
-                        $bgColor = $htmlToRichText->getDetectedBackgroundColor();
-                        if ($bgColor) {
-                            $sheet->getStyle($col . $row)->getFill()
-                                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-                                ->getStartColor()->setRGB($bgColor);
-                        }
-                    }
-                    $col++;
-                }
-
-                // Factor name
-                $sheet->setCellValue($col++ . $row, $factor['factor_name'] ?? '');
-
-                // Factor description (RichText)
-                if (!empty($factor['description'])) {
-                    $richText = $htmlToRichText->convert($factor['description']);
-                    $sheet->setCellValue($col . $row, $richText);
-
-                    // Apply background color if detected
-                    $bgColor = $htmlToRichText->getDetectedBackgroundColor();
-                    if ($bgColor) {
-                        $sheet->getStyle($col . $row)->getFill()
-                            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-                            ->getStartColor()->setRGB($bgColor);
-                    }
-                }
-
-                $row++;
-            }
-
-            // Output Excel file
-            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-
+            // Generate filename
             $timestamp = date('Y-m-d');
             $filename = "{$template['version_name']}_架構_{$timestamp}.xlsx";
 
-            // Save to temporary file
-            $tempFile = WRITEPATH . 'uploads/' . $filename;
-            $writer->save($tempFile);
-
-            // Read file content
-            $fileContent = file_get_contents($tempFile);
-
-            // Delete temporary file
-            unlink($tempFile);
+            // Use shared export service to generate Excel
+            $exportService = new \App\Services\StructureExportService();
+            $result = $exportService->exportToExcel($categories, $topics, $factors, $hasTopicLayer, $filename);
 
             // Return file
             return $this->response
                 ->setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-                ->setHeader('Content-Disposition', 'attachment;filename="' . $filename . '"')
+                ->setHeader('Content-Disposition', 'attachment;filename="' . $result['filename'] . '"')
                 ->setHeader('Cache-Control', 'max-age=0')
-                ->setBody($fileContent);
+                ->setBody($result['content']);
 
         } catch (\Exception $e) {
             log_message('error', 'Template structure export error: ' . $e->getMessage());

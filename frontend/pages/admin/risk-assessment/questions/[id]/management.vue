@@ -1107,7 +1107,7 @@ const route = useRoute()
 const companyId = computed(() => route.params.id)
 
 // Notification system using SweetAlert
-const { showSuccess, showError } = useNotification()
+const { showSuccess, showError, showLoading, closeAll } = useNotification()
 
 // Get templates from store
 const templatesStore = useTemplatesStore()
@@ -2474,14 +2474,6 @@ const truncateHtml = (html, maxLength = 20) => {
 
 // 匯入/匯出函數
 
-const showLoading = (message) => {
-  // 簡單的載入實作 - 可以使用更完整的載入元件來增強
-}
-
-const closeAll = () => {
-  // 關閉所有 Modal - 用於匯出期間
-}
-
 const exportStructure = async () => {
   if (!managingQuestion.value) return
 
@@ -2489,71 +2481,40 @@ const exportStructure = async () => {
     showLoading('正在匯出架構資料...')
 
     const assessmentId = managingQuestion.value.id
-    const hasTopicLayer = enableTopicLayer.value
 
-    // 取得所有架構資料
-    await loadQuestionStructureData(assessmentId)
-
-    const categories = questionCategories.value || []
-    const topics = hasTopicLayer ? (questionTopics.value || []) : []
-    const factors = questionFactors.value || []
-
-    // 準備 Excel 資料
-    const data = []
-
-    factors.forEach(factor => {
-      const category = categories.find(c => c.id === factor.category_id)
-      const row = {
-        '風險類別名稱': category?.category_name || '',
-        '風險類別描述': category?.description || ''
+    // 呼叫後端 API 匯出架構（支援 RichText 格式）
+    const response = await fetch(`/api/v1/question-management/assessment/${assessmentId}/export-structure`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
       }
-
-      if (hasTopicLayer) {
-        const topic = topics.find(t => t.id === factor.topic_id)
-        row['風險主題名稱'] = topic?.topic_name || ''
-        row['風險主題描述'] = topic?.description || ''
-      }
-
-      row['風險因子名稱'] = factor.factor_name || ''
-      row['風險因子描述'] = factor.description || ''
-
-      data.push(row)
     })
 
-    // 建立 workbook
-    const ws = XLSX.utils.json_to_sheet(data)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, '架構資料')
-
-    // 設定標題列樣式
-    const range = XLSX.utils.decode_range(ws['!ref'])
-    for (let C = range.s.c; C <= range.e.c; ++C) {
-      const address = XLSX.utils.encode_col(C) + '1'
-      if (!ws[address]) continue
-      ws[address].s = {
-        fill: { fgColor: { rgb: '4F46E5' } },
-        font: { bold: true, color: { rgb: 'FFFFFF' } }
-      }
+    if (!response.ok) {
+      throw new Error('匯出失敗')
     }
 
-    // 設定欄位寬度
-    ws['!cols'] = [
-      { wch: 20 },  // 風險類別名稱
-      { wch: 40 },  // 風險類別描述
-      ...(hasTopicLayer ? [
-        { wch: 20 },  // 風險主題名稱
-        { wch: 40 }   // 風險主題描述
-      ] : []),
-      { wch: 20 },  // 風險因子名稱
-      { wch: 40 }   // 風險因子描述
-    ]
+    // 取得檔案內容
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
 
-    // 產生檔案名稱
-    const timestamp = new Date().toISOString().slice(0, 10)
-    const filename = `${managingQuestion.value.templateVersion}_${managingQuestion.value.year}年_架構_${timestamp}.xlsx`
+    // 直接在前端生成檔名，包含公司、範本版本與年份
+    const now = new Date()
+    const timestamp = now.toISOString().slice(0, 10).replace(/-/g, '') + '_' +
+                      now.toTimeString().slice(0, 8).replace(/:/g, '')
+    const company = companyName.value || '公司'
+    const templateVersion = managingQuestion.value.templateVersion || '未知版本'
+    const year = managingQuestion.value.year || ''
+    const filename = `${company}_${templateVersion}_${year}_架構_${timestamp}.xlsx`
 
     // 下載檔案
-    XLSX.writeFile(wb, filename)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
 
     closeAll()
     await showSuccess('匯出成功', `架構資料已匯出為 ${filename}`)
