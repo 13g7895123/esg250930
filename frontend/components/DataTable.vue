@@ -151,8 +151,15 @@
             :key="getRowKey(item, index)"
             :class="[
               'hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200',
-              selectedRows.includes(getRowKey(item, index)) ? 'bg-primary-50 dark:bg-primary-900/20' : ''
+              selectedRows.includes(getRowKey(item, index)) ? 'bg-primary-50 dark:bg-primary-900/20' : '',
+              draggable ? 'sortable-row' : ''
             ]"
+            :draggable="draggable"
+            @dragstart="draggable ? handleDragStart($event, item) : null"
+            @dragend="draggable ? handleDragEnd($event) : null"
+            @dragover="draggable ? handleDragOver($event, item) : null"
+            @dragleave="draggable ? handleDragLeave($event) : null"
+            @drop="draggable ? handleDrop($event, item) : null"
           >
             <!-- Select Checkbox -->
             <td v-if="selectable" class="px-6 py-4">
@@ -336,7 +343,8 @@ import {
   MagnifyingGlassIcon,
   ChevronUpIcon,
   ChevronDownIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  Bars3Icon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -380,6 +388,14 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false
+  },
+  draggable: {
+    type: Boolean,
+    default: false
+  },
+  orderField: {
+    type: String,
+    default: 'sort_order'
   },
 
   // Actions Column Configuration
@@ -436,7 +452,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['search', 'sort', 'select', 'page-change'])
+const emit = defineEmits(['search', 'sort', 'select', 'page-change', 'drag-end'])
 
 // Get slots for checking if actions slot exists
 const slots = useSlots()
@@ -448,6 +464,10 @@ const currentPage = ref(1)
 const pageSize = ref(props.pageSize)
 const sortField = ref('')
 const sortOrder = ref('asc')
+
+// Drag and drop state
+const draggedItem = ref(null)
+const draggedOverItem = ref(null)
 
 // Computed properties
 
@@ -754,6 +774,55 @@ const goToPage = (page) => {
 const handlePageSizeChange = () => {
   currentPage.value = 1
   emit('page-change', 1)
+}
+
+// Drag and drop handlers
+const handleDragStart = (event, item) => {
+  draggedItem.value = item
+  event.target.style.opacity = '0.5'
+}
+
+const handleDragEnd = (event) => {
+  event.target.style.opacity = '1'
+  draggedItem.value = null
+  draggedOverItem.value = null
+}
+
+const handleDragOver = (event, item) => {
+  event.preventDefault()
+  draggedOverItem.value = item
+
+  // Add visual feedback
+  const row = event.currentTarget
+  if (row) {
+    row.style.borderTop = '2px solid #6366f1'
+  }
+}
+
+const handleDragLeave = (event) => {
+  // Remove visual feedback
+  const row = event.currentTarget
+  if (row) {
+    row.style.borderTop = ''
+  }
+}
+
+const handleDrop = (event, targetItem) => {
+  event.preventDefault()
+
+  // Remove visual feedback
+  const row = event.currentTarget
+  if (row) {
+    row.style.borderTop = ''
+  }
+
+  if (!draggedItem.value || draggedItem.value === targetItem) return
+
+  // Emit drag-end event with source and target items
+  emit('drag-end', {
+    draggedItem: draggedItem.value,
+    targetItem: targetItem
+  })
 }
 
 // Watch for data changes - only reset page when data length changes
