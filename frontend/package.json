@@ -18,7 +18,6 @@
     "test:e2e:debug": "playwright test --debug"
   },
   "dependencies": {
-    "@cyhnkckali/vue3-color-picker": "^2.1.5",
     "@heroicons/vue": "^2.1.5",
     "@nuxt/ui": "^2.18.7",
     "@pinia/nuxt": "^0.10.0",
@@ -28,6 +27,7 @@
     "pinia-plugin-persistedstate": "^4.5.0",
     "sweetalert2": "^11.23.0",
     "vue": "latest",
+    "vue-color-kit": "^1.0.6",
     "vue3-apexcharts": "^1.8.0",
     "xlsx": "^0.18.5"
   },

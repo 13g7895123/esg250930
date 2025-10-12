@@ -80,16 +80,15 @@
               </button>
               <template #panel="{ close }">
                 <div class="p-3">
-                  <Vue3ColorPicker
+                  <ColorPicker
                     v-if="isTextColorPopoverOpen"
                     :key="`text-color-${isTextColorPopoverOpen}`"
                     v-model="textColor"
-                    @update:modelValue="formatTextColor"
-                    mode="solid"
-                    type="HEX"
-                    :showColorList="false"
-                    :showEyeDrop="false"
-                    :showAlpha="false"
+                    @changeColor="formatTextColor"
+                    theme="light"
+                    :sucker-hide="true"
+                    :sucker-canvas="null"
+                    :sucker-area="[]"
                   />
                   <div class="mt-3 flex justify-end gap-2">
                     <button
@@ -130,16 +129,15 @@
               </button>
               <template #panel="{ close }">
                 <div class="p-3">
-                  <Vue3ColorPicker
+                  <ColorPicker
                     v-if="isBackgroundColorPopoverOpen"
                     :key="`bg-color-${isBackgroundColorPopoverOpen}`"
                     v-model="backgroundColor"
-                    @update:modelValue="formatBackgroundColor"
-                    mode="solid"
-                    type="HEX"
-                    :showColorList="false"
-                    :showEyeDrop="false"
-                    :showAlpha="false"
+                    @changeColor="formatBackgroundColor"
+                    theme="light"
+                    :sucker-hide="true"
+                    :sucker-canvas="null"
+                    :sucker-area="[]"
                   />
                   <div class="mt-3 flex justify-end gap-2">
                     <button
@@ -212,8 +210,8 @@
 
 <script setup>
 import { ref, onMounted, nextTick, computed, watch } from 'vue'
-import { Vue3ColorPicker } from '@cyhnkckali/vue3-color-picker'
-import '@cyhnkckali/vue3-color-picker/dist/style.css'
+import { ColorPicker } from 'vue-color-kit'
+import 'vue-color-kit/dist/vue-color-kit.css'
 
 // Props
 const props = defineProps({
@@ -503,8 +501,11 @@ const saveSelection = () => {
 }
 
 // Color formatting functions - 使用 style 屬性而非 HTML 屬性
-const formatTextColor = (color) => {
+const formatTextColor = (colorData) => {
   if (!editorRef.value) return
+
+  // 從 vue-color-kit 回傳的物件中取得顏色值
+  const color = typeof colorData === 'string' ? colorData : (colorData?.hex || colorData?.rgba?.a !== undefined ? `rgba(${colorData.rgba.r}, ${colorData.rgba.g}, ${colorData.rgba.b}, ${colorData.rgba.a})` : colorData?.hex)
 
   editorRef.value.focus()
 
@@ -572,8 +573,11 @@ const formatTextColor = (color) => {
   editorRef.value.focus()
 }
 
-const formatBackgroundColor = (color) => {
+const formatBackgroundColor = (colorData) => {
   if (!editorRef.value) return
+
+  // 從 vue-color-kit 回傳的物件中取得顏色值
+  const color = typeof colorData === 'string' ? colorData : (colorData?.hex || colorData?.rgba?.a !== undefined ? `rgba(${colorData.rgba.r}, ${colorData.rgba.g}, ${colorData.rgba.b}, ${colorData.rgba.a})` : colorData?.hex)
 
   editorRef.value.focus()
 
