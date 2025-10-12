@@ -605,25 +605,14 @@
 
         <!-- Custom Description Cell with HTML rendering and truncation -->
         <template #cell-description="{ item }">
-          <div class="relative group">
-            <div
-              v-if="item.description"
-              class="text-gray-600 dark:text-gray-400"
-              v-html="truncateHtml(item.description, 20)"
-            ></div>
-            <div v-else class="text-gray-400 dark:text-gray-500 italic">無描述</div>
-
-            <!-- Tooltip for full content on hover -->
-            <div
-              v-if="item.description && stripHtml(item.description).length > 20"
-              class="absolute left-0 top-full mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-[300px] max-w-[500px]"
-            >
-              <div
-                class="text-sm text-gray-700 dark:text-gray-300 break-words"
-                v-html="item.description"
-              ></div>
-            </div>
-          </div>
+          <HtmlTooltip
+            v-if="item.description"
+            :content="item.description"
+            :truncate-length="20"
+            text-class="text-base text-gray-500 dark:text-gray-400 cursor-pointer"
+            max-width="min-w-[300px] max-w-[500px]"
+          />
+          <span v-else class="text-base text-gray-400 dark:text-gray-500 italic">無描述</span>
         </template>
       </DataTable>
     </Modal>
@@ -712,25 +701,14 @@
 
         <!-- Custom Description Cell with HTML rendering and truncation -->
         <template #cell-description="{ item }">
-          <div class="relative group">
-            <div
-              v-if="item.description"
-              class="text-gray-600 dark:text-gray-400"
-              v-html="truncateHtml(item.description, 20)"
-            ></div>
-            <div v-else class="text-gray-400 dark:text-gray-500 italic">無描述</div>
-
-            <!-- Tooltip for full content on hover -->
-            <div
-              v-if="item.description && stripHtml(item.description).length > 20"
-              class="absolute left-0 top-full mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-[300px] max-w-[500px]"
-            >
-              <div
-                class="text-sm text-gray-700 dark:text-gray-300 break-words"
-                v-html="item.description"
-              ></div>
-            </div>
-          </div>
+          <HtmlTooltip
+            v-if="item.description"
+            :content="item.description"
+            :truncate-length="20"
+            text-class="text-base text-gray-500 dark:text-gray-400 cursor-pointer"
+            max-width="min-w-[300px] max-w-[500px]"
+          />
+          <span v-else class="text-base text-gray-400 dark:text-gray-500 italic">無描述</span>
         </template>
       </DataTable>
     </Modal>
@@ -818,25 +796,14 @@
 
         <!-- Custom Description Cell with HTML rendering and truncation -->
         <template #cell-description="{ item }">
-          <div class="relative group">
-            <div
-              v-if="item.description"
-              class="text-gray-600 dark:text-gray-400"
-              v-html="truncateHtml(item.description, 20)"
-            ></div>
-            <div v-else class="text-gray-400 dark:text-gray-500 italic">無描述</div>
-
-            <!-- Tooltip for full content on hover -->
-            <div
-              v-if="item.description && stripHtml(item.description).length > 20"
-              class="absolute left-0 top-full mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-[300px] max-w-[500px]"
-            >
-              <div
-                class="text-sm text-gray-700 dark:text-gray-300 break-words"
-                v-html="item.description"
-              ></div>
-            </div>
-          </div>
+          <HtmlTooltip
+            v-if="item.description"
+            :content="item.description"
+            :truncate-length="20"
+            text-class="text-base text-gray-500 dark:text-gray-400 cursor-pointer"
+            max-width="min-w-[300px] max-w-[500px]"
+          />
+          <span v-else class="text-base text-gray-400 dark:text-gray-500 italic">無描述</span>
         </template>
       </DataTable>
     </Modal>
@@ -1100,6 +1067,7 @@ import {
   XMarkIcon
 } from '@heroicons/vue/24/outline'
 
+import HtmlTooltip from '~/components/HtmlTooltip.vue'
 import * as XLSX from 'xlsx'
 
 const route = useRoute()
