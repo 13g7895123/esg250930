@@ -1445,8 +1445,8 @@ const submitRiskCategoryForm = async () => {
 
   if (isDuplicate) {
     await showError(
-      showAddRiskCategoryModal.value ? '新增失敗' : '更新失敗',
-      '已存在完全相同的風險類別資料，請修改後再試'
+      '資料重複',
+      '已存在完全相同的風險類別資料（類別名稱和描述皆相同），請修改後再試'
     )
     return
   }
@@ -1615,8 +1615,8 @@ const submitRiskFactorForm = async () => {
 
   if (isDuplicate) {
     await showError(
-      showAddRiskFactorModal.value ? '新增失敗' : '更新失敗',
-      '已存在完全相同的風險因子資料，請修改後再試'
+      '資料重複',
+      '已存在完全相同的風險因子資料（因子名稱、所屬類別、所屬主題和描述皆相同），請修改後再試'
     )
     return
   }
@@ -1769,8 +1769,8 @@ const submitRiskTopicForm = async () => {
 
   if (isDuplicate) {
     await showError(
-      showAddRiskTopicModal.value ? '新增失敗' : '更新失敗',
-      '已存在完全相同的風險主題資料，請修改後再試'
+      '資料重複',
+      '已存在完全相同的風險主題資料（主題名稱、所屬類別和描述皆相同），請修改後再試'
     )
     return
   }
