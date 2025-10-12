@@ -49,8 +49,6 @@
       empty-message="開始建立您的第一個題項管理項目"
       no-search-results-title="沒有找到符合的項目"
       no-search-results-message="請嘗試其他搜尋關鍵字"
-      @search="(query) => console.log('搜尋查詢:', query)"
-      @sort="(field, order) => console.log('排序:', field, order)"
     >
       <!-- Actions Slot -->
       <template #actions>
@@ -1136,7 +1134,6 @@ const loadCompanyName = async () => {
       companyExists.value = false
     }
   } catch (error) {
-    console.error('Error loading company name:', error)
     companyName.value = `公司 #${companyId.value}`
     companyExists.value = false
   }
@@ -1230,33 +1227,29 @@ const enableTopicLayer = ref(true) // Default to enabled
 
 // Topic layer toggle change handler
 const onTopicLayerToggleChange = (enabled) => {
-  console.log('Topic layer toggle changed:', enabled)
-
-  // Show confirmation if user is disabling topic layer and there are existing topics
+  // 如果使用者停用主題層級且已有主題存在，顯示確認對話框
   if (!enabled && questionTopics.value?.length > 0) {
-    // Could add a confirmation dialog here
-    console.warn('警告：停用風險主題層級將影響現有的主題資料')
+    // 可在此處加入確認對話框
   }
 
-  // Update UI immediately
+  // 立即更新 UI
   enableTopicLayer.value = enabled
 
-  // Save setting to localStorage so content page can access it
+  // 儲存設定到 localStorage 以供內容頁面存取
   if (process.client && managingQuestion.value?.id) {
     try {
       const settingKey = `question_management_${managingQuestion.value.id}_topic_layer`
       localStorage.setItem(settingKey, JSON.stringify(enabled))
-      console.log('Saved topic layer setting:', enabled)
     } catch (error) {
-      console.error('Error saving topic layer setting:', error)
+      // 靜默處理錯誤
     }
   }
 
-  // Could trigger API call to save this setting to the assessment
+  // 可觸發 API 呼叫將此設定儲存到評估記錄
   // saveTopicLayerSetting(managingQuestion.value?.id, enabled)
 }
 
-// Load topic layer setting from localStorage
+// 從 localStorage 載入主題層級設定
 const loadTopicLayerSetting = (questionId) => {
   if (process.client && questionId) {
     try {
@@ -1264,10 +1257,9 @@ const loadTopicLayerSetting = (questionId) => {
       const stored = localStorage.getItem(settingKey)
       if (stored !== null) {
         enableTopicLayer.value = JSON.parse(stored)
-        console.log('Loaded topic layer setting:', enableTopicLayer.value)
       }
     } catch (error) {
-      console.error('Error loading topic layer setting:', error)
+      // 靜默處理錯誤
     }
   }
 }
@@ -1577,15 +1569,13 @@ const handleQuestionFactorDragEnd = async ({ draggedItem, targetItem }) => {
     await reorderFactors(managingQuestion.value.id, orders)
     await loadQuestionStructureData(managingQuestion.value.id)
   } catch (error) {
-    console.error('風險因子排序錯誤:', error)
     await showError('排序失敗', '更新風險因子排序時發生錯誤，請稍後再試')
   }
 }
 
-// Save structure item
+// 儲存架構項目
 const saveQuestionCategory = async () => {
   if (!managingQuestion.value?.id) {
-    console.error('No assessment ID found')
     return
   }
 
@@ -1624,20 +1614,16 @@ const saveQuestionCategory = async () => {
     // Reload data
     await loadQuestionStructureData(managingQuestion.value.id)
 
-    // Close modal
+    // 關閉 Modal
     showEditCategoryModal.value = false
 
-    // Show success notification
+    // 顯示成功通知
     await showSuccess(
       isEditing ? '更新成功' : '新增成功',
       `風險分類「${data.category_name}」已成功${isEditing ? '更新' : '建立'}`
     )
-
-    console.log('Category saved successfully')
   } catch (error) {
-    console.error('Error saving category:', error)
-
-    // Show error notification
+    // 顯示錯誤通知
     await showError(
       isEditing ? '更新失敗' : '新增失敗',
       error.message || '操作時發生錯誤，請稍後再試'
@@ -1647,7 +1633,6 @@ const saveQuestionCategory = async () => {
 
 const saveQuestionTopic = async () => {
   if (!managingQuestion.value?.id) {
-    console.error('No assessment ID found')
     return
   }
 
@@ -1690,17 +1675,13 @@ const saveQuestionTopic = async () => {
     // Close modal
     showEditTopicModal.value = false
 
-    // Show success notification
+    // 顯示成功通知
     await showSuccess(
       isEditing ? '更新成功' : '新增成功',
       `風險主題「${data.topic_name}」已成功${isEditing ? '更新' : '建立'}`
     )
-
-    console.log('Topic saved successfully')
   } catch (error) {
-    console.error('Error saving topic:', error)
-
-    // Show error notification
+    // 顯示錯誤通知
     await showError(
       isEditing ? '更新失敗' : '新增失敗',
       error.message || '操作時發生錯誤，請稍後再試'
@@ -1710,21 +1691,20 @@ const saveQuestionTopic = async () => {
 
 const saveQuestionFactor = async () => {
   if (!managingQuestion.value?.id) {
-    console.error('No assessment ID found')
     return
   }
 
   const data = { ...editingStructureItem.value }
   const isEditing = !!data.id
 
-  // Check for duplicate data
+  // 檢查重複資料
   const isDuplicate = questionFactors.value?.some(factor => {
-    // Skip the current editing item when checking for duplicates
+    // 檢查重複時跳過目前編輯項目
     if (isEditing && factor.id === data.id) {
       return false
     }
 
-    // Check if factor_name, category_id, topic_id, and description are exactly the same
+    // 檢查因子名稱、類別 ID、主題 ID 和描述是否完全相同
     return factor.factor_name.trim() === data.factor_name.trim() &&
            String(factor.category_id) === String(data.category_id) &&
            String(factor.topic_id || '') === String(data.topic_id || '') &&
@@ -1741,30 +1721,26 @@ const saveQuestionFactor = async () => {
 
   try {
     if (data.id) {
-      // Update existing factor
+      // 更新現有因子
       await updateFactor(data.id, data)
     } else {
-      // Create new factor
+      // 建立新因子
       await createFactor(managingQuestion.value.id, data)
     }
 
-    // Reload data
+    // 重新載入資料
     await loadQuestionStructureData(managingQuestion.value.id)
 
-    // Close modal
+    // 關閉 Modal
     showEditFactorModal.value = false
 
-    // Show success notification
+    // 顯示成功通知
     await showSuccess(
       isEditing ? '更新成功' : '新增成功',
       `風險因子「${data.factor_name}」已成功${isEditing ? '更新' : '建立'}`
     )
-
-    console.log('Factor saved successfully')
   } catch (error) {
-    console.error('Error saving factor:', error)
-
-    // Show error notification
+    // 顯示錯誤通知
     await showError(
       isEditing ? '更新失敗' : '新增失敗',
       error.message || '操作時發生錯誤，請稍後再試'
@@ -1772,7 +1748,7 @@ const saveQuestionFactor = async () => {
   }
 }
 
-// Delete confirmation message
+// 刪除確認訊息
 const getDeleteConfirmMessage = () => {
   if (!deletingStructureItem.value) return ''
 
@@ -1788,10 +1764,9 @@ const getDeleteConfirmMessage = () => {
   }
 }
 
-// Confirm delete
+// 確認刪除
 const confirmDeleteStructureItem = async () => {
   if (!deletingStructureItem.value || !managingQuestion.value?.id) {
-    console.error('No item to delete or assessment ID')
     return
   }
 
@@ -1819,7 +1794,7 @@ const confirmDeleteStructureItem = async () => {
     // Close modal
     showDeleteConfirmModal.value = false
 
-    // Show success notification
+    // 顯示成功通知
     const typeNames = {
       'category': '風險分類',
       'topic': '風險主題',
@@ -1830,12 +1805,8 @@ const confirmDeleteStructureItem = async () => {
       '刪除成功',
       `${typeNames[structureEditType.value]}「${itemName}」已成功刪除`
     )
-
-    console.log(`${structureEditType.value} deleted successfully`)
   } catch (error) {
-    console.error(`Error deleting ${structureEditType.value}:`, error)
-
-    // Show error notification with specific API error message
+    // 顯示錯誤通知（包含特定 API 錯誤訊息）
     const typeNames = {
       'category': '風險分類',
       'topic': '風險主題',
@@ -1849,10 +1820,10 @@ const confirmDeleteStructureItem = async () => {
   }
 }
 
-// Computed property for form modal visibility
+// 表單 Modal 顯示狀態的 computed 屬性
 const showFormModal = computed(() => showAddModal.value || showEditModal.value)
 
-// Assignment-related data
+// 指派相關資料
 const selectedQuestionForAssignment = ref(null)
 const questionContentForAssignment = ref([])
 const itemToDelete = ref(null)
@@ -1870,7 +1841,7 @@ const copyOptions = ref({
   includeResults: false
 })
 
-// Date formatting function for columns
+// 欄位日期格式化函數
 const formatDate = (date) => {
   if (!date) return '-'
   const dateObj = typeof date === 'string' ? new Date(date) : date
@@ -1884,7 +1855,7 @@ const formatDate = (date) => {
   }).format(dateObj)
 }
 
-// Question management composable
+// 題項管理 composable
 const {
   getQuestionManagementByCompany,
   addQuestionManagementItem,
@@ -1895,11 +1866,11 @@ const {
   refreshCompanyAssessments
 } = useQuestionManagement()
 
-// Reactive data for question management items
+// 題項管理項目的響應式資料
 const questionManagement = ref([])
 const isLoadingQuestionManagement = ref(false)
 
-// Load question management data
+// 載入題項管理資料
 const loadQuestionManagementData = async () => {
   isLoadingQuestionManagement.value = true
   try {
@@ -1907,119 +1878,71 @@ const loadQuestionManagementData = async () => {
     await refreshCompanyAssessments(companyId.value)
     const data = await getQuestionManagementByCompany(companyId.value)
     questionManagement.value = data || []
-
-    console.log('=== /admin/risk-assessment/questions/1/management 頁面資料 ===')
-    console.log('Company ID:', companyId.value)
-    console.log('Company Name:', companyName.value)
-    console.log('Question Management Data:', data)
-
-    // 檢查建立日期格式 - 現在直接存儲顯示格式
-    if (data && data.length > 0) {
-      console.log('=== 建立日期格式檢查 ===')
-      data.forEach((item, index) => {
-        console.log(`第${index + 1}筆資料:`)
-        console.log('  建立日期:', item.createdAt)
-      })
-      console.log('=== 建立日期格式檢查結束 ===')
-    }
-
-    console.log('Available Templates:', availableTemplates.value)
-    console.log('Available Users:', availableUsers.value)
-    console.log('=== 資料結束 ===')
   } catch (error) {
-    console.error('Error loading question management data:', error)
     questionManagement.value = []
   } finally {
     isLoadingQuestionManagement.value = false
   }
 }
 
-// Initialize question management for this company (ensures empty array for new companies)
+// 初始化此公司的題項管理（確保新公司有空陣列）
 onMounted(async () => {
   try {
-    // Load company name first
+    // 先載入公司名稱
     await loadCompanyName()
 
-    // Load personnel data for the company
+    // 載入公司的人員資料
     if (companyId.value) {
       try {
         await loadPersonnel(companyId.value)
-        console.log('Personnel loaded for company:', companyId.value)
       } catch (error) {
-        console.error('Error loading personnel:', error)
+        // 靜默處理錯誤
       }
     }
 
     await initializeCompanyQuestionManagement(companyId.value)
 
-    // Load question management data
+    // 載入題項管理資料
     await loadQuestionManagementData()
 
-    // Initialize templates store to fetch templates from database
+    // 初始化 templates store 以從資料庫取得範本
     try {
       await templatesStore.initialize()
-      console.log('Templates loaded from database:', templatesStore.templates.length)
     } catch (error) {
-      console.error('Failed to load templates from database:', error)
+      // 靜默處理錯誤
     }
-
-    console.log('=== 頁面載入時的初始資料 ===')
-    console.log('Route Params:', route.params)
-    console.log('Company ID from Route:', companyId.value)
-    console.log('Available Templates on Mount:', availableTemplates.value)
-    console.log('Available Users on Mount:', availableUsers.value)
-    console.log('Available Personnel on Mount:', availablePersonnel.value)
-    console.log('=== 初始資料結束 ===')
   } catch (error) {
-    console.error('Error during component mount:', error)
-    // Set safe defaults to prevent render errors
+    // 設定安全的預設值以防止渲染錯誤
     questionManagement.value = []
     isLoadingQuestionManagement.value = false
   }
 })
 
-// Watch for changes in question management data (disabled to prevent performance issues)
+// 監聽題項管理資料變更（已停用以避免效能問題）
 // watch(questionManagement, (newData, oldData) => {
-//   console.log('=== 題項管理資料變更 ===')
-//   console.log('舊資料:', oldData)
-//   console.log('新資料:', newData)
-//   console.log('資料筆數:', newData?.length || 0)
-//   if (newData && newData.length > 0) {
-//     console.log('第一筆資料結構:', newData[0])
-//     console.log('所有資料詳細內容:', JSON.stringify(newData, null, 2))
-//   }
-//   console.log('=== 資料變更結束 ===')
+//   // 資料變更處理邏輯
 // }, { deep: true, immediate: true })
 
-// Watch for changes in company ID (route parameter changes)
+// 監聽公司 ID 變更（路由參數變更時）
 watch(companyId, async (newId, oldId) => {
   if (newId !== oldId && newId) {
-    console.log('=== 公司 ID 變更，重新載入公司資料 ===')
-    console.log('舊 ID:', oldId)
-    console.log('新 ID:', newId)
     await loadCompanyName()
 
-    // Load personnel for the new company
+    // 載入新公司的人員資料
     try {
       await loadPersonnel(newId)
-      console.log('Personnel reloaded for new company:', newId)
     } catch (error) {
-      console.error('Error reloading personnel:', error)
+      // 靜默處理錯誤
     }
-
-    console.log('=== 公司資料重新載入完成 ===')
   }
 })
 
-// Watch for changes in company name (disabled to prevent unnecessary logging)
+// 監聽公司名稱變更（已停用以避免不必要的日誌記錄）
 // watch(companyName, (newName, oldName) => {
-//   console.log('=== 公司名稱變更 ===')
-//   console.log('舊名稱:', oldName)
-//   console.log('新名稱:', newName)
-//   console.log('=== 名稱變更結束 ===')
+//   // 名稱變更處理邏輯
 // }, { immediate: true })
 
-// Auto-focus template select when form modal opens
+// 表單 Modal 開啟時自動聚焦至範本選擇欄位
 watch(showFormModal, (newValue) => {
   if (newValue) {
     nextTick(() => {
@@ -2056,27 +1979,27 @@ const columns = ref([
   }
 ])
 
-// Note: This function is commented out as it's not currently in use
-// Keep for potential future use
+// 注意：此函數目前未使用已註解
+// 保留以供未來可能使用
 /*
 const copyTemplateContentToQuestionManagement = (templateId, questionId) => {
-  // Get template content from templates store
+  // 從 templates store 取得範本內容
   const templateContent = templatesStore?.getTemplateContent?.(templateId)
   const riskCategories = templatesStore?.getRiskCategories?.(templateId)
 
-  // Create a unique key for this question management item's content
+  // 為此題項管理項目的內容建立唯一鍵值
   const contentKey = `question_${companyId.value}_${questionId}`
 
-  // Copy template content to question management context
+  // 複製範本內容至題項管理上下文
   if (templateContent.value && templateContent.value.length > 0) {
-    // First copy the categories to create mapping
+    // 首先複製分類以建立對應關係
     const copiedCategories = riskCategories.value ? riskCategories.value.map((cat, index) => ({
       ...cat,
       id: `${contentKey}_cat_${index + 1}`,
       originalTemplateId: templateId
     })) : []
 
-    // Create a mapping from old category IDs to new category IDs
+    // 建立舊分類 ID 到新分類 ID 的對應表
     const categoryIdMap = {}
     if (riskCategories.value) {
       riskCategories.value.forEach((originalCat, index) => {
@@ -2085,7 +2008,7 @@ const copyTemplateContentToQuestionManagement = (templateId, questionId) => {
       })
     }
 
-    // Copy content and map categoryId references
+    // 複製內容並對應 categoryId 參照
     const copiedContent = templateContent.value.map((item, index) => ({
       ...item,
       id: `${contentKey}_${index + 1}`,
@@ -2094,7 +2017,7 @@ const copyTemplateContentToQuestionManagement = (templateId, questionId) => {
       originalTemplateId: templateId
     }))
 
-    // Save to localStorage for persistence (only on client side)
+    // 儲存至 localStorage 以實現資料持久化（僅在客戶端執行）
     if (process.client) {
       const questionContentKey = `esg-question-content-${contentKey}`
       const questionCategoriesKey = `esg-question-categories-${contentKey}`
@@ -2102,9 +2025,8 @@ const copyTemplateContentToQuestionManagement = (templateId, questionId) => {
       try {
         localStorage.setItem(questionContentKey, JSON.stringify(copiedContent))
         localStorage.setItem(questionCategoriesKey, JSON.stringify(copiedCategories))
-        console.log(`Successfully copied template ${templateId} content to question ${questionId}`)
       } catch (error) {
-        console.error('Error saving question content to storage:', error)
+        // 靜默處理儲存錯誤
       }
     }
   }
@@ -2132,10 +2054,9 @@ const confirmDelete = async () => {
   if (itemToDelete.value) {
     try {
       await deleteQuestionManagementItem(companyId.value, itemToDelete.value.id)
-      await loadQuestionManagementData() // Reload data after deletion
+      await loadQuestionManagementData() // 刪除後重新載入資料
       await showSuccess('題項管理已成功刪除')
     } catch (error) {
-      console.error('Error deleting item:', error)
       await showError(error?.message || '刪除題項管理時發生錯誤，請稍後再試')
     }
   }
@@ -2147,12 +2068,12 @@ const confirmCopy = async () => {
   if (itemToCopy.value) {
     try {
       await copyQuestionManagementItem(companyId.value, itemToCopy.value.id, copyOptions.value)
-      await loadQuestionManagementData() // Reload data after copying
+      await loadQuestionManagementData() // 複製後重新載入資料
     } catch (error) {
-      console.error('Error copying item:', error)
+      // 靜默處理錯誤
     }
   }
-  
+
   showCopyOptions.value = false
   itemToCopy.value = null
   copyOptions.value.includeQuestions = true
@@ -2163,69 +2084,50 @@ const submitForm = async () => {
   const { $notify } = useNuxtApp()
   const template = availableTemplates.value.find(t => t.id === parseInt(formData.value.templateId))
 
-  console.log('=== 表單提交 ===')
-  console.log('表單資料:', formData.value)
-  console.log('選中的範本:', template)
-  console.log('公司ID:', companyId.value)
-
   // 顯示載入動畫
   $notify.loading('處理中...請稍候')
 
   try {
     if (showAddModal.value) {
-      // Add new item
+      // 新增項目
       const itemData = {
         templateId: parseInt(formData.value.templateId),
         templateVersion: template ? template.version_name : '',
         year: parseInt(formData.value.year)
       }
 
-      console.log('新增項目資料:', itemData)
       const newItem = await addQuestionManagementItem(companyId.value, itemData)
-      console.log('新增後返回的項目:', newItem)
 
-      // Copy template content when creating new question management item
+      // 建立新題項管理項目時複製範本內容
       if (template && newItem) {
-        console.log('開始從範本同步內容到資料庫...')
         try {
           // 呼叫後端 API 從範本複製架構到題項管理
-          const syncResponse = await $fetch(`/api/v1/question-management/assessment/${newItem.id}/sync-from-template`, {
+          await $fetch(`/api/v1/question-management/assessment/${newItem.id}/sync-from-template`, {
             method: 'POST'
           })
-
-          if (syncResponse.success) {
-            console.log('範本架構複製成功:', syncResponse.data)
-          } else {
-            console.error('範本架構複製失敗:', syncResponse.message)
-          }
         } catch (error) {
-          console.error('同步範本架構時發生錯誤:', error)
+          // 靜默處理同步錯誤
         }
       }
 
-      // Reload data after adding
+      // 新增後重新載入資料
       await loadQuestionManagementData()
 
       // 關閉載入動畫
       $notify.close()
       await showSuccess('題項管理已成功新增')
     } else if (showEditModal.value) {
-      // Update existing item
+      // 更新現有項目
       const itemData = {
         templateId: parseInt(formData.value.templateId),
         templateVersion: template ? template.version_name : '',
         year: parseInt(formData.value.year)
       }
 
-      console.log('編輯項目資料:', itemData)
-      console.log('編輯的項目:', editingItem.value)
-
       // 更新 assessment - 後端會自動檢測範本變更並同步
       await updateQuestionManagementItem(companyId.value, editingItem.value.id, itemData)
 
-      console.log('Assessment 更新完成（範本變更檢測和同步由後端自動處理）')
-
-      // Reload data after updating
+      // 更新後重新載入資料
       await loadQuestionManagementData()
 
       // 關閉載入動畫
@@ -2233,13 +2135,11 @@ const submitForm = async () => {
       await showSuccess('題項管理已成功更新')
     }
   } catch (error) {
-    console.error('Error in submitForm:', error)
     // 關閉載入動畫
     $notify.close()
     await showError(error?.message || '操作失敗，請稍後再試')
   }
 
-  console.log('=== 表單提交結束 ===')
   closeModals()
 }
 
@@ -2251,45 +2151,40 @@ const closeModals = () => {
   formData.value.year = new Date().getFullYear()
 }
 
-// Action button methods
+// 動作按鈕方法
 const showPersonnelAssignment = async (item) => {
   selectedQuestionForAssignment.value = item
 
-  // Ensure structure data is loaded
+  // 確保架構資料已載入
   if (item.id && (!questionCategories.value?.length || !questionTopics.value?.length || !questionFactors.value?.length)) {
-    console.log('Loading structure data...')
     await loadQuestionStructureData(item.id)
   }
 
-  // Load question content for the selected item
+  // 載入選定項目的題項內容
   await loadQuestionContentForAssignment(item)
 
   showPersonnelModal.value = true
 }
 
-// Load question content for assignment
+// 載入人員指派的題項內容
 const loadQuestionContentForAssignment = async (questionItem) => {
   try {
-    // Reset content first
+    // 先重置內容
     questionContentForAssignment.value = []
 
     if (!questionItem || !questionItem.id) {
-      console.warn('Invalid question item provided for assignment')
       return
     }
 
-    console.log('=== 載入人員指派題項內容（從資料庫API）===')
-    console.log('Question Item:', questionItem)
-
-    // Use API to fetch question content from database instead of localStorage
+    // 使用 API 從資料庫取得題項內容，不使用 localStorage
     try {
       const response = await $fetch(`/api/v1/question-management/assessment/${questionItem.id}/contents`)
 
       if (response.success && Array.isArray(response.data)) {
-        // Transform API response to compatible format
+        // 將 API 回應轉換為相容格式
         const transformedContent = response.data.map(item => ({
-          contentId: item.id, // Use database ID (numeric)
-          id: item.id, // Backward compatibility
+          contentId: item.id, // 使用資料庫 ID（數值型）
+          id: item.id, // 向下相容
           topic: item.title || '未命名題目',
           description: item.description || '',
           categoryId: item.category_id,
@@ -2298,22 +2193,17 @@ const loadQuestionContentForAssignment = async (questionItem) => {
           topic_id: item.topic_id,
           factorId: item.factor_id,
           factor_id: item.factor_id,
-          risk_factor_id: item.factor_id, // Alternative field name
-          assignmentCount: 0 // Will be updated by assignment API
+          risk_factor_id: item.factor_id, // 替代欄位名稱
+          assignmentCount: 0 // 將由 assignment API 更新
         }))
 
         // 直接使用後端回傳的資料順序，不再進行前端排序
         questionContentForAssignment.value = transformedContent
-        console.log('Loaded content from database API (using backend order):', transformedContent)
-        console.log('Content IDs:', transformedContent.map(item => item.contentId))
       } else {
-        console.warn('Invalid API response or no content found')
         questionContentForAssignment.value = []
       }
     } catch (apiError) {
-      console.warn('API fetch failed, falling back to localStorage:', apiError)
-
-      // Fallback to localStorage for backward compatibility
+      // Fallback 至 localStorage 以保持向下相容
       const contentKey = `question_${companyId.value}_${questionItem.id}`
       const questionContentKey = `esg-question-content-${contentKey}`
 
@@ -2321,70 +2211,55 @@ const loadQuestionContentForAssignment = async (questionItem) => {
         const storedContent = localStorage.getItem(questionContentKey)
         if (storedContent) {
           const parsedContent = JSON.parse(storedContent)
-          console.log('Fallback: loaded content from localStorage:', parsedContent)
           questionContentForAssignment.value = Array.isArray(parsedContent) ? parsedContent : []
-        } else {
-          console.log('No content found in localStorage for key:', questionContentKey)
         }
       }
     }
-
-    console.log('=== 載入完成 ===')
-    console.log('Final questionContentForAssignment:', questionContentForAssignment.value)
   } catch (error) {
-    console.error('Error loading question content for assignment:', error)
     questionContentForAssignment.value = []
   }
 }
 
-// Handle assignment updates
+// 處理人員指派更新
 const handleAssignmentUpdated = () => {
-  // Assignment updated, you can add any additional logic here if needed
-  console.log('Assignment updated for question:', selectedQuestionForAssignment.value?.id)
+  // 人員指派已更新，如有需要可在此處加入額外邏輯
 }
 
 const viewAssignments = (item) => {
-  console.log('Navigating to assignments for:', item)
   // 導航到新的指派狀況頁面
   navigateTo(`/admin/risk-assessment/questions/${item.id}/assignments`)
 }
 
 const showStatistics = (item) => {
-  console.log('Navigating to statistics for:', item)
   // 導航到統計結果頁面
   navigateTo(`/admin/risk-assessment/questions/${item.id}/statistics`)
 }
 
 const showCopyOverallForm = (item) => {
-  // TODO: Implement copy overall form functionality
-  console.log('Copy overall form for:', item)
+  // TODO: 實作複製整體表單功能
 }
 
 const manageQuestionContent = async (item) => {
-  // Navigate to question content management page using hierarchical routing
-  console.log('Navigating to content page for item:', item)
-  console.log('Target URL:', `/admin/risk-assessment/questions/${companyId.value}/management/${item.id}/content`)
-
+  // 使用階層式路由導航至題項內容管理頁面
   try {
     await navigateTo(`/admin/risk-assessment/questions/${companyId.value}/management/${item.id}/content`)
   } catch (error) {
-    console.error('Navigation error:', error)
+    // 靜默處理導航錯誤
   }
 }
 
-// Question structure management functions
+// 題項架構管理函數
 const manageQuestionStructure = async (item) => {
   managingQuestion.value = item
 
-  // Load topic layer setting for this question
+  // 載入此題項的主題層級設定
   loadTopicLayerSetting(item.id)
 
-  // Load question structure data (categories, topics, factors)
+  // 載入題項架構資料（分類、主題、因子）
   if (item.id) {
     try {
       await loadQuestionStructureData(item.id)
     } catch (error) {
-      console.error('Error loading structure data:', error)
       await showError('載入失敗', '無法載入架構資料，請稍後再試')
       return
     }
@@ -2393,7 +2268,7 @@ const manageQuestionStructure = async (item) => {
   showQuestionStructureModal.value = true
 }
 
-// Note: This function is commented out as it's not currently in use
+// 注意：此函數目前未使用已註解
 /*
 const getTemplateVersionName = (templateId) => {
   if (!templateId) return '未知範本'
@@ -2404,33 +2279,24 @@ const getTemplateVersionName = (templateId) => {
 
 const openQuestionManagementModal = async (type) => {
   if (!managingQuestion.value) {
-    console.error('No question selected for management')
     await showError('錯誤', '請先選擇一個題項管理記錄')
     return
   }
 
-  // Load topic layer setting for this question
+  // 載入此題項的主題層級設定
   loadTopicLayerSetting(managingQuestion.value.id)
 
   // 使用評估記錄 ID 載入題項架構資料（獨立於範本）
   if (managingQuestion.value.id) {
     try {
       await loadQuestionStructureData(managingQuestion.value.id)
-
-      // Ensure data is loaded properly
-      console.log('Structure data loaded:', {
-        categories: questionCategories.value?.length || 0,
-        topics: questionTopics.value?.length || 0,
-        factors: questionFactors.value?.length || 0
-      })
     } catch (error) {
-      console.error('Error loading question structure data:', error)
       await showError('載入失敗', '無法載入架構資料，請稍後再試')
       return
     }
   }
 
-  // Show appropriate modal
+  // 顯示對應的 Modal
   switch (type) {
     case 'categories':
       showCategoriesModal.value = true
@@ -2441,58 +2307,35 @@ const openQuestionManagementModal = async (type) => {
     case 'factors':
       showFactorsModal.value = true
       break
-    default:
-      console.warn(`Unknown structure type: ${type}`)
   }
 }
 
 // 載入題項架構資料（獨立於範本）
 const loadQuestionStructureData = async (assessmentId) => {
   if (!assessmentId) {
-    console.warn('No assessment ID provided for loading structure')
     return
   }
 
   try {
-    console.log('Loading question structure data for assessment:', assessmentId)
-
     // 載入分類、主題、因子資料
-    const results = await Promise.allSettled([
+    await Promise.allSettled([
       getCategories(assessmentId),
       getTopics(assessmentId),
       getFactors(assessmentId)
     ])
-
-    // Check each result individually
-    results.forEach((result, index) => {
-      const types = ['categories', 'topics', 'factors']
-      if (result.status === 'rejected') {
-        console.error(`Error loading ${types[index]}:`, result.reason)
-      }
-    })
-
-    console.log('Loaded question structure data:', {
-      assessmentId,
-      categories: questionCategories.value?.length || 0,
-      topics: questionTopics.value?.length || 0,
-      factors: questionFactors.value?.length || 0
-    })
   } catch (error) {
-    console.error('Error loading question structure data:', error)
     // 如果載入失敗，可能是還沒有架構資料，這是正常的
-    console.log('No structure data found - this might be expected for new assessments')
 
-    // Ensure data is always an array
+    // 確保資料永遠是陣列型態
     if (!questionCategories.value) questionCategories.value = []
     if (!questionTopics.value) questionTopics.value = []
     if (!questionFactors.value) questionFactors.value = []
   }
 }
 
-// Refresh structure data with error handling
+// 重新整理架構資料，包含錯誤處理
 const refreshStructureData = async () => {
   if (!managingQuestion.value?.id) {
-    console.error('No assessment ID for refresh')
     return
   }
 
@@ -2500,25 +2343,19 @@ const refreshStructureData = async () => {
     await loadQuestionStructureData(managingQuestion.value.id)
     await showSuccess('重新整理成功', '架構資料已更新')
   } catch (error) {
-    console.error('Error refreshing structure data:', error)
     await showError('重新整理失敗', '無法載入架構資料，請稍後再試')
   }
 }
 
 const syncFromTemplate = async () => {
   if (!managingQuestion.value?.id) {
-    console.error('No assessment ID found for syncing')
     await showError('同步失敗', '找不到評估項目，請重新整理頁面後再試')
     return
   }
 
   try {
-    console.log('Syncing from template for assessment:', managingQuestion.value.id)
-
     // 使用新的 API 從範本同步架構
     const result = await syncStructureFromTemplate(managingQuestion.value.id)
-
-    console.log('Successfully synced from template:', result)
 
     // 重新載入架構資料
     await loadQuestionStructureData(managingQuestion.value.id)
@@ -2527,10 +2364,7 @@ const syncFromTemplate = async () => {
     const syncedCounts = result?.data || {}
     const message = `已同步 ${syncedCounts.categories || 0} 個類別、${syncedCounts.topics || 0} 個主題、${syncedCounts.factors || 0} 個因子`
     await showSuccess('從範本同步成功', message)
-
-    console.log('Template sync completed successfully')
   } catch (error) {
-    console.error('Error syncing from template:', error)
     await showError('同步失敗', error?.message || '從範本同步架構時發生錯誤，請稍後再試')
   }
 }
@@ -2542,12 +2376,12 @@ const goToQuestionContent = (questionId) => {
   }
 }
 
-// HTML Helper Functions for Description Display
+// HTML 輔助函數用於描述顯示
 
 /**
- * Strip HTML tags from string to get plain text
- * @param {string} html - HTML string
- * @returns {string} Plain text without HTML tags
+ * 從字串中移除 HTML 標籤以取得純文字
+ * @param {string} html - HTML 字串
+ * @returns {string} 不含 HTML 標籤的純文字
  */
 const stripHtml = (html) => {
   if (!html) return ''
@@ -2557,25 +2391,25 @@ const stripHtml = (html) => {
 }
 
 /**
- * Truncate HTML content to specified character limit
- * @param {string} html - HTML string
- * @param {number} maxLength - Maximum character length
- * @returns {string} Truncated HTML with ellipsis if needed
+ * 將 HTML 內容截斷至指定字元數
+ * @param {string} html - HTML 字串
+ * @param {number} maxLength - 最大字元長度
+ * @returns {string} 截斷後的 HTML，如有需要會加上省略符號
  */
 const truncateHtml = (html, maxLength = 20) => {
   if (!html) return ''
 
   const plainText = stripHtml(html)
 
-  // If text is shorter than max length, return original HTML
+  // 如果文字短於最大長度，返回原始 HTML
   if (plainText.length <= maxLength) {
     return html
   }
 
-  // Truncate plain text and add ellipsis
+  // 截斷純文字並加上省略符號
   const truncated = plainText.substring(0, maxLength) + '...'
 
-  // Return truncated text wrapped in same HTML structure if original had tags
+  // 如果原始內容有標籤，返回包裹在相同 HTML 結構中的截斷文字
   if (html.includes('<')) {
     return `<span>${truncated}</span>`
   }
@@ -2583,16 +2417,14 @@ const truncateHtml = (html, maxLength = 20) => {
   return truncated
 }
 
-// Import/Export Functions
+// 匯入/匯出函數
 
 const showLoading = (message) => {
-  // Simple loading implementation - you can enhance this with a proper loading component
-  console.log('Loading:', message)
+  // 簡單的載入實作 - 可以使用更完整的載入元件來增強
 }
 
 const closeAll = () => {
-  // Close all modals - used during export
-  console.log('Closing all modals')
+  // 關閉所有 Modal - 用於匯出期間
 }
 
 const exportStructure = async () => {
@@ -2604,14 +2436,14 @@ const exportStructure = async () => {
     const assessmentId = managingQuestion.value.id
     const hasTopicLayer = enableTopicLayer.value
 
-    // Fetch all structure data
+    // 取得所有架構資料
     await loadQuestionStructureData(assessmentId)
 
     const categories = questionCategories.value || []
     const topics = hasTopicLayer ? (questionTopics.value || []) : []
     const factors = questionFactors.value || []
 
-    // Prepare data for Excel
+    // 準備 Excel 資料
     const data = []
 
     factors.forEach(factor => {
@@ -2633,12 +2465,12 @@ const exportStructure = async () => {
       data.push(row)
     })
 
-    // Create workbook
+    // 建立 workbook
     const ws = XLSX.utils.json_to_sheet(data)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, '架構資料')
 
-    // Style the header row
+    // 設定標題列樣式
     const range = XLSX.utils.decode_range(ws['!ref'])
     for (let C = range.s.c; C <= range.e.c; ++C) {
       const address = XLSX.utils.encode_col(C) + '1'
@@ -2649,7 +2481,7 @@ const exportStructure = async () => {
       }
     }
 
-    // Set column widths
+    // 設定欄位寬度
     ws['!cols'] = [
       { wch: 20 },  // 風險類別名稱
       { wch: 40 },  // 風險類別描述
@@ -2661,17 +2493,16 @@ const exportStructure = async () => {
       { wch: 40 }   // 風險因子描述
     ]
 
-    // Generate filename
+    // 產生檔案名稱
     const timestamp = new Date().toISOString().slice(0, 10)
     const filename = `${managingQuestion.value.templateVersion}_${managingQuestion.value.year}年_架構_${timestamp}.xlsx`
 
-    // Download
+    // 下載檔案
     XLSX.writeFile(wb, filename)
 
     closeAll()
     await showSuccess('匯出成功', `架構資料已匯出為 ${filename}`)
   } catch (error) {
-    console.error('Export structure error:', error)
     closeAll()
     await showError('匯出失敗', '匯出架構資料時發生錯誤')
   }
@@ -2682,7 +2513,7 @@ const downloadTemplate = () => {
 
   const hasTopicLayer = enableTopicLayer.value
 
-  // Create template data with headers only
+  // 建立僅含標題的範本資料
   const headers = {
     '風險類別名稱': '',
     '風險類別描述': ''
@@ -2696,12 +2527,12 @@ const downloadTemplate = () => {
   headers['風險因子名稱'] = ''
   headers['風險因子描述'] = ''
 
-  // Create workbook with empty template
+  // 建立空白範本 workbook
   const ws = XLSX.utils.json_to_sheet([headers])
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, '架構資料')
 
-  // Style the header row
+  // 設定標題列樣式
   const range = XLSX.utils.decode_range(ws['!ref'])
   for (let C = range.s.c; C <= range.e.c; ++C) {
     const address = XLSX.utils.encode_col(C) + '1'
@@ -2712,7 +2543,7 @@ const downloadTemplate = () => {
     }
   }
 
-  // Set column widths
+  // 設定欄位寬度
   ws['!cols'] = [
     { wch: 20 },  // 風險類別名稱
     { wch: 40 },  // 風險類別描述
@@ -2724,11 +2555,11 @@ const downloadTemplate = () => {
     { wch: 40 }   // 風險因子描述
   ]
 
-  // Generate filename
+  // 產生檔案名稱
   const timestamp = new Date().toISOString().slice(0, 10)
   const filename = `${managingQuestion.value.templateVersion}_${managingQuestion.value.year}年_匯入範本_${timestamp}.xlsx`
 
-  // Download
+  // 下載檔案
   XLSX.writeFile(wb, filename)
 }
 
@@ -2767,11 +2598,11 @@ const processImport = async () => {
   try {
     showLoading('正在匯入架構資料...')
 
-    // Create FormData for file upload
+    // 建立 FormData 用於檔案上傳
     const formData = new FormData()
     formData.append('file', selectedFile.value)
 
-    // Upload file to backend for processing with RichText support
+    // 上傳檔案至後端處理，支援 RichText 格式
     const assessmentId = managingQuestion.value.id
     const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/import-structure`, {
       method: 'POST',
@@ -2779,13 +2610,13 @@ const processImport = async () => {
     })
 
     if (response.success) {
-      // Refresh data
+      // 重新整理資料
       await refreshStructureData()
 
       closeAll()
       closeStructureImportModal()
 
-      // Show success message with import details
+      // 顯示包含匯入詳情的成功訊息
       let message = response.message || '架構匯入成功'
       if (response.data?.errors && response.data.errors.length > 0) {
         message += `\n\n部分資料匯入失敗：\n${response.data.errors.join('\n')}`
@@ -2797,7 +2628,6 @@ const processImport = async () => {
     }
 
   } catch (error) {
-    console.error('Import error:', error)
     closeAll()
 
     let errorMessage = '匯入架構資料時發生錯誤'
