@@ -497,7 +497,61 @@ const saveSelection = () => {
   const selection = window.getSelection()
   if (selection.rangeCount > 0) {
     savedSelection.value = selection.getRangeAt(0).cloneRange()
+    // 同時更新當前選取文字的顏色到顏色選擇器
+    updateColorFromSelection()
   }
+}
+
+// 從選取的文字中取得當前顏色
+const updateColorFromSelection = () => {
+  const selection = window.getSelection()
+  if (!selection.rangeCount || selection.toString().length === 0) return
+
+  try {
+    // 取得選取範圍的第一個節點
+    const range = selection.getRangeAt(0)
+    let node = range.startContainer
+
+    // 如果是文字節點，取得其父元素
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentElement
+    }
+
+    // 取得計算後的樣式
+    if (node && node.nodeType === Node.ELEMENT_NODE) {
+      const computedStyle = window.getComputedStyle(node)
+
+      // 更新文字顏色
+      const color = computedStyle.color
+      if (color && color !== 'rgb(0, 0, 0)' && color !== 'rgba(0, 0, 0, 0)') {
+        textColor.value = rgbToHex(color)
+      }
+
+      // 更新背景顏色
+      const bgColor = computedStyle.backgroundColor
+      if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
+        backgroundColor.value = rgbToHex(bgColor)
+      }
+    }
+  } catch (error) {
+    console.warn('無法取得選取文字的顏色:', error)
+  }
+}
+
+// 將 RGB/RGBA 顏色轉換為 HEX 格式
+const rgbToHex = (rgb) => {
+  // 處理 rgba 和 rgb 格式
+  const match = rgb.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)$/)
+  if (!match) return rgb
+
+  const r = parseInt(match[1])
+  const g = parseInt(match[2])
+  const b = parseInt(match[3])
+
+  return '#' + [r, g, b].map(x => {
+    const hex = x.toString(16)
+    return hex.length === 1 ? '0' + hex : hex
+  }).join('')
 }
 
 // Color formatting functions - 使用 style 屬性而非 HTML 屬性
