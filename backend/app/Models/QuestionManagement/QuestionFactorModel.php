@@ -173,11 +173,9 @@ class QuestionFactorModel extends Model
             $builder->like('question_factors.factor_name', $search);
         }
 
-        // 排序：先按分類、主題，再按因子排序
-        $builder->orderBy('question_categories.sort_order', 'ASC')
-            ->orderBy('question_topics.sort_order', 'ASC')
-            ->orderBy('question_factors.sort_order', 'ASC')
-            ->orderBy('question_factors.factor_name', 'ASC');
+        // 排序：只按因子的 sort_order 和 id 排序
+        $builder->orderBy('question_factors.sort_order', 'ASC')
+            ->orderBy('question_factors.id', 'ASC');
 
         $results = $builder->findAll();
 
@@ -230,7 +228,7 @@ class QuestionFactorModel extends Model
             ')
             ->where('topic_id', $topicId)
             ->orderBy('sort_order', 'ASC')
-            ->orderBy('factor_name', 'ASC')
+            ->orderBy('id', 'ASC')
             ->findAll();
 
         // 確保計數欄位為整數類型
@@ -256,7 +254,7 @@ class QuestionFactorModel extends Model
             ->where('category_id', $categoryId)
             ->where('topic_id IS NULL') // 只取直接歸屬於分類的因子
             ->orderBy('sort_order', 'ASC')
-            ->orderBy('factor_name', 'ASC')
+            ->orderBy('id', 'ASC')
             ->findAll();
 
         // 確保計數欄位為整數類型
@@ -283,7 +281,7 @@ class QuestionFactorModel extends Model
             ->where('topic_id IS NULL')
             ->where('category_id IS NULL')
             ->orderBy('sort_order', 'ASC')
-            ->orderBy('factor_name', 'ASC')
+            ->orderBy('id', 'ASC')
             ->findAll();
 
         // 確保計數欄位為整數類型
