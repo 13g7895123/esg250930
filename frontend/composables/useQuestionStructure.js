@@ -239,6 +239,39 @@ export const useQuestionStructure = () => {
     }
   }
 
+  /**
+   * 重新排序風險分類
+   * @param {number} assessmentId - 評估記錄 ID
+   * @param {Array} categoryOrders - 分類排序陣列 [{id, sort_order}, ...]
+   * @returns {Promise<boolean>} 是否成功
+   */
+  const reorderCategories = async (assessmentId, categoryOrders) => {
+    if (!assessmentId) {
+      throw new Error('評估記錄ID為必填項目')
+    }
+
+    if (!Array.isArray(categoryOrders) || categoryOrders.length === 0) {
+      throw new Error('排序資料格式錯誤')
+    }
+
+    try {
+      const result = await api.questionManagement.reorderCategories(assessmentId, categoryOrders)
+
+      // Handle the API response structure
+      if (!result.success) {
+        throw new Error(result.error?.message || '排序風險分類失敗')
+      }
+
+      // Reload categories to get updated sort_order
+      await getCategories(assessmentId)
+      return true
+    } catch (error) {
+      console.error('Error reordering categories:', error)
+      lastError.value = error.message || '排序風險分類時發生錯誤'
+      throw error
+    }
+  }
+
   // =============================================
   // 風險主題管理
   // =============================================
@@ -373,6 +406,39 @@ export const useQuestionStructure = () => {
     } catch (error) {
       console.error('Error deleting topic:', error)
       lastError.value = error.message || '刪除風險主題時發生錯誤'
+      throw error
+    }
+  }
+
+  /**
+   * 重新排序風險主題
+   * @param {number} assessmentId - 評估記錄 ID
+   * @param {Array} topicOrders - 主題排序陣列 [{id, sort_order}, ...]
+   * @returns {Promise<boolean>} 是否成功
+   */
+  const reorderTopics = async (assessmentId, topicOrders) => {
+    if (!assessmentId) {
+      throw new Error('評估記錄ID為必填項目')
+    }
+
+    if (!Array.isArray(topicOrders) || topicOrders.length === 0) {
+      throw new Error('排序資料格式錯誤')
+    }
+
+    try {
+      const result = await api.questionManagement.reorderTopics(assessmentId, topicOrders)
+
+      // Handle the API response structure
+      if (!result.success) {
+        throw new Error(result.error?.message || '排序風險主題失敗')
+      }
+
+      // Reload topics to get updated sort_order
+      await getTopics(assessmentId)
+      return true
+    } catch (error) {
+      console.error('Error reordering topics:', error)
+      lastError.value = error.message || '排序風險主題時發生錯誤'
       throw error
     }
   }
@@ -627,12 +693,14 @@ export const useQuestionStructure = () => {
     createCategory,
     updateCategory,
     deleteCategory,
+    reorderCategories,
 
     // 主題管理
     getTopics,
     createTopic,
     updateTopic,
     deleteTopic,
+    reorderTopics,
 
     // 因子管理
     getFactors,

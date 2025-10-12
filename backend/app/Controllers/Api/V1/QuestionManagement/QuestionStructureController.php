@@ -655,6 +655,126 @@ class QuestionStructureController extends BaseController
      * @param int|null $assessmentId 評估記錄ID
      * @return ResponseInterface
      */
+    /**
+     * 重新排序風險分類
+     * PUT /api/v1/question-management/assessment/{assessmentId}/categories/reorder
+     *
+     * @param int|null $assessmentId 評估記錄ID
+     * @return ResponseInterface
+     */
+    public function reorderCategories($assessmentId = null)
+    {
+        try {
+            if (!$assessmentId) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '評估記錄ID為必填項目'
+                ]);
+            }
+
+            // Check if assessment exists
+            $assessment = $this->assessmentModel->find($assessmentId);
+            if (!$assessment) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '評估記錄不存在'
+                ]);
+            }
+
+            $input = $this->request->getJSON(true) ?? $this->request->getRawInput();
+
+            if (!isset($input['orders']) || !is_array($input['orders'])) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '排序資料格式錯誤'
+                ]);
+            }
+
+            // Update sort_order for each category
+            foreach ($input['orders'] as $order) {
+                if (!isset($order['id']) || !isset($order['sort_order'])) {
+                    continue;
+                }
+
+                $this->categoryModel->update($order['id'], [
+                    'sort_order' => $order['sort_order']
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => '重新排序成功'
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'QuestionStructureController::reorderCategories - ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '重新排序失敗: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * 重新排序風險主題
+     * PUT /api/v1/question-management/assessment/{assessmentId}/topics/reorder
+     *
+     * @param int|null $assessmentId 評估記錄ID
+     * @return ResponseInterface
+     */
+    public function reorderTopics($assessmentId = null)
+    {
+        try {
+            if (!$assessmentId) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '評估記錄ID為必填項目'
+                ]);
+            }
+
+            // Check if assessment exists
+            $assessment = $this->assessmentModel->find($assessmentId);
+            if (!$assessment) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '評估記錄不存在'
+                ]);
+            }
+
+            $input = $this->request->getJSON(true) ?? $this->request->getRawInput();
+
+            if (!isset($input['orders']) || !is_array($input['orders'])) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '排序資料格式錯誤'
+                ]);
+            }
+
+            // Update sort_order for each topic
+            foreach ($input['orders'] as $order) {
+                if (!isset($order['id']) || !isset($order['sort_order'])) {
+                    continue;
+                }
+
+                $this->topicModel->update($order['id'], [
+                    'sort_order' => $order['sort_order']
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => '重新排序成功'
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'QuestionStructureController::reorderTopics - ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '重新排序失敗: ' . $e->getMessage()
+            ]);
+        }
+    }
+
     public function reorderFactors($assessmentId = null)
     {
         try {

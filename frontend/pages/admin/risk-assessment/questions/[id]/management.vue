@@ -538,6 +538,8 @@
         no-search-results-title="沒有找到符合的風險類別"
         no-search-results-message="請嘗試其他搜尋關鍵字"
         :loading="structureLoading"
+        :draggable="true"
+        @drag-end="handleQuestionCategoryDragEnd"
       >
         <!-- Actions Slot -->
         <template #actions>
@@ -633,6 +635,8 @@
         no-search-results-title="沒有找到符合的風險主題"
         no-search-results-message="請嘗試其他搜尋關鍵字"
         :loading="structureLoading"
+        :draggable="true"
+        @drag-end="handleQuestionTopicDragEnd"
       >
         <!-- Actions Slot -->
         <template #actions>
@@ -1166,9 +1170,11 @@ const {
   createCategory,
   updateCategory,
   deleteCategory,
+  reorderCategories,
   createTopic,
   updateTopic,
   deleteTopic,
+  reorderTopics,
   createFactor,
   updateFactor,
   deleteFactor,
@@ -1367,13 +1373,6 @@ const questionFactorColumns = [
     cellClass: 'text-base text-gray-900 dark:text-white'
   },
   {
-    key: 'sort_order',
-    label: '排序',
-    sortable: true,
-    cellClass: 'text-base text-center text-gray-900 dark:text-white',
-    formatter: (value) => value || '-'
-  },
-  {
     key: 'factor_name',
     label: '因子名稱',
     sortable: true,
@@ -1543,6 +1542,62 @@ const deleteQuestionFactor = (item) => {
   deletingStructureItem.value = item
   structureEditType.value = 'factor'
   showDeleteConfirmModal.value = true
+}
+
+// Handle category drag and drop reorder
+const handleQuestionCategoryDragEnd = async ({ draggedItem, targetItem }) => {
+  if (!managingQuestion.value?.id) return
+
+  try {
+    const categories = [...sortedQuestionCategories.value]
+    const draggedIndex = categories.findIndex(c => c.id === draggedItem.id)
+    const targetIndex = categories.findIndex(c => c.id === targetItem.id)
+
+    if (draggedIndex === -1 || targetIndex === -1) return
+
+    // Reorder array
+    const [removed] = categories.splice(draggedIndex, 1)
+    categories.splice(targetIndex, 0, removed)
+
+    // Format orders for API
+    const orders = categories.map((category, index) => ({
+      id: category.id,
+      sort_order: index + 1
+    }))
+
+    await reorderCategories(managingQuestion.value.id, orders)
+    await loadQuestionStructureData(managingQuestion.value.id)
+  } catch (error) {
+    await showError('排序失敗', '更新風險類別排序時發生錯誤，請稍後再試')
+  }
+}
+
+// Handle topic drag and drop reorder
+const handleQuestionTopicDragEnd = async ({ draggedItem, targetItem }) => {
+  if (!managingQuestion.value?.id) return
+
+  try {
+    const topics = [...sortedQuestionTopics.value]
+    const draggedIndex = topics.findIndex(t => t.id === draggedItem.id)
+    const targetIndex = topics.findIndex(t => t.id === targetItem.id)
+
+    if (draggedIndex === -1 || targetIndex === -1) return
+
+    // Reorder array
+    const [removed] = topics.splice(draggedIndex, 1)
+    topics.splice(targetIndex, 0, removed)
+
+    // Format orders for API
+    const orders = topics.map((topic, index) => ({
+      id: topic.id,
+      sort_order: index + 1
+    }))
+
+    await reorderTopics(managingQuestion.value.id, orders)
+    await loadQuestionStructureData(managingQuestion.value.id)
+  } catch (error) {
+    await showError('排序失敗', '更新風險主題排序時發生錯誤，請稍後再試')
+  }
 }
 
 // Handle factor drag and drop reorder

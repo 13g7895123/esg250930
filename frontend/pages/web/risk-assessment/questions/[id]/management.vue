@@ -345,7 +345,7 @@ const showCompanyWarning = computed(() => {
   return !companiesLoading.value && !companiesError.value && !companyExists.value
 })
 
-// 點15 映射狀態檢查計算屬性
+// 映射狀態檢查計算屬性
 const mappingStatus = computed(() => {
   const userDataUserId = externalUserStore.userInfo?.data?.user_id
   const storeExternalId = externalUserStore.externalId

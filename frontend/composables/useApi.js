@@ -236,6 +236,8 @@ export const useApi = () => {
       await put(`/question-management/categories/${categoryId}`, data),
     deleteCategory: async (categoryId) =>
       await del(`/question-management/categories/${categoryId}`),
+    reorderCategories: async (assessmentId, orders) =>
+      await put(`/question-management/assessment/${assessmentId}/categories/reorder`, { orders }),
 
     // Topics
     getTopics: async (assessmentId, params = {}) => {
@@ -251,6 +253,8 @@ export const useApi = () => {
       await put(`/question-management/topics/${topicId}`, data),
     deleteTopic: async (topicId) =>
       await del(`/question-management/topics/${topicId}`),
+    reorderTopics: async (assessmentId, orders) =>
+      await put(`/question-management/assessment/${assessmentId}/topics/reorder`, { orders }),
 
     // Factors
     getFactors: async (assessmentId, params = {}) => {
