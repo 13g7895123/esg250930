@@ -1118,12 +1118,6 @@ const columns = ref([
 // Risk Category DataTable columns configuration
 const riskCategoryColumns = ref([
   {
-    key: 'actions',
-    label: '功能',
-    sortable: false,
-    cellClass: 'text-base text-gray-900 dark:text-white'
-  },
-  {
     key: 'category_name',
     label: '類別名稱',
     sortable: true
@@ -1145,10 +1139,10 @@ const riskCategoryColumns = ref([
 // Risk Factor DataTable columns configuration
 const riskFactorColumns = ref([
   {
-    key: 'actions',
-    label: '功能',
-    sortable: false,
-    cellClass: 'text-base text-gray-900 dark:text-white'
+    key: 'sort_order',
+    label: '排序',
+    sortable: true,
+    cellClass: 'text-center text-gray-600 dark:text-gray-400 font-medium'
   },
   {
     key: 'factor_name',
@@ -1181,12 +1175,6 @@ const riskFactorColumns = ref([
 
 // Risk Topic DataTable columns configuration
 const riskTopicColumns = ref([
-  {
-    key: 'actions',
-    label: '功能',
-    sortable: false,
-    cellClass: 'text-base text-gray-900 dark:text-white'
-  },
   {
     key: 'topic_name',
     label: '主題名稱',

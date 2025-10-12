@@ -29,9 +29,6 @@
         <thead class="bg-gray-50 dark:bg-gray-700">
           <!-- Group Header Row (if groups exist and have multiple columns) -->
           <tr v-if="shouldShowGroupHeader" class="bg-gray-50 dark:bg-gray-700">
-            <!-- Drag Handle Header (only show if draggable) -->
-            <th v-if="draggable" class="px-6 py-3 border-b border-gray-300 dark:border-gray-600" rowspan="2" />
-
             <th v-if="selectable" class="px-6 py-3 border-b border-gray-300 dark:border-gray-600" rowspan="2">
               <input
                 type="checkbox"
@@ -40,7 +37,7 @@
                 class="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
               />
             </th>
-            <template v-for="(column, index) in columns" :key="`group-${column.key}`">
+            <template v-for="(column, index) in finalColumns" :key="`group-${column.key}`">
               <!-- Group header for columns with groups (only show once per group) -->
               <th
                 v-if="column.group && isFirstInGroup(index)"
@@ -86,9 +83,6 @@
 
           <!-- Column Header Row -->
           <tr v-if="!shouldShowGroupHeader || hasGroups">
-            <!-- Drag Handle Header (only show if draggable) -->
-            <th v-if="draggable && !shouldShowGroupHeader" class="px-6 py-3 text-left" />
-
             <!-- Select All Checkbox (only show if no group header) -->
             <th v-if="selectable && !shouldShowGroupHeader" class="px-6 py-3 text-left">
               <input
@@ -100,7 +94,7 @@
             </th>
 
             <!-- Column Headers -->
-            <template v-for="(column, index) in columns" :key="column.key">
+            <template v-for="(column, index) in finalColumns" :key="column.key">
               <!-- Only show grouped columns in second row when group header exists -->
               <th
                 v-if="!shouldShowGroupHeader || column.group"
@@ -142,7 +136,7 @@
         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           <!-- Loading State -->
           <tr v-if="loading">
-            <td :colspan="columns.length + (draggable ? 1 : 0) + (selectable ? 1 : 0)" class="px-6 py-12">
+            <td :colspan="finalColumns.length + (selectable ? 1 : 0)" class="px-6 py-12">
               <div class="flex flex-col items-center justify-center">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mb-4"></div>
                 <p class="text-gray-500 dark:text-gray-400">載入中...</p>
@@ -167,19 +161,6 @@
             @dragleave="draggable ? handleDragLeave($event) : null"
             @drop="draggable ? handleDrop($event, item) : null"
           >
-            <!-- Drag Handle -->
-            <td v-if="draggable" class="px-4 py-4">
-              <div class="relative group cursor-move drag-handle">
-                <div class="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded-lg transition-colors duration-200">
-                  <Bars3Icon class="w-4 h-4" />
-                </div>
-                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                  拖曳以排序
-                  <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
-                </div>
-              </div>
-            </td>
-
             <!-- Select Checkbox -->
             <td v-if="selectable" class="px-6 py-4">
               <input
@@ -192,7 +173,7 @@
 
             <!-- Data Cells -->
             <td
-              v-for="(column, colIndex) in columns"
+              v-for="(column, colIndex) in finalColumns"
               :key="column.key"
               :class="[
                 'px-6 py-4 whitespace-nowrap',
@@ -200,20 +181,42 @@
                 hasGroups && column.group ? 'bg-gray-50/50 dark:bg-gray-700/30' : ''
               ]"
             >
-              <!-- Custom Cell Content -->
-              <div v-if="$slots[`cell-${column.key}`]">
-                <slot :name="`cell-${column.key}`" :item="item" :value="getNestedValue(item, column.key)" />
+              <!-- Actions Column: Drag Handle + Custom Actions -->
+              <div v-if="column.key === 'actions'" class="flex items-center gap-2">
+                <!-- Drag Handle (if draggable) -->
+                <div v-if="draggable" class="relative group cursor-move drag-handle">
+                  <div class="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 rounded-lg transition-colors duration-200">
+                    <Bars3Icon class="w-4 h-4" />
+                  </div>
+                  <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                    拖曳以排序
+                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+                  </div>
+                </div>
+
+                <!-- Custom Actions via Slot -->
+                <div v-if="$slots['cell-actions']">
+                  <slot name="cell-actions" :item="item" :value="getNestedValue(item, column.key)" />
+                </div>
               </div>
 
-              <!-- Default Cell Content with Tooltip -->
-              <div
-                v-else
-                :class="column.cellClass || 'text-lg text-gray-900 dark:text-white'"
-                :title="column.tooltip && typeof column.tooltip === 'function' ? column.tooltip(item) : ''"
-              >
-                <span v-if="column.isHtml" v-html="formatCellValue(item, column)"></span>
-                <span v-else>{{ formatCellValue(item, column) }}</span>
-              </div>
+              <!-- Regular Column: Custom or Default Content -->
+              <template v-else>
+                <!-- Custom Cell Content -->
+                <div v-if="$slots[`cell-${column.key}`]">
+                  <slot :name="`cell-${column.key}`" :item="item" :value="getNestedValue(item, column.key)" />
+                </div>
+
+                <!-- Default Cell Content with Tooltip -->
+                <div
+                  v-else
+                  :class="column.cellClass || 'text-lg text-gray-900 dark:text-white'"
+                  :title="column.tooltip && typeof column.tooltip === 'function' ? column.tooltip(item) : ''"
+                >
+                  <span v-if="column.isHtml" v-html="formatCellValue(item, column)"></span>
+                  <span v-else>{{ formatCellValue(item, column) }}</span>
+                </div>
+              </template>
             </td>
           </tr>
         </tbody>
@@ -395,6 +398,21 @@ const props = defineProps({
     default: false
   },
 
+  // Actions Column Configuration
+  actionsPosition: {
+    type: String,
+    default: 'left',
+    validator: (value) => ['left', 'right'].includes(value)
+  },
+  actionsColumnLabel: {
+    type: String,
+    default: '功能'
+  },
+  showActionsColumn: {
+    type: Boolean,
+    default: undefined
+  },
+
   // Search
   searchPlaceholder: {
     type: String,
@@ -436,6 +454,9 @@ const props = defineProps({
 
 const emit = defineEmits(['search', 'sort', 'select', 'page-change', 'reorder'])
 
+// Get slots for checking if actions slot exists
+const slots = useSlots()
+
 // Reactive data
 const searchQuery = ref('')
 const selectedRows = ref([])
@@ -450,9 +471,56 @@ const dragOverItem = ref(null)
 
 // Computed properties
 
+// Auto-detect if actions column is needed
+const needsActionsColumn = computed(() => {
+  // Explicit setting takes precedence
+  if (props.showActionsColumn !== undefined) {
+    return props.showActionsColumn
+  }
+  // Auto-detect: show actions column if draggable or has #cell-actions slot
+  return props.draggable || !!slots['cell-actions']
+})
+
+// Get the actions column definition (either from columns or create default)
+const actionsColumnDef = computed(() => {
+  const existingActions = props.columns.find(col => col.key === 'actions')
+  if (existingActions) {
+    return existingActions
+  }
+  return {
+    key: 'actions',
+    label: props.actionsColumnLabel,
+    sortable: false,
+    cellClass: 'text-base text-gray-900 dark:text-white'
+  }
+})
+
+// Final columns array with actions column properly positioned
+const finalColumns = computed(() => {
+  if (!needsActionsColumn.value) {
+    // No actions column needed, return columns as-is
+    return props.columns
+  }
+
+  // Check if actions column already exists in columns
+  const hasActionsInColumns = props.columns.some(col => col.key === 'actions')
+
+  if (hasActionsInColumns) {
+    // Actions already defined, use existing columns as-is
+    return props.columns
+  }
+
+  // Add actions column based on position
+  if (props.actionsPosition === 'left') {
+    return [actionsColumnDef.value, ...props.columns]
+  } else {
+    return [...props.columns, actionsColumnDef.value]
+  }
+})
+
 // Check if any column has a group
 const hasGroups = computed(() => {
-  return props.columns.some(col => col.group)
+  return finalColumns.value.some(col => col.group)
 })
 
 // Calculate column groups for header
@@ -463,7 +531,7 @@ const columnGroups = computed(() => {
   let currentGroup = null
   let colspan = 0
 
-  props.columns.forEach((column, index) => {
+  finalColumns.value.forEach((column, index) => {
     if (column.group) {
       if (currentGroup === column.group) {
         // Same group, increase colspan
@@ -523,8 +591,8 @@ const shouldShowGroupHeader = computed(() => {
 // Check if column is the first in its group
 const isFirstColumnInGroup = (index) => {
   if (index === 0) return false
-  const currentColumn = props.columns[index]
-  const previousColumn = props.columns[index - 1]
+  const currentColumn = finalColumns.value[index]
+  const previousColumn = finalColumns.value[index - 1]
 
   // First column with a group, or group changed
   return currentColumn.group && currentColumn.group !== previousColumn?.group
@@ -533,8 +601,8 @@ const isFirstColumnInGroup = (index) => {
 // Check if this is the first column in a group (for group header display)
 const isFirstInGroup = (index) => {
   if (index === 0) return true
-  const currentColumn = props.columns[index]
-  const previousColumn = props.columns[index - 1]
+  const currentColumn = finalColumns.value[index]
+  const previousColumn = finalColumns.value[index - 1]
 
   // First occurrence of this group
   return currentColumn.group && (!previousColumn || previousColumn.group !== currentColumn.group)
@@ -543,8 +611,8 @@ const isFirstInGroup = (index) => {
 // Get colspan for a group starting at given index
 const getGroupColspan = (groupName, startIndex) => {
   let count = 0
-  for (let i = startIndex; i < props.columns.length; i++) {
-    if (props.columns[i].group === groupName) {
+  for (let i = startIndex; i < finalColumns.value.length; i++) {
+    if (finalColumns.value[i].group === groupName) {
       count++
     } else {
       break
@@ -562,7 +630,7 @@ const filteredData = computed(() => {
   const query = searchQuery.value.toLowerCase()
   const fieldsToSearch = props.searchFields.length > 0
     ? props.searchFields
-    : props.columns.map(col => col.key)
+    : finalColumns.value.filter(col => col.key !== 'actions').map(col => col.key)
 
   return safeData.filter(item => {
     return fieldsToSearch.some(field => {
