@@ -518,6 +518,39 @@ export const useQuestionStructure = () => {
   }
 
   /**
+   * 重新排序風險因子
+   * @param {number} assessmentId - 評估記錄 ID
+   * @param {Array} factorOrders - 因子排序陣列 [{id, sort_order}, ...]
+   * @returns {Promise<boolean>} 是否成功
+   */
+  const reorderFactors = async (assessmentId, factorOrders) => {
+    if (!assessmentId) {
+      throw new Error('評估記錄ID為必填項目')
+    }
+
+    if (!Array.isArray(factorOrders) || factorOrders.length === 0) {
+      throw new Error('排序資料格式錯誤')
+    }
+
+    try {
+      const result = await api.questionManagement.reorderFactors(assessmentId, factorOrders)
+
+      // Handle the API response structure
+      if (!result.success) {
+        throw new Error(result.error?.message || '排序風險因子失敗')
+      }
+
+      // Reload factors to get updated sort_order
+      await getFactors(assessmentId)
+      return true
+    } catch (error) {
+      console.error('Error reordering factors:', error)
+      lastError.value = error.message || '排序風險因子時發生錯誤'
+      throw error
+    }
+  }
+
+  /**
    * 取得評估記錄的統計資料
    * @param {number} assessmentId - 評估記錄 ID
    * @returns {Promise<Object>} 統計資料
@@ -605,6 +638,7 @@ export const useQuestionStructure = () => {
     getFactors,
     createFactor,
     updateFactor,
-    deleteFactor
+    deleteFactor,
+    reorderFactors
   }
 }

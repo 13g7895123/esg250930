@@ -266,6 +266,8 @@ export const useApi = () => {
       await put(`/question-management/factors/${factorId}`, data),
     deleteFactor: async (factorId) =>
       await del(`/question-management/factors/${factorId}`),
+    reorderFactors: async (assessmentId, orders) =>
+      await post(`/question-management/assessment/${assessmentId}/factors/reorder`, { orders }),
 
     // Contents
     getContent: async (contentId) =>
