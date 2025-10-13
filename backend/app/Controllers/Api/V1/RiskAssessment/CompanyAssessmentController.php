@@ -496,13 +496,9 @@ class CompanyAssessmentController extends BaseController
      */
     public function copy($id)
     {
-        log_message('info', '=== CompanyAssessmentController::copy START ===');
-        log_message('info', 'Original Assessment ID: ' . $id);
-
         try {
             $originalAssessment = $this->assessmentModel->find($id);
             if (!$originalAssessment) {
-                log_message('error', 'Original assessment not found: ' . $id);
                 return $this->response->setStatusCode(404)->setJSON([
                     'success' => false,
                     'message' => '原評估項目不存在'
@@ -510,17 +506,15 @@ class CompanyAssessmentController extends BaseController
             }
 
             $input = $this->request->getJSON(true) ?: $this->request->getPost();
-            log_message('info', 'Copy request input: ' . json_encode($input));
-
+            
             $rules = [
                 'company_id' => 'required|max_length[50]',
                 'assessment_year' => 'permit_empty|integer|greater_than[1900]|less_than_equal_to[2040]',
                 'include_questions' => 'permit_empty|in_list[0,1]',
                 'include_results' => 'permit_empty|in_list[0,1]'
             ];
-
+            
             if (!$this->validate($rules, $input)) {
-                log_message('error', 'Validation failed: ' . json_encode($this->validator->getErrors()));
                 return $this->response->setStatusCode(400)->setJSON([
                     'success' => false,
                     'message' => '驗證失敗',
@@ -533,40 +527,28 @@ class CompanyAssessmentController extends BaseController
                 'include_results' => $input['include_results'] ?? false
             ];
 
-            log_message('info', 'Copy options: ' . json_encode($copyOptions));
-            log_message('info', 'Target company ID: ' . $input['company_id']);
-
             $newAssessmentId = $this->assessmentModel->copyAssessment(
-                $id,
-                $input['company_id'],
+                $id, 
+                $input['company_id'], 
                 $copyOptions
             );
 
             if (!$newAssessmentId) {
-                $modelErrors = $this->assessmentModel->errors();
-                log_message('error', 'Copy assessment failed. Model errors: ' . json_encode($modelErrors));
-                log_message('error', 'Please check the detailed log messages above for the actual error');
-
                 return $this->response->setStatusCode(500)->setJSON([
                     'success' => false,
-                    'message' => '複製評估項目失敗，請檢查後端日誌以查看詳細錯誤訊息',
-                    'errors' => $modelErrors,
-                    'hint' => '請查看 writable/logs 目錄中的日誌檔案以取得完整的錯誤堆疊資訊'
+                    'message' => '複製評估項目失敗',
+                    'errors' => $this->assessmentModel->errors()
                 ]);
             }
 
-            log_message('info', 'Assessment copied successfully. New ID: ' . $newAssessmentId);
-
             // Update assessment year if provided
             if (!empty($input['assessment_year'])) {
-                log_message('info', 'Updating assessment year to: ' . $input['assessment_year']);
                 $this->assessmentModel->update($newAssessmentId, [
                     'assessment_year' => $input['assessment_year']
                 ]);
             }
 
             $newAssessment = $this->assessmentModel->getAssessmentWithTemplate($newAssessmentId);
-            log_message('info', '=== CompanyAssessmentController::copy END: SUCCESS ===');
 
             return $this->response->setStatusCode(201)->setJSON([
                 'success' => true,
@@ -576,12 +558,9 @@ class CompanyAssessmentController extends BaseController
 
         } catch (\Exception $e) {
             log_message('error', 'CompanyAssessment copy error: ' . $e->getMessage());
-            log_message('error', 'Error stack trace: ' . $e->getTraceAsString());
             return $this->response->setStatusCode(500)->setJSON([
                 'success' => false,
-                'message' => '複製評估項目失敗: ' . $e->getMessage(),
-                'error_details' => $e->getMessage(),
-                'hint' => '請查看 writable/logs 目錄中的日誌檔案以取得完整的錯誤堆疊資訊'
+                'message' => '複製評估項目失敗: ' . $e->getMessage()
             ]);
         }
     }
@@ -737,14 +716,8 @@ class CompanyAssessmentController extends BaseController
             $factorIdMapping = $factorModel->copyFromTemplateFactors($assessmentId, $templateFactors, $topicIdMapping, $categoryIdMapping);
             log_message('info', "Factor mapping: " . json_encode($factorIdMapping));
 
-            // 取得評估記錄以獲取範本版本名稱，用於設定題項名稱的預設值
-            log_message('info', "Getting assessment to retrieve template version name...");
-            $assessment = $this->assessmentModel->find($assessmentId);
-            $versionName = $assessment['template_version'] ?? null;
-            log_message('info', "Template version name for question name: " . ($versionName ?? 'null'));
-
             log_message('info', "Copying contents...");
-            $contentIdMapping = $contentModel->copyFromTemplateContents($assessmentId, $templateContents, $categoryIdMapping, $topicIdMapping, $factorIdMapping, $versionName);
+            $contentIdMapping = $contentModel->copyFromTemplateContents($assessmentId, $templateContents, $categoryIdMapping, $topicIdMapping, $factorIdMapping);
             log_message('info', "Content mapping: " . json_encode($contentIdMapping));
 
             log_message('info', "Completing database transaction...");

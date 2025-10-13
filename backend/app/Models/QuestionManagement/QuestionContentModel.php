@@ -56,7 +56,6 @@ class QuestionContentModel extends Model
         'category_id',
         'topic_id',
         'factor_id',
-        'name',  // 題項名稱，預設從範本版本名稱複製
         // 'title', // REMOVED: question_contents table doesn't have this column
         // 'description', // REMOVED: question_contents table doesn't have this column
         'assessment_criteria',
@@ -618,7 +617,6 @@ class QuestionContentModel extends Model
      * @param array $categoryIdMapping 分類ID對應表
      * @param array $topicIdMapping 主題ID對應表
      * @param array $factorIdMapping 因子ID對應表
-     * @param string|null $versionName 範本版本名稱，用作題項名稱的預設值
      * @return array 新建立的內容ID對應表 [原始範本內容ID => 新題項內容ID]
      */
     public function copyFromTemplateContents(
@@ -626,11 +624,9 @@ class QuestionContentModel extends Model
         array $templateContents,
         array $categoryIdMapping = [],
         array $topicIdMapping = [],
-        array $factorIdMapping = [],
-        string $versionName = null
+        array $factorIdMapping = []
     ): array {
         log_message('info', "QuestionContentModel::copyFromTemplateContents START - Assessment: {$assessmentId}, Contents to copy: " . count($templateContents));
-        log_message('info', "Version Name (for question name): " . ($versionName ?? 'null'));
         log_message('info', "Category ID mapping: " . json_encode($categoryIdMapping));
         log_message('info', "Topic ID mapping: " . json_encode($topicIdMapping));
         log_message('info', "Factor ID mapping: " . json_encode($factorIdMapping));
@@ -670,7 +666,6 @@ class QuestionContentModel extends Model
                 'category_id' => $newCategoryId,
                 'topic_id' => $newTopicId,
                 'factor_id' => $newFactorId,
-                'name' => $versionName,  // 題項名稱，預設使用範本版本名稱
 
                 // 核心內容欄位（title, assessment_criteria, scoring_method, weight, description 已移除/遷移至 a_content）
                 'is_required' => $templateContent['is_required'] ?? 1,
