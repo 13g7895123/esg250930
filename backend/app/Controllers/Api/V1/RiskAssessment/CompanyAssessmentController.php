@@ -227,6 +227,7 @@ class CompanyAssessmentController extends BaseController
                 'template_id' => 'required|integer|is_not_unique[risk_assessment_templates.id]',
                 'assessment_year' => 'required|integer|greater_than[1900]|less_than_equal_to[2040]',
                 'template_version' => 'permit_empty|max_length[255]',
+                'name' => 'permit_empty|max_length[255]',
                 'status' => 'permit_empty|in_list[pending,in_progress,completed,archived]',
                 'notes' => 'permit_empty|string'
             ];
@@ -273,6 +274,7 @@ class CompanyAssessmentController extends BaseController
                 'company_id' => $input['company_id'],
                 'template_id' => $input['template_id'],
                 'template_version' => $templateVersionName,
+                'name' => $input['name'] ?? $templateVersionName,
                 'assessment_year' => $input['assessment_year'],
                 'status' => $input['status'] ?? 'pending',
                 'notes' => $input['notes'] ?? null
@@ -360,6 +362,7 @@ class CompanyAssessmentController extends BaseController
                 'template_id' => 'permit_empty|integer|is_not_unique[risk_assessment_templates.id]',
                 'assessment_year' => 'permit_empty|integer|greater_than[1900]|less_than_equal_to[2040]',
                 'template_version' => 'permit_empty|max_length[255]',
+                'name' => 'permit_empty|max_length[255]',
                 'status' => 'permit_empty|in_list[pending,in_progress,completed,archived]',
                 'total_score' => 'permit_empty|decimal',
                 'percentage_score' => 'permit_empty|decimal|greater_than_equal_to[0]|less_than_equal_to[100]',
@@ -376,7 +379,7 @@ class CompanyAssessmentController extends BaseController
             }
 
             $data = array_intersect_key($input, array_flip([
-                'template_id', 'template_version', 'assessment_year', 'status',
+                'template_id', 'template_version', 'name', 'assessment_year', 'status',
                 'total_score', 'percentage_score', 'risk_level', 'notes'
             ]));
 

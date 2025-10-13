@@ -16,6 +16,7 @@ class CompanyAssessmentModel extends Model
         'company_id',
         'template_id',
         'template_version',
+        'name',
         'assessment_year',
         'status',
         'copied_from',
@@ -105,6 +106,7 @@ class CompanyAssessmentModel extends Model
         if (!empty($search)) {
             $builder->groupStart()
                 ->like('risk_assessment_templates.version_name', $search)
+                ->orLike('company_assessments.name', $search)
                 ->orLike('company_assessments.notes', $search)
                 ->groupEnd();
         }
@@ -154,6 +156,7 @@ class CompanyAssessmentModel extends Model
             'company_id' => $companyId,
             'template_id' => $original['template_id'],
             'template_version' => $original['template_version'],
+            'name' => $original['name'] ?? $original['template_version'],
             'assessment_year' => $original['assessment_year'],
             'status' => 'pending',
             'copied_from' => $originalId,

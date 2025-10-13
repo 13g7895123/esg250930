@@ -89,6 +89,7 @@ export const useQuestionManagement = () => {
           id: assessment.id,
           templateId: assessment.template_id,
           templateVersion: assessment.template_version || assessment.template_version_name,
+          name: assessment.name || assessment.template_version || assessment.template_version_name,
           year: assessment.assessment_year,
           createdAt: formatDateForDisplay(new Date(assessment.created_at)),
           status: assessment.status,
@@ -153,6 +154,7 @@ export const useQuestionManagement = () => {
         company_id: companyId.toString(),
         template_id: itemData.templateId,
         template_version: itemData.templateVersion,
+        name: itemData.name || itemData.templateVersion,
         assessment_year: itemData.year
       }
 
@@ -164,6 +166,7 @@ export const useQuestionManagement = () => {
         id: savedAssessment.id,
         templateId: savedAssessment.template_id,
         templateVersion: savedAssessment.template_version || savedAssessment.template_version_name,
+        name: savedAssessment.name || savedAssessment.template_version || savedAssessment.template_version_name,
         year: savedAssessment.assessment_year,
         createdAt: formatDateForDisplay(new Date(savedAssessment.created_at)),
         status: savedAssessment.status
@@ -191,6 +194,7 @@ export const useQuestionManagement = () => {
       const apiData = {
         template_id: itemData.templateId,
         template_version: itemData.templateVersion,
+        name: itemData.name,
         assessment_year: itemData.year
       }
 
@@ -215,6 +219,7 @@ export const useQuestionManagement = () => {
           if (item) {
             item.templateId = response.data.template_id
             item.templateVersion = response.data.template_version || response.data.template_version_name
+            item.name = response.data.name || response.data.template_version || response.data.template_version_name
             item.year = response.data.assessment_year
             return item
           }
@@ -276,6 +281,7 @@ export const useQuestionManagement = () => {
           id: response.data.id,
           templateId: response.data.template_id,
           templateVersion: response.data.template_version || response.data.template_version_name,
+          name: response.data.name || response.data.template_version || response.data.template_version_name,
           year: response.data.assessment_year,
           createdAt: formatDateForDisplay(new Date(response.data.created_at)),
           copiedFrom: response.data.copied_from,

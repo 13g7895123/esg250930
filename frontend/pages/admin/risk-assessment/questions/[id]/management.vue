@@ -43,8 +43,8 @@
       :data="questionManagement"
       :columns="columns"
       :loading="isLoadingQuestionManagement"
-      search-placeholder="搜尋年份或範本版本..."
-      :search-fields="['year', 'templateVersion']"
+      search-placeholder="搜尋年份、題項名稱或範本版本..."
+      :search-fields="['year', 'name', 'templateVersion']"
       empty-title="還沒有題項管理資料"
       empty-message="開始建立您的第一個題項管理項目"
       no-search-results-title="沒有找到符合的項目"
@@ -241,6 +241,18 @@
               {{ template.version_name }}
             </option>
           </select>
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            題項名稱
+          </label>
+          <input
+            v-model="formData.name"
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            placeholder="留空則使用範本版本名稱"
+          />
         </div>
 
         <div class="mb-4">
@@ -1914,6 +1926,7 @@ const templateSelectRef = ref(null)
 
 const formData = ref({
   templateId: '',
+  name: '',
   year: new Date().getFullYear()
 })
 
@@ -2068,6 +2081,12 @@ const columns = ref([
     cellClass: 'text-base text-gray-900 dark:text-white'
   },
   {
+    key: 'name',
+    label: '題項名稱',
+    sortable: true,
+    cellClass: 'text-base text-gray-900 dark:text-white'
+  },
+  {
     key: 'templateVersion',
     label: '範本版本',
     sortable: true,
@@ -2144,6 +2163,7 @@ const copyTemplateContentToQuestionManagement = (templateId, questionId) => {
 const editItem = (item) => {
   editingItem.value = item
   formData.value.templateId = item.templateId
+  formData.value.name = item.name || ''
   formData.value.year = item.year
   showEditModal.value = true
 }
@@ -2201,6 +2221,7 @@ const submitForm = async () => {
       const itemData = {
         templateId: parseInt(formData.value.templateId),
         templateVersion: template ? template.version_name : '',
+        name: formData.value.name || (template ? template.version_name : ''),
         year: parseInt(formData.value.year)
       }
 
@@ -2229,6 +2250,7 @@ const submitForm = async () => {
       const itemData = {
         templateId: parseInt(formData.value.templateId),
         templateVersion: template ? template.version_name : '',
+        name: formData.value.name || (template ? template.version_name : ''),
         year: parseInt(formData.value.year)
       }
 
@@ -2256,6 +2278,7 @@ const closeModals = () => {
   showEditModal.value = false
   editingItem.value = null
   formData.value.templateId = ''
+  formData.value.name = ''
   formData.value.year = new Date().getFullYear()
 }
 
