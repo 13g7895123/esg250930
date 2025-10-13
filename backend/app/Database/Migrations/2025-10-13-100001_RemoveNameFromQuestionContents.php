@@ -26,12 +26,26 @@ class RemoveNameFromQuestionContents extends Migration
         if ($this->db->fieldExists('name', 'question_contents')) {
             log_message('info', 'Migration: Removing name column from question_contents table...');
 
-            // 先移除索引（如果存在）
+            // 先移除索引（如果存在）- 使用正確的 MySQL 語法
             try {
-                $this->db->query('DROP INDEX IF EXISTS idx_question_contents_name ON question_contents');
-                log_message('info', 'Migration: Dropped index idx_question_contents_name');
+                // 檢查索引是否存在
+                $query = $this->db->query(
+                    "SELECT COUNT(*) as count FROM information_schema.statistics
+                     WHERE table_schema = DATABASE()
+                     AND table_name = 'question_contents'
+                     AND index_name = 'idx_question_contents_name'"
+                );
+                $result = $query->getRow();
+
+                if ($result && $result->count > 0) {
+                    // 索引存在，執行刪除
+                    $this->db->query('ALTER TABLE question_contents DROP INDEX idx_question_contents_name');
+                    log_message('info', 'Migration: Dropped index idx_question_contents_name');
+                } else {
+                    log_message('info', 'Migration: Index idx_question_contents_name does not exist, skipping');
+                }
             } catch (\Exception $e) {
-                log_message('warning', 'Migration: Index idx_question_contents_name not found or already dropped: ' . $e->getMessage());
+                log_message('warning', 'Migration: Failed to drop index idx_question_contents_name: ' . $e->getMessage());
             }
 
             // 移除 name 欄位
@@ -65,8 +79,13 @@ class RemoveNameFromQuestionContents extends Migration
 
         $this->forge->addColumn('question_contents', $fields);
 
-        // 重新建立索引
-        $this->db->query('CREATE INDEX idx_question_contents_name ON question_contents(name)');
+        // 重新建立索引 - 使用正確的 MySQL 語法
+        try {
+            $this->db->query('ALTER TABLE question_contents ADD INDEX idx_question_contents_name (name)');
+            log_message('warning', 'Migration: Rollback - re-created index idx_question_contents_name');
+        } catch (\Exception $e) {
+            log_message('error', 'Migration: Rollback - failed to create index: ' . $e->getMessage());
+        }
 
         log_message('warning', 'Migration: Rollback completed - name column re-added to question_contents (should be removed in production)');
     }
