@@ -24,6 +24,16 @@
       <!-- Actions Slot -->
       <template #actions>
         <div class="flex items-center space-x-3">
+          <!-- Batch Delete Button -->
+          <button
+            v-if="selectedRows.length > 0"
+            @click="handleBatchDelete(selectedRows)"
+            class="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200"
+          >
+            <TrashIcon class="w-4 h-4 mr-2" />
+            批次刪除 ({{ selectedRows.length }})
+          </button>
+
           <!-- Duplicate Error Button -->
           <button
             v-if="duplicateItems.length > 0"
@@ -981,6 +991,43 @@
           empty-message="沒有重複資料"
           :initial-page-size="10"
         >
+          <!-- Actions Slot for Batch Delete and Delete Duplicates -->
+          <template #actions>
+            <div class="flex items-center space-x-3">
+              <!-- Select All Button -->
+              <button
+                @click="toggleSelectAllDuplicates"
+                class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
+              >
+                <input
+                  type="checkbox"
+                  :checked="isAllDuplicatesSelected"
+                  @click.prevent
+                  class="mr-2 rounded border-gray-300 text-primary-600 focus:ring-primary-500 pointer-events-none"
+                />
+                全選
+              </button>
+
+              <!-- Delete Duplicates Button -->
+              <button
+                @click="handleDeleteDuplicates"
+                class="flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-200"
+              >
+                <TrashIcon class="w-4 h-4 mr-2" />
+                刪除重複資料
+              </button>
+
+              <!-- Batch Delete Button -->
+              <button
+                :disabled="selectedDuplicateRows.length === 0"
+                @click="handleBatchDeleteFromDuplicates(selectedDuplicateRows)"
+                class="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-600 transition-colors duration-200"
+              >
+                <TrashIcon class="w-4 h-4 mr-2" />
+                批次刪除{{ selectedDuplicateRows.length > 0 ? ` (${selectedDuplicateRows.length})` : '' }}
+              </button>
+            </div>
+          </template>
           <!-- ID Column -->
           <template #cell-id="{ item }">
             <span class="font-mono text-sm">{{ item.id }}</span>
@@ -988,24 +1035,54 @@
 
           <!-- Category Column -->
           <template #cell-category_name="{ item }">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-              {{ item.category_name }}
-            </span>
+            <div class="relative group">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 cursor-help">
+                {{ item.category_name.length > 6 ? item.category_name.substring(0, 6) + '...' : item.category_name }}
+              </span>
+              <!-- Tooltip for full text -->
+              <div
+                v-if="item.category_name.length > 6"
+                class="absolute left-0 bottom-full mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none"
+              >
+                {{ item.category_name }}
+                <div class="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+              </div>
+            </div>
           </template>
 
           <!-- Topic Column -->
           <template #cell-topic_name="{ item }">
-            <span v-if="item.topic_name" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-              {{ item.topic_name }}
-            </span>
+            <div v-if="item.topic_name" class="relative group">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 cursor-help">
+                {{ item.topic_name.length > 6 ? item.topic_name.substring(0, 6) + '...' : item.topic_name }}
+              </span>
+              <!-- Tooltip for full text -->
+              <div
+                v-if="item.topic_name.length > 6"
+                class="absolute left-0 bottom-full mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none"
+              >
+                {{ item.topic_name }}
+                <div class="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+              </div>
+            </div>
             <span v-else class="text-gray-400 dark:text-gray-500 italic text-sm">未設定</span>
           </template>
 
           <!-- Factor Column -->
           <template #cell-factor_name="{ item }">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-              {{ item.factor_name }}
-            </span>
+            <div class="relative group">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 cursor-help">
+                {{ item.factor_name.length > 6 ? item.factor_name.substring(0, 6) + '...' : item.factor_name }}
+              </span>
+              <!-- Tooltip for full text -->
+              <div
+                v-if="item.factor_name.length > 6"
+                class="absolute left-0 bottom-full mb-2 px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none"
+              >
+                {{ item.factor_name }}
+                <div class="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+              </div>
+            </div>
           </template>
 
           <!-- Duplicate Info Column -->
@@ -1018,6 +1095,14 @@
           <!-- Actions Column -->
           <template #cell-actions="{ item }">
             <div class="flex items-center space-x-2">
+              <!-- Checkbox -->
+              <input
+                type="checkbox"
+                :checked="selectedDuplicateRows.includes(item.id)"
+                @change="toggleDuplicateSelection(item.id)"
+                class="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+
               <!-- Edit Button -->
               <button
                 @click="editContentFromDuplicate(item)"
@@ -1171,6 +1256,10 @@ const showAllErrorRecords = ref(false)
 const duplicateItems = ref([])
 const showDuplicateModal = ref(false)
 
+// Selection state
+const selectedRows = ref([])
+const selectedDuplicateRows = ref([])
+
 // Drag and drop state
 const draggedItem = ref(null)
 const dragOverItem = ref(null)
@@ -1274,6 +1363,12 @@ const categoryColumns = ref([
 const duplicateColumns = computed(() => {
   const cols = [
     {
+      key: 'actions',
+      label: '操作',
+      sortable: false,
+      cellClass: 'text-base text-gray-900 dark:text-white'
+    },
+    {
       key: 'id',
       label: 'ID',
       sortable: true,
@@ -1307,12 +1402,6 @@ const duplicateColumns = computed(() => {
     {
       key: 'duplicate_info',
       label: '重複狀態',
-      sortable: false,
-      cellClass: 'text-base text-gray-900 dark:text-white'
-    },
-    {
-      key: 'actions',
-      label: '操作',
       sortable: false,
       cellClass: 'text-base text-gray-900 dark:text-white'
     }
@@ -1630,6 +1719,240 @@ const confirmDelete = () => {
   }
   showDeleteModal.value = false
   contentToDelete.value = null
+}
+
+// Handle checkbox toggle
+const toggleSelection = (itemId) => {
+  const index = selectedRows.value.indexOf(itemId)
+  if (index > -1) {
+    selectedRows.value.splice(index, 1)
+  } else {
+    selectedRows.value.push(itemId)
+  }
+}
+
+// Handle checkbox toggle for duplicate items
+const toggleDuplicateSelection = (itemId) => {
+  const index = selectedDuplicateRows.value.indexOf(itemId)
+  if (index > -1) {
+    selectedDuplicateRows.value.splice(index, 1)
+  } else {
+    selectedDuplicateRows.value.push(itemId)
+  }
+}
+
+// Handle select all toggle for duplicate items
+const toggleSelectAllDuplicates = () => {
+  if (isAllDuplicatesSelected.value) {
+    // Deselect all
+    selectedDuplicateRows.value = []
+  } else {
+    // Select all duplicate items
+    selectedDuplicateRows.value = duplicateItems.value.map(item => item.id)
+  }
+}
+
+// Computed property to check if all duplicate items are selected
+const isAllDuplicatesSelected = computed(() => {
+  if (duplicateItems.value.length === 0) return false
+  return duplicateItems.value.every(item => selectedDuplicateRows.value.includes(item.id))
+})
+
+// Handle batch delete with confirmation
+const handleBatchDelete = async (selectedIds) => {
+  const { $swal } = useNuxtApp()
+
+  const result = await $swal.fire({
+    title: '確認批次刪除',
+    html: `
+      <div class="text-left">
+        <p class="mb-2">您確定要刪除以下項目嗎？</p>
+        <p class="text-red-600 font-semibold">共 ${selectedIds.length} 筆資料</p>
+        <p class="mt-3 text-gray-600">此操作無法復原。</p>
+      </div>
+    `,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: '確定刪除',
+    cancelButtonText: '取消',
+    confirmButtonColor: '#dc2626',
+    cancelButtonColor: '#6b7280'
+  })
+
+  if (result.isConfirmed) {
+    const { $notify } = useNuxtApp()
+    $notify.loading('批次刪除中...')
+
+    try {
+      // Delete each selected item
+      for (const id of selectedIds) {
+        emit('delete-content', id)
+      }
+
+      await $swal.fire({
+        title: '刪除成功',
+        text: `已成功刪除 ${selectedIds.length} 筆資料`,
+        icon: 'success',
+        confirmButtonText: '確定',
+        confirmButtonColor: '#16a34a'
+      })
+    } catch (error) {
+      await $swal.fire({
+        title: '刪除失敗',
+        text: '批次刪除過程中發生錯誤',
+        icon: 'error',
+        confirmButtonText: '確定',
+        confirmButtonColor: '#dc2626'
+      })
+    } finally {
+      $notify.close()
+    }
+  }
+}
+
+// Handle delete duplicates with confirmation
+const handleDeleteDuplicates = async () => {
+  const { $swal } = useNuxtApp()
+
+  // Group duplicates by combination
+  const duplicateGroups = new Map()
+
+  duplicateItems.value.forEach(item => {
+    const key = props.riskTopicsEnabled
+      ? `${item.category_id}-${item.topic_id}-${item.risk_factor_id}`
+      : `${item.category_id}-${item.risk_factor_id}`
+
+    if (!duplicateGroups.has(key)) {
+      duplicateGroups.set(key, [])
+    }
+    duplicateGroups.get(key).push(item)
+  })
+
+  // Calculate total items to be deleted (all duplicates except one per group)
+  let totalToDelete = 0
+  duplicateGroups.forEach(group => {
+    if (group.length > 1) {
+      totalToDelete += group.length - 1
+    }
+  })
+
+  const result = await $swal.fire({
+    title: '確認刪除重複資料',
+    html: `
+      <div class="text-left">
+        <p class="mb-2">系統偵測到 <strong>${duplicateGroups.size}</strong> 組重複資料。</p>
+        <p class="mb-2">每組重複資料將保留一筆，其餘將被刪除。</p>
+        <p class="text-red-600 font-semibold">共將刪除 ${totalToDelete} 筆資料</p>
+        <p class="mt-3 text-gray-600">此操作無法復原。</p>
+      </div>
+    `,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: '確定刪除',
+    cancelButtonText: '取消',
+    confirmButtonColor: '#dc2626',
+    cancelButtonColor: '#6b7280'
+  })
+
+  if (result.isConfirmed) {
+    const { $notify } = useNuxtApp()
+    $notify.loading('刪除重複資料中...')
+
+    try {
+      let deletedCount = 0
+
+      // For each duplicate group, keep the first item and delete the rest
+      duplicateGroups.forEach(group => {
+        if (group.length > 1) {
+          // Sort by ID to ensure consistent behavior (keep the oldest one)
+          group.sort((a, b) => a.id - b.id)
+
+          // Delete all except the first one
+          for (let i = 1; i < group.length; i++) {
+            emit('delete-content', group[i].id)
+            deletedCount++
+          }
+        }
+      })
+
+      await $swal.fire({
+        title: '刪除成功',
+        text: `已成功刪除 ${deletedCount} 筆重複資料`,
+        icon: 'success',
+        confirmButtonText: '確定',
+        confirmButtonColor: '#16a34a'
+      })
+
+      // Close the duplicate modal
+      showDuplicateModal.value = false
+    } catch (error) {
+      await $swal.fire({
+        title: '刪除失敗',
+        text: '刪除重複資料過程中發生錯誤',
+        icon: 'error',
+        confirmButtonText: '確定',
+        confirmButtonColor: '#dc2626'
+      })
+    } finally {
+      $notify.close()
+    }
+  }
+}
+
+// Handle batch delete from duplicates modal with confirmation
+const handleBatchDeleteFromDuplicates = async (selectedIds) => {
+  const { $swal } = useNuxtApp()
+
+  const result = await $swal.fire({
+    title: '確認批次刪除',
+    html: `
+      <div class="text-left">
+        <p class="mb-2">您確定要刪除以下項目嗎？</p>
+        <p class="text-red-600 font-semibold">共 ${selectedIds.length} 筆資料</p>
+        <p class="mt-3 text-gray-600">此操作無法復原。</p>
+      </div>
+    `,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: '確定刪除',
+    cancelButtonText: '取消',
+    confirmButtonColor: '#dc2626',
+    cancelButtonColor: '#6b7280'
+  })
+
+  if (result.isConfirmed) {
+    const { $notify } = useNuxtApp()
+    $notify.loading('批次刪除中...')
+
+    try {
+      // Delete each selected item
+      for (const id of selectedIds) {
+        emit('delete-content', id)
+      }
+
+      await $swal.fire({
+        title: '刪除成功',
+        text: `已成功刪除 ${selectedIds.length} 筆資料`,
+        icon: 'success',
+        confirmButtonText: '確定',
+        confirmButtonColor: '#16a34a'
+      })
+
+      // Clear selection and close modal
+      selectedDuplicateRows.value = []
+      showDuplicateModal.value = false
+    } catch (error) {
+      await $swal.fire({
+        title: '刪除失敗',
+        text: '批次刪除過程中發生錯誤',
+        icon: 'error',
+        confirmButtonText: '確定',
+        confirmButtonColor: '#dc2626'
+      })
+    } finally {
+      $notify.close()
+    }
+  }
 }
 
 const submitForm = async () => {

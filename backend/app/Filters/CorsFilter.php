@@ -119,6 +119,7 @@ class CorsFilter implements FilterInterface
             $allowedDomains = [
                 'https://esgmate.cc-sustain.com',
                 'https://www.esgmate.cc-sustain.com',
+                'https://csr.cc-sustain.com',
                 'https://your-production-domain.com',
                 'https://www.your-production-domain.com'
                 // Add your production domains here
