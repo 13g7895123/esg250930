@@ -990,42 +990,48 @@
           />
         </div>
 
-        <div v-if="enableTopicLayer">
+        <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            所屬主題 <span class="text-red-500">*</span>
-          </label>
-          <select
-            v-model="editingStructureItem.topic_id"
-            :required="enableTopicLayer"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-          >
-            <option value="">請選擇主題</option>
-            <option
-              v-for="topic in questionTopics"
-              :key="topic.id"
-              :value="topic.id"
-            >
-              {{ topic.topic_name }}
-            </option>
-          </select>
-        </div>
-
-        <div v-if="!enableTopicLayer">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            所屬類別 <span class="text-red-500">*</span>
+            所屬風險類別 <span class="text-red-500">*</span>
           </label>
           <select
             v-model="editingStructureItem.category_id"
-            :required="!enableTopicLayer"
+            required
             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
           >
-            <option value="">請選擇類別</option>
+            <option value="">請選擇風險類別</option>
             <option
               v-for="category in questionCategories"
               :key="category.id"
               :value="category.id"
             >
               {{ category.category_name }}
+            </option>
+          </select>
+        </div>
+
+        <div v-if="enableTopicLayer">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            所屬風險主題 <span class="text-red-500">*</span>
+          </label>
+          <select
+            v-model="editingStructureItem.topic_id"
+            :required="enableTopicLayer"
+            :disabled="!editingStructureItem.category_id || isLoadingQuestionTopics"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:text-gray-400 dark:disabled:bg-gray-600 dark:disabled:text-gray-500"
+          >
+            <option value="">
+              {{ !editingStructureItem.category_id
+                ? '請先選擇風險類別'
+                : (isLoadingQuestionTopics ? '載入中...' : '請選擇風險主題')
+              }}
+            </option>
+            <option
+              v-for="topic in filteredQuestionTopics"
+              :key="topic.id"
+              :value="topic.id"
+            >
+              {{ topic.topic_name }}
             </option>
           </select>
         </div>
@@ -1204,6 +1210,18 @@ const sortedQuestionFactors = computed(() => {
   }
 
   return questionFactors.value
+})
+
+// Filtered question topics based on selected category
+const isLoadingQuestionTopics = ref(false)
+const filteredQuestionTopics = computed(() => {
+  if (!editingStructureItem.value?.category_id || !questionTopics.value) {
+    return []
+  }
+  const selectedCategoryId = String(editingStructureItem.value.category_id)
+  return questionTopics.value.filter(topic =>
+    String(topic.category_id) === selectedCategoryId
+  )
 })
 
 // Set page title safely for SSR
@@ -1521,6 +1539,7 @@ const deleteQuestionTopic = (item) => {
 
 // Factor management methods
 const addQuestionFactor = () => {
+  isInitializingEditForm.value = true
   editingStructureItem.value = {
     factor_name: '',
     description: '',
@@ -1530,12 +1549,19 @@ const addQuestionFactor = () => {
   }
   structureEditType.value = 'factor'
   showEditFactorModal.value = true
+  nextTick(() => {
+    isInitializingEditForm.value = false
+  })
 }
 
 const editQuestionFactor = (item) => {
+  isInitializingEditForm.value = true
   editingStructureItem.value = { ...item }
   structureEditType.value = 'factor'
   showEditFactorModal.value = true
+  nextTick(() => {
+    isInitializingEditForm.value = false
+  })
 }
 
 const deleteQuestionFactor = (item) => {
@@ -2003,6 +2029,33 @@ watch(showFormModal, (newValue) => {
     nextTick(() => {
       templateSelectRef.value?.focus()
     })
+  }
+})
+
+// Watch for category changes in risk factor form
+const isInitializingEditForm = ref(false)
+watch(() => editingStructureItem.value?.category_id, async (newCategoryId, oldCategoryId) => {
+  // Only process if we're editing a factor and not initializing the form
+  if (structureEditType.value !== 'factor' || isInitializingEditForm.value) {
+    return
+  }
+
+  // Clear topic selection when category changes (user manually changed it)
+  if (newCategoryId !== oldCategoryId && editingStructureItem.value) {
+    editingStructureItem.value.topic_id = ''
+
+    // If a category is selected and topic layer is enabled, ensure topics are loaded
+    if (newCategoryId && enableTopicLayer.value && managingQuestion.value?.id) {
+      isLoadingQuestionTopics.value = true
+
+      try {
+        await getTopics(managingQuestion.value.id)
+      } catch (error) {
+        console.error('Failed to load question topics:', error)
+      } finally {
+        isLoadingQuestionTopics.value = false
+      }
+    }
   }
 })
 
