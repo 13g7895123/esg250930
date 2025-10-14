@@ -71,11 +71,15 @@ $routes->group('api/v1', function($routes) {
     $routes->options('local-companies/resolve', function() {
         return service('response')->setStatusCode(200);
     });
+    $routes->options('local-companies/find-by-external-id', function() {
+        return service('response')->setStatusCode(200);
+    });
 
     // Local Companies routes - Put specific routes before resource routes
     $routes->get('local-companies/stats', 'Api\V1\LocalCompaniesController::stats');
     $routes->get('local-companies/external/(:segment)', 'Api\V1\LocalCompaniesController::findByExternalId/$1');
     $routes->post('local-companies/resolve', 'Api\V1\LocalCompaniesController::resolveCompany');
+    $routes->post('local-companies/find-by-external-id', 'Api\V1\LocalCompaniesController::findByExternalIdPost');
 
     // Local Companies CRUD routes
     $routes->resource('local-companies', ['controller' => 'Api\V1\LocalCompaniesController']);

@@ -31,8 +31,8 @@ export const useExternalUserStore = defineStore('externalUser', () => {
            userInfo.value?.email ||
            null
   })
-  const companyId = computed(() => {
-    // 優先從 userInfo.user.com_id 取得公司ID，fallback 到其他路徑
+  const externalCompanyId = computed(() => {
+    // 優先從 userInfo.user.com_id 取得外部公司ID，fallback 到其他路徑
     return userInfo.value?.user?.com_id ||
            userInfo.value?.data?.com_id ||
            null
@@ -60,6 +60,14 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     return internalUserId.value
   })
 
+  // 新的 companyId - 通過 externalCompanyId 查詢 local_companies 表獲得的內部ID
+  const internalCompanyId = ref(null)
+
+  // companyId getter - 回傳內部公司ID
+  const companyId = computed(() => {
+    return internalCompanyId.value
+  })
+
   // 查詢 external_personnel 表獲取內部用戶ID
   const fetchInternalUserId = async (extId) => {
     if (!extId) return null
@@ -82,13 +90,13 @@ export const useExternalUserStore = defineStore('externalUser', () => {
         console.log('⚠️ 未找到對應的內部用戶ID，嘗試同步人員資料...')
 
         // 如果找不到用戶，嘗試同步人員資料
-        const currentCompanyId = companyId.value
-        if (currentCompanyId) {
-          console.log('📥 開始同步人員資料，Company ID:', currentCompanyId)
+        const currentExternalCompanyId = externalCompanyId.value
+        if (currentExternalCompanyId) {
+          console.log('📥 開始同步人員資料，External Company ID:', currentExternalCompanyId)
 
           try {
             // 調用人員同步API
-            const syncResponse = await $fetch(`/api/v1/personnel/companies/${currentCompanyId}/sync`, {
+            const syncResponse = await $fetch(`/api/v1/personnel/companies/${currentExternalCompanyId}/sync`, {
               method: 'POST'
             })
 
@@ -119,13 +127,42 @@ export const useExternalUserStore = defineStore('externalUser', () => {
             return null
           }
         } else {
-          console.log('❌ 缺少 companyId，無法執行人員同步')
+          console.log('❌ 缺少 externalCompanyId，無法執行人員同步')
           return null
         }
       }
 
     } catch (error) {
       console.error('❌ 查詢內部用戶ID失敗:', error)
+      return null
+    }
+  }
+
+  // 查詢 local_companies 表獲取內部公司ID
+  const fetchInternalCompanyId = async (extCompanyId) => {
+    if (!extCompanyId) return null
+
+    try {
+      console.log('=== 查詢內部公司ID ===')
+      console.log('External Company ID:', extCompanyId)
+
+      // 調用後端API查詢 local_companies 表
+      const response = await $fetch('/api/v1/local-companies/find-by-external-id', {
+        method: 'POST',
+        body: { external_company_id: extCompanyId }
+      })
+
+      if (response.success && response.data) {
+        const internalId = response.data.id
+        console.log('✅ 查詢到內部公司ID:', internalId)
+        return internalId
+      } else {
+        console.log('⚠️ 未找到對應的內部公司ID')
+        return null
+      }
+
+    } catch (error) {
+      console.error('❌ 查詢內部公司ID失敗:', error)
       return null
     }
   }
@@ -162,7 +199,7 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     console.log('userName (computed):', userName.value)
     console.log('userEmail (computed):', userEmail.value)
     console.log('externalId (computed):', externalId.value)
-    console.log('companyId (computed):', companyId.value)
+    console.log('externalCompanyId (computed):', externalCompanyId.value)
     console.log('group (computed):', group.value)
     console.log('Token:', tokenValue)
 
@@ -178,6 +215,18 @@ export const useExternalUserStore = defineStore('externalUser', () => {
       }
     }
 
+    // 查詢並設置內部公司ID
+    if (externalCompanyId.value) {
+      try {
+        const internalId = await fetchInternalCompanyId(externalCompanyId.value)
+        internalCompanyId.value = internalId
+        console.log('設置內部公司ID (companyId):', companyId.value)
+      } catch (error) {
+        console.error('查詢內部公司ID時發生錯誤，但不影響頁面載入:', error)
+        // 不拋出錯誤，允許頁面繼續載入
+      }
+    }
+
     console.log('最後更新:', lastUpdated.value)
   }
 
@@ -186,6 +235,7 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     userInfo.value = null
     token.value = null
     internalUserId.value = null
+    internalCompanyId.value = null
     isLoaded.value = false
     lastUpdated.value = null
 
@@ -286,9 +336,10 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     hasUserInfo,
     userName,
     userEmail,
-    companyId,
-    externalId,
-    userId, // userId 現在是 computed getter
+    externalCompanyId, // 外部公司ID（從 token 解密後的 com_id）
+    companyId, // 內部公司ID（查詢 local_companies 表獲得）
+    externalId, // 外部用戶ID（從 token 解密後的 user_id）
+    userId, // 內部用戶ID（查詢 external_personnel 表獲得）
     group, // 用戶所屬群組名稱陣列
 
     // 方法
@@ -296,11 +347,12 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     clearUserInfo,
     fetchExternalUserData,
     fetchInternalUserId,
+    fetchInternalCompanyId,
     updateUserInfo
   }
 }, {
   persist: {
     storage: typeof window !== 'undefined' ? sessionStorage : undefined, // 使用 sessionStorage（當前瀏覽器分頁有效）
-    pick: ['userInfo', 'token', 'internalUserId', 'isLoaded', 'lastUpdated'] // 持久化用戶相關字段
+    pick: ['userInfo', 'token', 'internalUserId', 'internalCompanyId', 'isLoaded', 'lastUpdated'] // 持久化用戶相關字段
   }
 })

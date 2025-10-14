@@ -278,6 +278,48 @@ class LocalCompaniesController extends BaseController
     }
 
     /**
+     * 根據外部ID查找公司 (POST方法)
+     * POST /api/v1/local-companies/find-by-external-id
+     */
+    public function findByExternalIdPost()
+    {
+        try {
+            $json = $this->request->getJSON(true);
+
+            if (!$json || !isset($json['external_company_id'])) {
+                return $this->failValidationError('external_company_id 為必需參數');
+            }
+
+            $externalCompanyId = $json['external_company_id'];
+
+            log_message('info', "Finding company by external_id: {$externalCompanyId}");
+
+            $company = $this->localCompanyModel->findByExternalId($externalCompanyId);
+
+            if (!$company) {
+                log_message('info', "Company with external_id {$externalCompanyId} not found");
+                return $this->respond([
+                    'success' => false,
+                    'data' => null,
+                    'message' => '找不到指定的公司'
+                ]);
+            }
+
+            log_message('info', "Company found: {$company['company_name']} (ID: {$company['id']})");
+
+            return $this->respond([
+                'success' => true,
+                'data' => $company,
+                'message' => '成功找到公司'
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'LocalCompaniesController::findByExternalIdPost - ' . $e->getMessage());
+            return $this->fail('查找公司失敗: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * 獲取公司統計資訊
      * GET /api/v1/local-companies/stats
      */
