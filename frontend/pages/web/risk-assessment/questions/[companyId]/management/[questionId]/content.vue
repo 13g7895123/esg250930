@@ -86,18 +86,24 @@
       <!-- Custom Categories Cell -->
       <template #cell-categories="{ item }">
         <div class="flex flex-wrap gap-1">
-          <span v-if="item.category_name"
-                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-            {{ item.category_name }}
-          </span>
-          <span v-if="item.topic_name"
-                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-            {{ item.topic_name }}
-          </span>
-          <span v-if="item.factor_name"
-                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-            {{ item.factor_name }}
-          </span>
+          <TextWithTooltip
+            v-if="item.category_name"
+            :text="item.category_name"
+            :truncate-length="6"
+            custom-class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+          />
+          <TextWithTooltip
+            v-if="item.topic_name"
+            :text="item.topic_name"
+            :truncate-length="6"
+            custom-class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+          />
+          <TextWithTooltip
+            v-if="item.factor_name"
+            :text="item.factor_name"
+            :truncate-length="6"
+            custom-class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+          />
         </div>
       </template>
 
@@ -272,27 +278,36 @@
                     {{ item.category_id || '-' }}
                   </td>
                   <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                    <span v-if="item.category_name" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                      {{ item.category_name }}
-                    </span>
+                    <TextWithTooltip
+                      v-if="item.category_name"
+                      :text="item.category_name"
+                      :truncate-length="6"
+                      custom-class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                    />
                     <span v-else class="text-gray-400">未分類</span>
                   </td>
                   <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                     {{ item.topic_id || '-' }}
                   </td>
                   <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                    <span v-if="item.topic_name" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                      {{ item.topic_name }}
-                    </span>
+                    <TextWithTooltip
+                      v-if="item.topic_name"
+                      :text="item.topic_name"
+                      :truncate-length="6"
+                      custom-class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                    />
                     <span v-else class="text-gray-400">未分類</span>
                   </td>
                   <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                     {{ item.risk_factor_id || '-' }}
                   </td>
                   <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                    <span v-if="item.factor_name" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-                      {{ item.factor_name }}
-                    </span>
+                    <TextWithTooltip
+                      v-if="item.factor_name"
+                      :text="item.factor_name"
+                      :truncate-length="6"
+                      custom-class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                    />
                     <span v-else class="text-gray-400">未分類</span>
                   </td>
                   <td class="px-4 py-3 text-sm">
