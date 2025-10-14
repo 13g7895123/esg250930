@@ -198,8 +198,6 @@ class ExternalAccessController extends ResourceController
             'assessmentId' => $assessmentId,
             'personnelId' => $personnelId);
 
-        print_r($test);
-
         // 查詢該人員在該評估記錄中的指派
         $assignments = $this->assignmentModel
             ->where('company_id', $companyId)
