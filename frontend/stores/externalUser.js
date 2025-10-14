@@ -71,6 +71,9 @@ export const useExternalUserStore = defineStore('externalUser', () => {
   // 最新被指派的題項ID
   const latestAssignedQuestionId = ref(null)
 
+  // verify API 回傳的 URL
+  const verifiedUrl = ref(null)
+
   // 查詢 external_personnel 表獲取內部用戶ID
   const fetchInternalUserId = async (extId) => {
     if (!extId) return null
@@ -207,6 +210,37 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     }
   }
 
+  // 調用 verify API 取得驗證後的 URL
+  const fetchVerifiedUrl = async () => {
+    const extCompanyId = externalCompanyId.value
+    const extUserId = externalId.value
+
+    if (!extCompanyId || !extUserId) {
+      console.log('❌ 缺少 externalCompanyId 或 externalId，無法調用 verify API')
+      return null
+    }
+
+    try {
+      console.log('=== 調用 Verify API ===')
+      console.log('External Company ID:', extCompanyId)
+      console.log('External User ID:', extUserId)
+
+      const response = await $fetch(`/api/v1/external-access/verify?company_id=${extCompanyId}&user_id=${extUserId}`)
+
+      if (response.success && response.url) {
+        console.log('✅ Verify API 調用成功，取得 URL:', response.url)
+        return response.url
+      } else {
+        console.log('⚠️ Verify API 未回傳 URL')
+        return null
+      }
+
+    } catch (error) {
+      console.error('❌ 調用 Verify API 失敗:', error)
+      return null
+    }
+  }
+
   // 設定用戶資訊
   const setUserInfo = async (data, tokenValue = null) => {
     userInfo.value = data
@@ -279,6 +313,21 @@ export const useExternalUserStore = defineStore('externalUser', () => {
       }
     }
 
+    // 如果沒有 company_agent 群組，調用 verify API 取得驗證後的 URL
+    const hasCompanyAgent = group.value?.includes('company_agent')
+    if (!hasCompanyAgent && externalCompanyId.value && externalId.value) {
+      try {
+        const url = await fetchVerifiedUrl()
+        verifiedUrl.value = url
+        console.log('設置 Verified URL (verifiedUrl):', verifiedUrl.value)
+      } catch (error) {
+        console.error('調用 Verify API 時發生錯誤，但不影響頁面載入:', error)
+        // 不拋出錯誤，允許頁面繼續載入
+      }
+    } else if (hasCompanyAgent) {
+      console.log('⏭️ 使用者有 company_agent 群組，跳過 Verify API 調用')
+    }
+
     console.log('最後更新:', lastUpdated.value)
   }
 
@@ -289,6 +338,7 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     internalUserId.value = null
     internalCompanyId.value = null
     latestAssignedQuestionId.value = null
+    verifiedUrl.value = null
     isLoaded.value = false
     lastUpdated.value = null
 
@@ -395,6 +445,7 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     userId, // 內部用戶ID（查詢 external_personnel 表獲得）
     group, // 用戶所屬群組名稱陣列
     latestAssignedQuestionId: readonly(latestAssignedQuestionId), // 最新被指派的題項ID
+    verifiedUrl: readonly(verifiedUrl), // verify API 回傳的 URL
 
     // 方法
     setUserInfo,
@@ -403,11 +454,12 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     fetchInternalUserId,
     fetchInternalCompanyId,
     fetchLatestAssignedQuestion,
+    fetchVerifiedUrl,
     updateUserInfo
   }
 }, {
   persist: {
     storage: typeof window !== 'undefined' ? sessionStorage : undefined, // 使用 sessionStorage（當前瀏覽器分頁有效）
-    pick: ['userInfo', 'token', 'internalUserId', 'internalCompanyId', 'latestAssignedQuestionId', 'isLoaded', 'lastUpdated'] // 持久化用戶相關字段
+    pick: ['userInfo', 'token', 'internalUserId', 'internalCompanyId', 'latestAssignedQuestionId', 'verifiedUrl', 'isLoaded', 'lastUpdated'] // 持久化用戶相關字段
   }
 })

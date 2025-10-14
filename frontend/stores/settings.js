@@ -42,8 +42,11 @@ export const useSettingsStore = defineStore('settings', () => {
       if (hasCompanyAgent && companyId) {
         // 有 company_agent 群組：導到管理頁面
         questionManagementItem.href = `/web/risk-assessment/questions/${companyId}/management`
+      } else if (externalUserStore.verifiedUrl) {
+        // 沒有 company_agent 群組且有 verifiedUrl：優先使用 verify API 回傳的 URL
+        questionManagementItem.href = externalUserStore.verifiedUrl
       } else if (companyId && externalUserStore.latestAssignedQuestionId) {
-        // 沒有 company_agent 群組：導到內容頁面（使用最新被指派的題項ID）
+        // Fallback：使用最新被指派的題項ID
         questionManagementItem.href = `/web/risk-assessment/questions/${companyId}/management/${externalUserStore.latestAssignedQuestionId}/content`
       } else {
         // 沒有必要資料：暫時導到管理頁面

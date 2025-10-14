@@ -74,7 +74,6 @@
           :key="child.name"
           :to="child.href"
           class="block px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-500 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
-          @click="(e) => handleChildClick(e, child)"
         >
           {{ child.name }}
         </NuxtLink>
@@ -108,7 +107,7 @@
             :key="child.name"
             :to="child.href"
             class="block px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200"
-            @click="(e) => handleChildClick(e, child)"
+            @click="showCollapsedSubmenu = false"
           >
             {{ child.name }}
           </NuxtLink>
@@ -145,7 +144,6 @@ const props = defineProps({
 })
 
 const route = useRoute()
-const settingsStore = useSettingsStore()
 const isExpanded = ref(false)
 const showTooltip = ref(false)
 const showCollapsedSubmenu = ref(false)
@@ -224,28 +222,6 @@ const toggleItem = () => {
   } else if (props.item.href) {
     // Navigate to the href if the item has one and no children
     navigateTo(props.item.href)
-  }
-}
-
-// 處理子選單項目點擊
-const handleChildClick = async (e, child) => {
-  // 如果是題項管理連結，先顯示判斷資料
-  if (child.name === '題項管理') {
-    e.preventDefault()
-
-    // 調用 settings store 的除錯方法（現在是 async）
-    const result = await settingsStore.showQuestionManagementDebugInfo()
-
-    // 關閉收起狀態的子選單
-    showCollapsedSubmenu.value = false
-
-    // 顯示判斷資料後，導航到目標連結
-    if (result?.finalHref) {
-      navigateTo(result.finalHref)
-    }
-  } else {
-    // 其他連結正常處理，關閉收起狀態的子選單
-    showCollapsedSubmenu.value = false
   }
 }
 
