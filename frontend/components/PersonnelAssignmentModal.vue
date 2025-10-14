@@ -173,31 +173,39 @@
                 <div class="flex items-start justify-between mb-3">
                   <div class="flex-1">
                     <div class="flex items-center gap-2 mb-2">
-                      <h5
-                        class="font-medium text-gray-900 dark:text-white cursor-help relative group"
-                      >
-                        {{ truncateText(getFactorDescription(content.factorId), 10) || content.topic }}
-                        <!-- Tooltip for full content with HTML rendering -->
-                        <span
-                          v-if="stripHtml(getFactorDescription(content.factorId)).length > 10"
-                          class="absolute left-0 top-full mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-[9999] min-w-[300px] max-w-[500px] whitespace-normal text-sm font-normal prose prose-sm dark:prose-invert max-w-none"
-                          v-html="getFactorDescription(content.factorId)"
-                        >
-                        </span>
+                      <HtmlTooltip
+                        v-if="getFactorDescription(content.factorId)"
+                        :content="getFactorDescription(content.factorId)"
+                        :display-text="truncateText(getFactorDescription(content.factorId), 10)"
+                        :truncate-length="10"
+                        text-class="font-medium text-gray-900 dark:text-white"
+                      />
+                      <h5 v-else class="font-medium text-gray-900 dark:text-white">
+                        {{ content.topic }}
                       </h5>
-                      <BadgeWithTooltip
-                        :text="getCategoryName(content.categoryId || content.category_id)"
-                        variant="category"
+
+                      <HtmlTooltip
+                        :content="getCategoryName(content.categoryId || content.category_id)"
+                        :display-text="truncateText(getCategoryName(content.categoryId || content.category_id), 6)"
+                        :truncate-length="6"
+                        text-class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                        max-width="max-w-xs"
                       />
-                      <BadgeWithTooltip
+                      <HtmlTooltip
                         v-if="getTopicName(content.topicId)"
-                        :text="getTopicName(content.topicId)"
-                        variant="topic"
+                        :content="getTopicName(content.topicId)"
+                        :display-text="truncateText(getTopicName(content.topicId), 6)"
+                        :truncate-length="6"
+                        text-class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                        max-width="max-w-xs"
                       />
-                      <BadgeWithTooltip
+                      <HtmlTooltip
                         v-if="getFactorName(content.factorId)"
-                        :text="getFactorName(content.factorId)"
-                        variant="factor"
+                        :content="getFactorName(content.factorId)"
+                        :display-text="truncateText(getFactorName(content.factorId), 6)"
+                        :truncate-length="6"
+                        text-class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                        max-width="max-w-xs"
                       />
                     </div>
                     <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -312,22 +320,31 @@
             <template #cell-content_description="{ item }">
               <div>
                 <p class="font-medium text-gray-900 dark:text-white text-sm">
-                  {{ truncateText(getFactorDescription(item.factor_id), 20) || item.content_description }}
+                  {{ truncateText(getFactorName(item.factor_id), 20) || item.factor_id }}
                 </p>
                 <div class="flex items-center gap-1 mt-1">
-                  <BadgeWithTooltip
-                    :text="getCategoryName(item.category_id)"
-                    variant="category"
+                  <HtmlTooltip
+                    :content="getCategoryName(item.category_id)"
+                    :display-text="truncateText(getCategoryName(item.category_id), 6)"
+                    :truncate-length="6"
+                    text-class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                    max-width="max-w-xs"
                   />
-                  <BadgeWithTooltip
+                  <HtmlTooltip
                     v-if="getTopicName(item.topic_id)"
-                    :text="getTopicName(item.topic_id)"
-                    variant="topic"
+                    :content="getTopicName(item.topic_id)"
+                    :display-text="truncateText(getTopicName(item.topic_id), 6)"
+                    :truncate-length="6"
+                    text-class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                    max-width="max-w-xs"
                   />
-                  <BadgeWithTooltip
+                  <HtmlTooltip
                     v-if="getFactorName(item.factor_id)"
-                    :text="getFactorName(item.factor_id)"
-                    variant="factor"
+                    :content="getFactorName(item.factor_id)"
+                    :display-text="truncateText(getFactorName(item.factor_id), 6)"
+                    :truncate-length="6"
+                    text-class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                    max-width="max-w-xs"
                   />
                 </div>
               </div>
