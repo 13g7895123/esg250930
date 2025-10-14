@@ -228,13 +228,13 @@ const toggleItem = () => {
 }
 
 // 處理子選單項目點擊
-const handleChildClick = (e, child) => {
+const handleChildClick = async (e, child) => {
   // 如果是題項管理連結，先顯示判斷資料
   if (child.name === '題項管理') {
     e.preventDefault()
 
-    // 調用 settings store 的除錯方法
-    const result = settingsStore.showQuestionManagementDebugInfo()
+    // 調用 settings store 的除錯方法（現在是 async）
+    const result = await settingsStore.showQuestionManagementDebugInfo()
 
     // 關閉收起狀態的子選單
     showCollapsedSubmenu.value = false

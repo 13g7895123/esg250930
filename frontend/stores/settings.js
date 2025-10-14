@@ -68,14 +68,37 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   // 除錯方法：顯示題項管理連結的判斷資料
-  const showQuestionManagementDebugInfo = () => {
+  const showQuestionManagementDebugInfo = async () => {
     const isWebPath = route.path.startsWith('/web')
     const hasCompanyAgent = externalUserStore.group?.includes('company_agent')
     const companyId = externalUserStore.companyId
     const latestAssignedQuestionId = externalUserStore.latestAssignedQuestionId
     const group = externalUserStore.group
+    const externalCompanyId = externalUserStore.externalCompanyId
     const externalId = externalUserStore.externalId
     const userId = externalUserStore.userId
+
+    console.log('=== 開始除錯題項管理連結 ===')
+
+    // 調用 external-access verify API
+    let verifyResult = null
+    let verifyError = null
+
+    if (externalCompanyId && externalId) {
+      try {
+        console.log(`調用 API: /api/v1/external-access/verify?company_id=${externalCompanyId}&user_id=${externalId}`)
+
+        const response = await $fetch(`/api/v1/external-access/verify?company_id=${externalCompanyId}&user_id=${externalId}`)
+        verifyResult = response
+
+        console.log('✅ API 調用成功:', verifyResult)
+      } catch (error) {
+        verifyError = error
+        console.error('❌ API 調用失敗:', error)
+      }
+    } else {
+      console.warn('⚠️ 缺少 externalCompanyId 或 externalId，無法調用 verify API')
+    }
 
     // 計算最終連結
     let finalHref = ''
@@ -107,8 +130,9 @@ export const useSettingsStore = defineStore('settings', () => {
       '是否為 /web 路徑': isWebPath,
       '使用者群組': group,
       '是否有 company_agent 群組': hasCompanyAgent,
-      '內部公司ID (companyId)': companyId,
+      '外部公司ID (externalCompanyId)': externalCompanyId,
       '外部用戶ID (externalId)': externalId,
+      '內部公司ID (companyId)': companyId,
       '內部用戶ID (userId)': userId,
       '最新被指派題項ID': latestAssignedQuestionId,
       '判斷原因': reason,
@@ -119,22 +143,42 @@ export const useSettingsStore = defineStore('settings', () => {
     console.table(debugInfo)
     console.log('詳細資料:', debugInfo)
 
-    // 使用 alert 顯示簡化版資訊
-    alert(
-      `題項管理連結判斷資料：\n\n` +
+    if (verifyResult) {
+      console.log('=== Verify API 回傳結果 ===')
+      console.log(verifyResult)
+    }
+
+    // 建立顯示訊息
+    let alertMessage = `題項管理連結判斷資料：\n\n` +
       `當前路徑: ${route.path}\n` +
       `是否為 /web 路徑: ${isWebPath}\n` +
       `使用者群組: ${JSON.stringify(group)}\n` +
-      `是否有 company_agent: ${hasCompanyAgent}\n` +
+      `是否有 company_agent: ${hasCompanyAgent}\n\n` +
+      `外部公司ID: ${externalCompanyId}\n` +
+      `外部用戶ID: ${externalId}\n` +
       `內部公司ID: ${companyId}\n` +
       `內部用戶ID: ${userId}\n` +
-      `最新被指派題項ID: ${latestAssignedQuestionId}\n\n` +
-      `判斷原因:\n${reason}\n\n` +
+      `最新被指派題項ID: ${latestAssignedQuestionId}\n\n`
+
+    // 添加 API 調用結果
+    if (verifyResult) {
+      alertMessage += `✅ Verify API 調用成功\n`
+      alertMessage += `API 回傳: ${JSON.stringify(verifyResult, null, 2)}\n\n`
+    } else if (verifyError) {
+      alertMessage += `❌ Verify API 調用失敗\n`
+      alertMessage += `錯誤: ${verifyError.message || verifyError}\n\n`
+    } else {
+      alertMessage += `⚠️ 未調用 Verify API（缺少必要參數）\n\n`
+    }
+
+    alertMessage += `判斷原因:\n${reason}\n\n` +
       `最終導航連結:\n${finalHref}\n\n` +
       `詳細資料請查看 Console`
-    )
 
-    return { debugInfo, finalHref }
+    // 使用 alert 顯示
+    alert(alertMessage)
+
+    return { debugInfo, finalHref, verifyResult }
   }
 
   return {
