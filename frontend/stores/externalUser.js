@@ -37,6 +37,20 @@ export const useExternalUserStore = defineStore('externalUser', () => {
            userInfo.value?.data?.com_id ||
            null
   })
+  const group = computed(() => {
+    // 從 userInfo 中取得 group 陣列，並提取每筆資料的 name
+    const groupData = userInfo.value?.user?.group ||
+                      userInfo.value?.data?.group ||
+                      userInfo.value?.group ||
+                      []
+
+    // 確保 groupData 是陣列，並提取每個項目的 name
+    if (Array.isArray(groupData)) {
+      return groupData.map(item => item?.name).filter(name => name != null)
+    }
+
+    return []
+  })
 
   // 新的 userId - 通過 externalId 查詢 external_personnel 表獲得的內部ID
   const internalUserId = ref(null)
@@ -149,6 +163,7 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     console.log('userEmail (computed):', userEmail.value)
     console.log('externalId (computed):', externalId.value)
     console.log('companyId (computed):', companyId.value)
+    console.log('group (computed):', group.value)
     console.log('Token:', tokenValue)
 
     // 查詢並設置內部用戶ID
@@ -274,6 +289,7 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     companyId,
     externalId,
     userId, // userId 現在是 computed getter
+    group, // 用戶所屬群組名稱陣列
 
     // 方法
     setUserInfo,
