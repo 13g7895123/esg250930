@@ -100,29 +100,43 @@ export const useSettingsStore = defineStore('settings', () => {
       console.warn('⚠️ 缺少 externalCompanyId 或 externalId，無法調用 verify API')
     }
 
-    // 計算最終連結
-    let finalHref = ''
-    let reason = ''
+    // 計算本地邏輯的連結（作為 fallback）
+    let localHref = ''
+    let localReason = ''
 
     if (isWebPath) {
       if (hasCompanyAgent && companyId) {
-        finalHref = `/web/risk-assessment/questions/${companyId}/management`
-        reason = '在 /web 路徑下，有 company_agent 群組，導到管理頁面'
+        localHref = `/web/risk-assessment/questions/${companyId}/management`
+        localReason = '在 /web 路徑下，有 company_agent 群組，導到管理頁面'
       } else if (companyId && latestAssignedQuestionId) {
-        finalHref = `/web/risk-assessment/questions/${companyId}/management/${latestAssignedQuestionId}/content`
-        reason = '在 /web 路徑下，沒有 company_agent 群組，導到最新被指派題項的內容頁面'
+        localHref = `/web/risk-assessment/questions/${companyId}/management/${latestAssignedQuestionId}/content`
+        localReason = '在 /web 路徑下，沒有 company_agent 群組，導到最新被指派題項的內容頁面'
       } else {
-        finalHref = companyId ? `/web/risk-assessment/questions/${companyId}/management` : '/admin/risk-assessment/questions'
-        reason = '在 /web 路徑下，缺少必要資料，使用 fallback 連結'
+        localHref = companyId ? `/web/risk-assessment/questions/${companyId}/management` : '/admin/risk-assessment/questions'
+        localReason = '在 /web 路徑下，缺少必要資料，使用 fallback 連結'
       }
     } else {
       if (hasCompanyAgent && companyId) {
-        finalHref = `/web/risk-assessment/questions/${companyId}/management`
-        reason = '在 /admin 路徑下，有 company_agent 群組'
+        localHref = `/web/risk-assessment/questions/${companyId}/management`
+        localReason = '在 /admin 路徑下，有 company_agent 群組'
       } else {
-        finalHref = '/admin/risk-assessment/questions'
-        reason = '在 /admin 路徑下，沒有 company_agent 群組'
+        localHref = '/admin/risk-assessment/questions'
+        localReason = '在 /admin 路徑下，沒有 company_agent 群組'
       }
+    }
+
+    // 決定最終使用的連結：優先使用 API 回傳的 url
+    let finalHref = ''
+    let reason = ''
+
+    if (verifyResult && verifyResult.success && verifyResult.url) {
+      finalHref = verifyResult.url
+      reason = '✅ 使用 Verify API 回傳的 URL'
+      console.log('🎯 優先使用 API 回傳的 URL:', finalHref)
+    } else {
+      finalHref = localHref
+      reason = `⚙️ 使用本地計算的 URL（${localReason}）`
+      console.log('🎯 使用本地計算的 URL:', finalHref)
     }
 
     const debugInfo = {
@@ -135,8 +149,11 @@ export const useSettingsStore = defineStore('settings', () => {
       '內部公司ID (companyId)': companyId,
       '內部用戶ID (userId)': userId,
       '最新被指派題項ID': latestAssignedQuestionId,
-      '判斷原因': reason,
-      '最終導航連結': finalHref
+      '本地計算連結': localHref,
+      '本地判斷原因': localReason,
+      'API 回傳連結': verifyResult?.url || 'N/A',
+      '最終使用連結': finalHref,
+      '最終判斷原因': reason
     }
 
     console.log('=== 題項管理連結判斷資料 ===')
@@ -163,7 +180,11 @@ export const useSettingsStore = defineStore('settings', () => {
     // 添加 API 調用結果
     if (verifyResult) {
       alertMessage += `✅ Verify API 調用成功\n`
-      alertMessage += `API 回傳: ${JSON.stringify(verifyResult, null, 2)}\n\n`
+      alertMessage += `API 授權狀態: ${verifyResult.is_authorized ? '✓ 已授權' : '✗ 未授權'}\n`
+      if (verifyResult.url) {
+        alertMessage += `API 回傳 URL: ${verifyResult.url}\n`
+      }
+      alertMessage += `完整回傳: ${JSON.stringify(verifyResult, null, 2)}\n\n`
     } else if (verifyError) {
       alertMessage += `❌ Verify API 調用失敗\n`
       alertMessage += `錯誤: ${verifyError.message || verifyError}\n\n`
@@ -171,9 +192,16 @@ export const useSettingsStore = defineStore('settings', () => {
       alertMessage += `⚠️ 未調用 Verify API（缺少必要參數）\n\n`
     }
 
-    alertMessage += `判斷原因:\n${reason}\n\n` +
-      `最終導航連結:\n${finalHref}\n\n` +
-      `詳細資料請查看 Console`
+    // 添加本地計算結果
+    alertMessage += `本地計算連結: ${localHref}\n`
+    alertMessage += `本地判斷原因: ${localReason}\n\n`
+
+    // 添加最終決定
+    alertMessage += `━━━━━━━━━━━━━━━━━━━━\n`
+    alertMessage += `${reason}\n`
+    alertMessage += `最終導航連結:\n${finalHref}\n`
+    alertMessage += `━━━━━━━━━━━━━━━━━━━━\n\n`
+    alertMessage += `詳細資料請查看 Console`
 
     // 使用 alert 顯示
     alert(alertMessage)
