@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6">
+  <div class="space-y-6">
     <!-- Page Header -->
     <PageHeader
       title="評估表指派狀況"
@@ -49,7 +49,7 @@
     </div>
 
     <!-- Assignment Status Table -->
-    <div v-else-if="assignments && assignments.length > 0">
+    <div v-else-if="assignments && assignments.length > 0" class="relative z-0">
       <DataTable
         :data="assignments"
         :columns="columns"
@@ -74,6 +74,15 @@
             {{ loading ? '重新整理中...' : '重新整理' }}
           </button>
         </template>
+        <!-- Question Content Cell -->
+        <template #cell-question_content="{ item }">
+          <div class="text-sm">
+            <span class="font-medium">{{ item.completed_questions || 0 }}</span>
+            <span class="text-gray-500 dark:text-gray-400"> / {{ item.total_questions || 0 }}</span>
+            <span class="text-gray-400 dark:text-gray-500 ml-1 text-xs">題</span>
+          </div>
+        </template>
+
         <!-- Status Cell -->
         <template #cell-status="{ item }">
           <span
@@ -150,7 +159,7 @@ const assessmentStats = ref(null)
 const columns = [
   {
     key: 'actions',
-    label: '操作',
+    label: '動作',
     sortable: false
   },
   {
@@ -159,8 +168,13 @@ const columns = [
     sortable: true
   },
   {
+    key: 'question_content',
+    label: '題項內容',
+    sortable: true
+  },
+  {
     key: 'status',
-    label: '填寫狀況',
+    label: '狀態',
     sortable: true
   },
   {

@@ -1091,6 +1091,20 @@
       @close="showDeleteConfirmModal = false"
       @confirm="confirmDeleteStructureItem"
     />
+
+    <!-- Sync from Template Confirmation Modal -->
+    <ConfirmationModal
+      :model-value="showSyncConfirmModal"
+      title="確認從範本同步"
+      message="確定要從範本同步架構嗎？"
+      details="此操作將會同步類別、主題和風險因子的架構資料。"
+      type="warning"
+      cancel-text="取消"
+      confirm-text="確認同步"
+      @update:model-value="(value) => showSyncConfirmModal = value"
+      @close="showSyncConfirmModal = false"
+      @confirm="confirmSyncFromTemplate"
+    />
   </div>
 </template>
 
@@ -1246,6 +1260,7 @@ const showEditModal = ref(false)
 const showDeleteModal = ref(false)
 const showCopyOptions = ref(false)
 const showPersonnelModal = ref(false)
+const showSyncConfirmModal = ref(false)
 
 // Question structure management
 const showQuestionStructureModal = ref(false)
@@ -2484,6 +2499,16 @@ const syncFromTemplate = async () => {
     return
   }
 
+  // 顯示確認對話框
+  showSyncConfirmModal.value = true
+}
+
+const confirmSyncFromTemplate = async () => {
+  if (!managingQuestion.value?.id) {
+    await showError('同步失敗', '找不到評估項目，請重新整理頁面後再試')
+    return
+  }
+
   try {
     // 使用新的 API 從範本同步架構
     const result = await syncStructureFromTemplate(managingQuestion.value.id)
@@ -2491,11 +2516,15 @@ const syncFromTemplate = async () => {
     // 重新載入架構資料
     await loadQuestionStructureData(managingQuestion.value.id)
 
+    // 關閉確認對話框
+    showSyncConfirmModal.value = false
+
     // 顯示成功訊息
     const syncedCounts = result?.data || {}
     const message = `已同步 ${syncedCounts.categories || 0} 個類別、${syncedCounts.topics || 0} 個主題、${syncedCounts.factors || 0} 個因子`
     await showSuccess('從範本同步成功', message)
   } catch (error) {
+    showSyncConfirmModal.value = false
     await showError('同步失敗', error?.message || '從範本同步架構時發生錯誤，請稍後再試')
   }
 }

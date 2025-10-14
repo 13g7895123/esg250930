@@ -135,12 +135,12 @@
                 <p
                   class="font-medium text-gray-900 dark:text-white cursor-help relative group"
                 >
-                  {{ truncateText(getFactorDescription(content.factorId), 10) || content.topic }}
+                  {{ truncateText(getFactorName(content.factorId), 10) || content.topic }}
                   <!-- Tooltip for full content with HTML rendering -->
                   <span
-                    v-if="stripHtml(getFactorDescription(content.factorId)).length > 10"
+                    v-if="stripHtml(getFactorName(content.factorId)).length > 10"
                     class="absolute left-0 top-full mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-[9999] min-w-[300px] max-w-[500px] whitespace-normal text-sm font-normal prose prose-sm dark:prose-invert max-w-none"
-                    v-html="getFactorDescription(content.factorId)"
+                    v-html="getFactorName(content.factorId)"
                   >
                   </span>
                 </p>

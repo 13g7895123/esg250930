@@ -278,125 +278,74 @@
         </div>
 
         <!-- Assignment History Tab -->
-        <div v-else-if="activeTab === 'history'" class="h-full flex flex-col">
-          <!-- Search and Filter -->
-          <div class="flex-shrink-0 p-4 border-b border-gray-100 dark:border-gray-700">
-            <div class="flex items-center space-x-4">
-              <div class="flex-1 relative">
-                <input
-                  v-model="historySearchQuery"
-                  type="text"
-                  placeholder="搜尋人員、部門或題項內容..."
-                  class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                />
-                <MagnifyingGlassIcon class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              </div>
-              <select
-                v-model="historyFilterBy"
-                class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              >
-                <option value="all">所有動作</option>
-                <option value="created">僅新增</option>
-                <option value="removed">僅移除</option>
-                <option value="updated">僅更新</option>
-              </select>
-            </div>
+        <div v-else-if="activeTab === 'history'" class="h-full overflow-y-auto p-4">
+          <div v-if="assignmentHistory.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+            <p>尚無指派紀錄</p>
+            <p class="text-sm mt-2">請先進行人員指派</p>
           </div>
-
-          <!-- Empty State -->
-          <div v-if="assignmentHistory.length === 0" class="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
-            <div class="text-center">
-              <p>尚無指派紀錄</p>
-              <p class="text-sm mt-2">請先進行人員指派</p>
-            </div>
-          </div>
-
-          <!-- History Cards -->
-          <div v-else class="flex-1 overflow-y-auto p-4 max-h-96">
-            <!-- No Results State -->
-            <div v-if="filteredHistory.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
-              <p>找不到符合條件的記錄</p>
-              <p class="text-sm mt-2">請嘗試調整搜尋條件</p>
-            </div>
-
-            <div v-else class="space-y-3">
-              <div
-                v-for="item in filteredHistory"
-                :key="item.id"
-                class="border border-gray-200 dark:border-gray-600 rounded-lg p-4"
-              >
-                <div class="flex items-start justify-between mb-3">
-                  <div class="flex-1">
-                    <div class="flex items-center gap-2 mb-2">
-                      <h5
-                        class="font-medium text-gray-900 dark:text-white cursor-help relative group"
-                      >
-                        {{ truncateText(getFactorDescription(item.factor_id), 10) || item.content_description }}
-                        <!-- Tooltip for full content with HTML rendering -->
-                        <span
-                          v-if="stripHtml(getFactorDescription(item.factor_id)).length > 10"
-                          class="absolute left-0 top-full mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible z-[9999] min-w-[300px] max-w-[500px] whitespace-normal text-sm font-normal prose prose-sm dark:prose-invert max-w-none"
-                          v-html="getFactorDescription(item.factor_id)"
-                        >
-                        </span>
-                      </h5>
-                      <BadgeWithTooltip
-                        :text="getCategoryName(item.category_id)"
-                        :truncate-length="6"
-                        variant="category"
-                      />
-                      <BadgeWithTooltip
-                        v-if="getTopicName(item.topic_id)"
-                        :text="getTopicName(item.topic_id)"
-                        :truncate-length="6"
-                        variant="topic"
-                      />
-                      <BadgeWithTooltip
-                        v-if="getFactorName(item.factor_id)"
-                        :text="getFactorName(item.factor_id)"
-                        :truncate-length="6"
-                        variant="factor"
-                      />
-                    </div>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      {{ item.content_description }}
-                    </p>
-                  </div>
-                  <div class="flex items-center space-x-2 ml-4">
-                    <span :class="[
-                      'px-2 py-1 text-xs rounded-full',
-                      item.action_type === 'created' ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400' :
-                      item.action_type === 'removed' ? 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400' :
-                      item.action_type === 'updated' ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400' :
-                      'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                    ]">
-                      {{ getActionTypeText(item.action_type) }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Action Info: Personnel and Timestamp -->
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center space-x-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-1">
-                    <div class="w-5 h-5 bg-blue-200 dark:bg-blue-700 rounded-full flex items-center justify-center">
-                      <span class="text-blue-700 dark:text-blue-300 font-medium text-xs">
-                        {{ item.personnel_name?.charAt(0) || '?' }}
-                      </span>
-                    </div>
-                    <span class="text-sm text-blue-900 dark:text-blue-200">
-                      {{ item.personnel_name }}
-                      <span v-if="item.personnel_department" class="text-blue-700 dark:text-blue-300">
-                        ({{ item.personnel_department }})
-                      </span>
-                    </span>
-                  </div>
-                  <span class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ formatDateTime(item.assigned_at) }}
+          <DataTable
+            v-else
+            :columns="historyColumns"
+            :data="assignmentHistory"
+            :searchable="true"
+            search-placeholder="搜尋人員或題項..."
+            :sortable="true"
+            :initial-sort-field="'assigned_at'"
+            :initial-sort-order="'desc'"
+          >
+            <template #cell-personnel_name="{ item }">
+              <div class="flex items-center space-x-2">
+                <div class="w-6 h-6 bg-primary-100 dark:bg-primary-900/20 rounded-full flex items-center justify-center">
+                  <span class="text-primary-600 dark:text-primary-400 font-medium text-xs">
+                    {{ item.personnel_name.charAt(0) }}
                   </span>
                 </div>
+                <span class="font-medium text-gray-900 dark:text-white">{{ item.personnel_name }}</span>
               </div>
-            </div>
-          </div>
+            </template>
+
+            <template #cell-content_description="{ item }">
+              <div>
+                <p class="font-medium text-gray-900 dark:text-white text-sm">
+                  {{ truncateText(getFactorDescription(item.factor_id), 20) || item.content_description }}
+                </p>
+                <div class="flex items-center gap-1 mt-1">
+                  <BadgeWithTooltip
+                    :text="getCategoryName(item.category_id)"
+                    variant="category"
+                  />
+                  <BadgeWithTooltip
+                    v-if="getTopicName(item.topic_id)"
+                    :text="getTopicName(item.topic_id)"
+                    variant="topic"
+                  />
+                  <BadgeWithTooltip
+                    v-if="getFactorName(item.factor_id)"
+                    :text="getFactorName(item.factor_id)"
+                    variant="factor"
+                  />
+                </div>
+              </div>
+            </template>
+
+            <template #cell-assignment_status="{ item }">
+              <span :class="[
+                'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
+                item.assignment_status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                item.assignment_status === 'accepted' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                item.assignment_status === 'declined' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+                'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+              ]">
+                {{ getStatusText(item.assignment_status) }}
+              </span>
+            </template>
+
+            <template #cell-assigned_at="{ item }">
+              <span class="text-sm text-gray-600 dark:text-gray-400">
+                {{ formatDateTime(item.assigned_at) }}
+              </span>
+            </template>
+          </DataTable>
         </div>
       </div>
     </div>
@@ -699,8 +648,6 @@ const searchQuery = ref('')
 const filterBy = ref('all')
 const activeTab = ref('assignments')
 const historyRecords = ref([])
-const historySearchQuery = ref('')
-const historyFilterBy = ref('all')
 
 // Loading state for current company
 const isLoadingPersonnel = computed(() => {
@@ -805,7 +752,7 @@ const assignmentHistory = computed(() => {
       factor_id: content?.factor_id || content?.factorId || content?.risk_factor_id,
       assignment_status: record.assignment_status,
       action_type: record.action_type,
-      assigned_at: record.action_at,
+      assigned_at: record.action_type === 'created' ? record.action_at : record.original_assigned_at,
       accepted_at: record.accepted_at,
       completed_at: record.completed_at
     }
@@ -815,32 +762,33 @@ const assignmentHistory = computed(() => {
   return result
 })
 
-// Filtered history based on search and action type
-const filteredHistory = computed(() => {
-  let filtered = assignmentHistory.value
-
-  // Apply search filter
-  if (historySearchQuery.value) {
-    const query = historySearchQuery.value.toLowerCase()
-    filtered = filtered.filter(item => {
-      const personnelMatch = item.personnel_name?.toLowerCase().includes(query) ||
-                            item.personnel_department?.toLowerCase().includes(query)
-      const contentMatch = getFactorName(item.factor_id)?.toLowerCase().includes(query) ||
-                          item.content_description?.toLowerCase().includes(query)
-      const categoryMatch = getCategoryName(item.category_id)?.toLowerCase().includes(query)
-      const topicMatch = getTopicName(item.topic_id)?.toLowerCase().includes(query)
-
-      return personnelMatch || contentMatch || categoryMatch || topicMatch
-    })
+const historyColumns = [
+  {
+    key: 'personnel_name',
+    label: '指派人員',
+    sortable: true
+  },
+  {
+    key: 'personnel_department',
+    label: '部門',
+    sortable: true
+  },
+  {
+    key: 'content_description',
+    label: '題項內容',
+    sortable: false
+  },
+  {
+    key: 'assignment_status',
+    label: '狀態',
+    sortable: true
+  },
+  {
+    key: 'assigned_at',
+    label: '指派時間',
+    sortable: true
   }
-
-  // Apply action type filter
-  if (historyFilterBy.value !== 'all') {
-    filtered = filtered.filter(item => item.action_type === historyFilterBy.value)
-  }
-
-  return filtered
-})
+]
 
 // Debug data for troubleshooting category display issues
 const debugData = computed(() => {
@@ -1056,15 +1004,6 @@ const getStatusText = (status) => {
     'completed': '已完成'
   }
   return statusMap[status] || status
-}
-
-const getActionTypeText = (actionType) => {
-  const actionTypeMap = {
-    'created': '新增',
-    'removed': '移除',
-    'updated': '更新'
-  }
-  return actionTypeMap[actionType] || actionType
 }
 
 const formatDateTime = (dateTime) => {

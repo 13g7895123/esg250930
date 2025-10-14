@@ -2078,6 +2078,7 @@ class QuestionManagementController extends BaseController
                 'data' => [
                     'assessment' => [
                         'id' => $assessment['id'],
+                        'company_id' => $assessment['company_id'],
                         'template_version' => $assessment['template_version'] ?? '預設範本',
                         'year' => $assessment['assessment_year'] ?? date('Y')
                     ],
