@@ -278,7 +278,7 @@
         </div>
 
         <!-- Assignment History Tab -->
-        <div v-else-if="activeTab === 'history'" class="h-full overflow-y-auto p-4">
+        <div v-else-if="activeTab === 'history'" class="max-h-96 overflow-y-auto p-4">
           <div v-if="assignmentHistory.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
             <p>尚無指派紀錄</p>
             <p class="text-sm mt-2">請先進行人員指派</p>
@@ -300,7 +300,12 @@
                     {{ item.personnel_name.charAt(0) }}
                   </span>
                 </div>
-                <span class="font-medium text-gray-900 dark:text-white">{{ item.personnel_name }}</span>
+                <div>
+                  <div class="font-medium text-gray-900 dark:text-white">{{ item.personnel_name }}</div>
+                  <div v-if="item.personnel_department" class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ item.personnel_department }}
+                  </div>
+                </div>
               </div>
             </template>
 
@@ -328,15 +333,15 @@
               </div>
             </template>
 
-            <template #cell-assignment_status="{ item }">
+            <template #cell-action_type="{ item }">
               <span :class="[
                 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
-                item.assignment_status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                item.assignment_status === 'accepted' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                item.assignment_status === 'declined' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+                item.action_type === 'created' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                item.action_type === 'removed' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+                item.action_type === 'updated' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
                 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
               ]">
-                {{ getStatusText(item.assignment_status) }}
+                {{ getActionTypeText(item.action_type) }}
               </span>
             </template>
 
@@ -769,18 +774,13 @@ const historyColumns = [
     sortable: true
   },
   {
-    key: 'personnel_department',
-    label: '部門',
-    sortable: true
-  },
-  {
     key: 'content_description',
     label: '題項內容',
     sortable: false
   },
   {
-    key: 'assignment_status',
-    label: '狀態',
+    key: 'action_type',
+    label: '動作',
     sortable: true
   },
   {
@@ -1004,6 +1004,15 @@ const getStatusText = (status) => {
     'completed': '已完成'
   }
   return statusMap[status] || status
+}
+
+const getActionTypeText = (actionType) => {
+  const actionTypeMap = {
+    'created': '新增',
+    'removed': '移除',
+    'updated': '更新'
+  }
+  return actionTypeMap[actionType] || actionType
 }
 
 const formatDateTime = (dateTime) => {
