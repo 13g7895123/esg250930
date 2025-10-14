@@ -36,12 +36,26 @@ export const useSettingsStore = defineStore('settings', () => {
     // 題項管理項目
     let questionManagementItem = { name: '題項管理' }
 
-    // 如果有 company_agent 群組且有 companyId，連結到 /web 路徑
-    if (hasCompanyAgent && companyId) {
-      questionManagementItem.href = `/web/risk-assessment/questions/${companyId}/management`
+    // 根據路徑、群組和資料決定連結
+    if (isWebPath) {
+      // 在 /web 路徑下
+      if (hasCompanyAgent && companyId) {
+        // 有 company_agent 群組：導到管理頁面
+        questionManagementItem.href = `/web/risk-assessment/questions/${companyId}/management`
+      } else if (companyId && externalUserStore.latestAssignedQuestionId) {
+        // 沒有 company_agent 群組：導到內容頁面（使用最新被指派的題項ID）
+        questionManagementItem.href = `/web/risk-assessment/questions/${companyId}/management/${externalUserStore.latestAssignedQuestionId}/content`
+      } else {
+        // 沒有必要資料：暫時導到管理頁面
+        questionManagementItem.href = companyId ? `/web/risk-assessment/questions/${companyId}/management` : '/admin/risk-assessment/questions'
+      }
     } else {
-      // 否則連結到 /admin 路徑
-      questionManagementItem.href = '/admin/risk-assessment/questions'
+      // 在 /admin 路徑下：保持原有邏輯
+      if (hasCompanyAgent && companyId) {
+        questionManagementItem.href = `/web/risk-assessment/questions/${companyId}/management`
+      } else {
+        questionManagementItem.href = '/admin/risk-assessment/questions'
+      }
     }
 
     menuItems[0].children.push(questionManagementItem)

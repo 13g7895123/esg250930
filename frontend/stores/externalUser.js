@@ -68,6 +68,9 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     return internalCompanyId.value
   })
 
+  // 最新被指派的題項ID
+  const latestAssignedQuestionId = ref(null)
+
   // 查詢 external_personnel 表獲取內部用戶ID
   const fetchInternalUserId = async (extId) => {
     if (!extId) return null
@@ -167,6 +170,43 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     }
   }
 
+  // 查詢使用者被指派的最新年度題項ID
+  const fetchLatestAssignedQuestion = async () => {
+    // 需要有 userId 和 companyId
+    if (!internalUserId.value || !internalCompanyId.value) {
+      console.log('❌ 缺少 userId 或 companyId，無法查詢最新被指派題項')
+      return null
+    }
+
+    try {
+      console.log('=== 查詢最新被指派題項 ===')
+      console.log('User ID:', internalUserId.value)
+      console.log('Company ID:', internalCompanyId.value)
+
+      // 調用後端API查詢使用者被指派的最新年度題項
+      const response = await $fetch('/api/v1/personnel-assignments/latest-assigned-question', {
+        method: 'POST',
+        body: {
+          user_id: internalUserId.value,
+          company_id: internalCompanyId.value
+        }
+      })
+
+      if (response.success && response.data) {
+        const questionId = response.data.question_id
+        console.log('✅ 查詢到最新被指派題項ID:', questionId)
+        return questionId
+      } else {
+        console.log('⚠️ 未找到被指派的題項')
+        return null
+      }
+
+    } catch (error) {
+      console.error('❌ 查詢最新被指派題項失敗:', error)
+      return null
+    }
+  }
+
   // 設定用戶資訊
   const setUserInfo = async (data, tokenValue = null) => {
     userInfo.value = data
@@ -227,6 +267,18 @@ export const useExternalUserStore = defineStore('externalUser', () => {
       }
     }
 
+    // 查詢並設置最新被指派的題項ID
+    if (internalUserId.value && internalCompanyId.value) {
+      try {
+        const questionId = await fetchLatestAssignedQuestion()
+        latestAssignedQuestionId.value = questionId
+        console.log('設置最新被指派題項ID (latestAssignedQuestionId):', latestAssignedQuestionId.value)
+      } catch (error) {
+        console.error('查詢最新被指派題項時發生錯誤，但不影響頁面載入:', error)
+        // 不拋出錯誤，允許頁面繼續載入
+      }
+    }
+
     console.log('最後更新:', lastUpdated.value)
   }
 
@@ -236,6 +288,7 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     token.value = null
     internalUserId.value = null
     internalCompanyId.value = null
+    latestAssignedQuestionId.value = null
     isLoaded.value = false
     lastUpdated.value = null
 
@@ -341,6 +394,7 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     externalId, // 外部用戶ID（從 token 解密後的 user_id）
     userId, // 內部用戶ID（查詢 external_personnel 表獲得）
     group, // 用戶所屬群組名稱陣列
+    latestAssignedQuestionId: readonly(latestAssignedQuestionId), // 最新被指派的題項ID
 
     // 方法
     setUserInfo,
@@ -348,11 +402,12 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     fetchExternalUserData,
     fetchInternalUserId,
     fetchInternalCompanyId,
+    fetchLatestAssignedQuestion,
     updateUserInfo
   }
 }, {
   persist: {
     storage: typeof window !== 'undefined' ? sessionStorage : undefined, // 使用 sessionStorage（當前瀏覽器分頁有效）
-    pick: ['userInfo', 'token', 'internalUserId', 'internalCompanyId', 'isLoaded', 'lastUpdated'] // 持久化用戶相關字段
+    pick: ['userInfo', 'token', 'internalUserId', 'internalCompanyId', 'latestAssignedQuestionId', 'isLoaded', 'lastUpdated'] // 持久化用戶相關字段
   }
 })

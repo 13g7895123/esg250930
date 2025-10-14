@@ -396,6 +396,9 @@ $routes->group('api/v1/personnel', function($routes) {
     $routes->options('assignments/(:num)/status', function() {
         return service('response')->setStatusCode(200);
     });
+    $routes->options('personnel-assignments/latest-assigned-question', function() {
+        return service('response')->setStatusCode(200);
+    });
 
     // Personnel Assignment Management routes
     $routes->get('companies/(:num)/personnel-assignments', 'Api\V1\PersonnelAssignmentController::getPersonnelByCompany/$1');
@@ -414,6 +417,9 @@ $routes->group('api/v1/personnel', function($routes) {
     $routes->get('companies/(:num)/assessments/(:num)/contents/(:segment)/history', 'Api\V1\PersonnelAssignmentController::getContentHistory/$1/$2/$3');
     $routes->get('companies/(:num)/assessments/(:num)/personnel/(:num)/history', 'Api\V1\PersonnelAssignmentController::getPersonnelHistory/$1/$2/$3');
     $routes->get('companies/(:num)/assessments/(:num)/history/statistics', 'Api\V1\PersonnelAssignmentController::getHistoryStatistics/$1/$2');
+
+    // Latest Assigned Question route
+    $routes->post('personnel-assignments/latest-assigned-question', 'Api\V1\PersonnelAssignmentController::getLatestAssignedQuestion');
 });
 
 // V1 External Personnel API Routes

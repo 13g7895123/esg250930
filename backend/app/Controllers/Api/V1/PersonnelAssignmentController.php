@@ -981,4 +981,69 @@ class PersonnelAssignmentController extends ResourceController
             return $this->failServerError('取得歷史統計時發生錯誤');
         }
     }
+
+    /**
+     * 取得使用者被指派的最新年度題項ID
+     * POST /api/v1/personnel-assignments/latest-assigned-question
+     */
+    public function getLatestAssignedQuestion()
+    {
+        try {
+            $data = $this->request->getJSON(true);
+
+            // 驗證必填欄位
+            if (empty($data['user_id']) || empty($data['company_id'])) {
+                return $this->fail('user_id 和 company_id 為必填參數', 400);
+            }
+
+            $userId = (int)$data['user_id'];
+            $companyId = (int)$data['company_id'];
+
+            log_message('info', "查詢最新被指派題項 - User ID: {$userId}, Company ID: {$companyId}");
+
+            // 查詢該使用者被指派的所有評估
+            // 按年度排序，取最新的一筆
+            $db = \Config\Database::connect();
+
+            // 先查詢 company_assessments 表取得最新年度的評估
+            $query = $db->table('company_assessments ca')
+                ->select('ca.id as assessment_id, ca.year, ca.company_id')
+                ->join('personnel_assignments pa', 'pa.company_assessment_id = ca.id', 'inner')
+                ->where('pa.personnel_id', $userId)
+                ->where('ca.company_id', $companyId)
+                ->where('pa.assignment_status', 'assigned')
+                ->orderBy('ca.year', 'DESC')
+                ->orderBy('ca.created_at', 'DESC')
+                ->limit(1)
+                ->get();
+
+            $result = $query->getRowArray();
+
+            if (!$result) {
+                log_message('info', "未找到使用者被指派的評估");
+                return $this->respond([
+                    'success' => false,
+                    'data' => null,
+                    'message' => '未找到被指派的評估'
+                ]);
+            }
+
+            $assessmentId = $result['assessment_id'];
+            log_message('info', "找到最新評估 ID: {$assessmentId}, 年度: {$result['year']}");
+
+            return $this->respond([
+                'success' => true,
+                'data' => [
+                    'question_id' => $assessmentId,
+                    'year' => $result['year'],
+                    'company_id' => $result['company_id']
+                ],
+                'message' => '成功取得最新被指派題項'
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error in getLatestAssignedQuestion: ' . $e->getMessage());
+            return $this->failServerError('取得最新被指派題項時發生錯誤: ' . $e->getMessage());
+        }
+    }
 }
