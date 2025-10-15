@@ -1855,7 +1855,14 @@ const saveQuestionFactor = async () => {
     } else {
       // 建立新因子
       const result = await createFactor(managingQuestion.value.id, data)
-      createdFactor = result
+      console.log('=== createFactor result ===', result)
+
+      // result 的結構是 { success: true, message: '...', data: { id, factor_name, ... } }
+      // 所以實際的 factor 資料在 result.data
+      const factorData = result.data || result
+      createdFactor = factorData
+
+      console.log('=== Factor data extracted ===', factorData)
 
       // 新增風險因子後，自動新增對應的題目
       if (createdFactor && createdFactor.id) {
@@ -1882,6 +1889,8 @@ const saveQuestionFactor = async () => {
             contentData
           )
 
+          console.log('=== createContent result ===', contentResult)
+
           if (contentResult.success) {
             console.log('✅ 題目新增成功:', contentResult.data)
           } else {
@@ -1890,8 +1899,12 @@ const saveQuestionFactor = async () => {
           }
         } catch (contentError) {
           console.error('❌ 新增題目時發生錯誤:', contentError)
+          console.error('Error details:', contentError)
           // 不拋出錯誤，讓風險因子創建成功的通知仍然顯示
         }
+      } else {
+        console.warn('⚠️ 無法取得 factor ID，跳過題目創建')
+        console.log('createdFactor:', createdFactor)
       }
     }
 
