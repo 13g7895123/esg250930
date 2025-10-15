@@ -120,7 +120,7 @@ class QuestionResponseModel extends Model
         'notes' => 'permit_empty',
         'evidence_files' => 'permit_empty|valid_json',
         'answered_by' => 'permit_empty|integer',
-        'review_status' => 'permit_empty|in_list[pending,approved,rejected]',
+        'review_status' => 'permit_empty|in_list[not_filled,pending,rejected,completed]',
         'reviewed_by' => 'permit_empty|integer'
     ];
 
@@ -149,7 +149,7 @@ class QuestionResponseModel extends Model
             'integer' => '回答人員ID必須為整數'
         ],
         'review_status' => [
-            'in_list' => '審核狀態必須為：pending、approved、rejected 之一'
+            'in_list' => '審核狀態必須為：not_filled、pending、rejected、completed 之一'
         ],
         'reviewed_by' => [
             'integer' => '審核人員ID必須為整數'
@@ -352,7 +352,7 @@ class QuestionResponseModel extends Model
             'evidence_files' => $evidenceFiles ? json_encode($evidenceFiles) : null,
             'answered_at' => date('Y-m-d H:i:s'),
             'answered_by' => $answeredBy,
-            'review_status' => 'pending' // 預設為待審核
+            'review_status' => 'not_filled' // 預設為未填寫
         ];
 
         // 處理回答值 - 將其分離到各個欄位

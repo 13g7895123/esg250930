@@ -74,8 +74,7 @@
 
         <!-- Actions Cell -->
         <template #cell-actions="{ item }">
-          <div class="flex items-center gap-2">
-            <!-- View Response Button - Direct Navigation -->
+          <div class="flex items-center justify-center">
             <div class="relative group">
               <button
                 @click="viewUserResponse(item.content_id, item.user_id, item.user_name)"
@@ -94,31 +93,33 @@
         <!-- Question Content Cell (Factor + Category/Topic) -->
         <template #cell-question_content="{ item }">
           <div class="py-2 flex flex-wrap gap-2 items-center">
-            <!-- Category Badge -->
-            <BadgeWithTooltip
-              v-if="item.category_name"
-              :text="item.category_name"
-              variant="category"
-              :truncate-length="6"
-            />
-
-            <!-- Topic Badge -->
-            <BadgeWithTooltip
-              v-if="item.topic_name"
-              :text="item.topic_name"
-              variant="topic"
-              :truncate-length="6"
-            />
-            <span v-else-if="!item.topic_name && item.category_name" class="text-gray-400 dark:text-gray-500 italic text-xs">未設定主題</span>
-
-            <!-- Factor Badge -->
-            <BadgeWithTooltip
-              v-if="item.factor_name"
-              :text="item.factor_name"
-              variant="factor"
-              :truncate-length="6"
-            />
+            <!-- Factor Name as Text -->
+            <span v-if="item.factor_name" class="text-sm font-medium text-gray-900 dark:text-white">
+              {{ item.factor_name }}
+            </span>
             <span v-else class="text-gray-400 dark:text-gray-500 italic text-xs">未命名題目</span>
+
+            <!-- Category Badge without Icon -->
+            <div v-if="item.category_name" class="relative group">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 cursor-pointer">
+                {{ item.category_name.length > 8 ? item.category_name.substring(0, 8) + '...' : item.category_name }}
+              </span>
+              <div v-if="item.category_name.length > 8" class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                {{ item.category_name }}
+                <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+              </div>
+            </div>
+
+            <!-- Topic Badge without Icon -->
+            <div v-if="item.topic_name" class="relative group">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 cursor-pointer">
+                {{ item.topic_name.length > 8 ? item.topic_name.substring(0, 8) + '...' : item.topic_name }}
+              </span>
+              <div v-if="item.topic_name.length > 8" class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                {{ item.topic_name }}
+                <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+              </div>
+            </div>
           </div>
         </template>
 
@@ -137,16 +138,21 @@
         <!-- Status Cell (Only indicator, no text) -->
         <template #cell-status="{ item }">
           <div class="flex justify-center">
-            <!-- Status Indicator - Using review_status based logic -->
-            <div
-              class="w-3 h-3 rounded-full"
-              :class="{
-                'bg-green-500': item.status === 'completed',
-                'bg-red-500': item.status === 'pending',
-                'bg-gray-400': item.status === 'not_started'
-              }"
-              :title="getStatusText(item.status)"
-            ></div>
+            <div class="relative group">
+              <div
+                class="w-3 h-3 rounded-full cursor-pointer"
+                :class="{
+                  'bg-gray-400': !item.status || item.status === 'not_started',
+                  'bg-yellow-500': item.status === 'pending',
+                  'bg-red-500': item.status === 'rejected',
+                  'bg-green-500': item.status === 'completed'
+                }"
+              ></div>
+              <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 dark:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                {{ getStatusText(item.status) }}
+                <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+              </div>
+            </div>
           </div>
         </template>
 
@@ -194,7 +200,6 @@ import {
   UsersIcon
 } from '@heroicons/vue/24/outline'
 import DataTable from '~/components/DataTable.vue'
-import BadgeWithTooltip from '~/components/BadgeWithTooltip.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -278,11 +283,12 @@ const columns = [
 
 const getStatusText = (status) => {
   const statusMap = {
-    'completed': '已完成',
-    'pending': '待更新',
-    'not_started': '未開始'
+    'not_filled': '未填寫',
+    'pending': '待審核',
+    'rejected': '拒絕',
+    'completed': '完成'
   }
-  return statusMap[status] || '未知'
+  return statusMap[status] || '未填寫'
 }
 
 const formatDateTime = (dateTimeString) => {

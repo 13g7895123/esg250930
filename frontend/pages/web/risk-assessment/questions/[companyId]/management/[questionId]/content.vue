@@ -672,32 +672,45 @@ const getMappingStatusClass = (item) => {
 
 // Response status indicator functions
 const getResponseStatus = (item) => {
-  if (item.response_count > 0) {
-    return {
-      color: 'yellow',
-      label: '已提交',
-      description: '使用者已提交答案'
-    }
-  } else {
-    return {
+  const reviewStatus = item.review_status || 'not_filled'
+
+  const statusMap = {
+    'not_filled': {
       color: 'gray',
-      label: '未作答',
-      description: '尚未開始作答'
+      label: '未填寫',
+      description: '尚未開始填寫'
+    },
+    'pending': {
+      color: 'yellow',
+      label: '待審核',
+      description: '使用者已送出，等待審核'
+    },
+    'rejected': {
+      color: 'red',
+      label: '拒絕',
+      description: '已被拒絕，需要修改'
+    },
+    'completed': {
+      color: 'green',
+      label: '完成',
+      description: '已審核通過'
     }
   }
+
+  return statusMap[reviewStatus] || statusMap['not_filled']
 }
 
 const getResponseStatusClass = (item) => {
   const status = getResponseStatus(item)
 
-  switch (status.color) {
-    case 'yellow':
-      return 'bg-yellow-400 dark:bg-yellow-500'
-    case 'gray':
-      return 'bg-gray-300 dark:bg-gray-600'
-    default:
-      return 'bg-gray-300 dark:bg-gray-600'
+  const colorMap = {
+    'gray': 'bg-gray-400 dark:bg-gray-500',
+    'yellow': 'bg-yellow-500 dark:bg-yellow-400',
+    'red': 'bg-red-500 dark:bg-red-400',
+    'green': 'bg-green-500 dark:bg-green-400'
   }
+
+  return colorMap[status.color] || 'bg-gray-400 dark:bg-gray-500'
 }
 
 // Page title will be set after companyName is resolved
@@ -765,6 +778,7 @@ const loadQuestionData = async () => {
         description: item.factor_description || '',  // 從 question_factors.description 欄位取得
         order: item.sort_order || 0,
         response_count: item.response_count || 0,
+        review_status: item.review_status || 'not_filled',  // 新增 review_status 欄位
         category_name: item.category_name || '',
         topic_name: item.topic_name || '',
         factor_name: item.factor_name || ''
