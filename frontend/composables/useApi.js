@@ -276,6 +276,8 @@ export const useApi = () => {
     // Contents
     getContent: async (contentId) =>
       await get(`/question-management/contents/${contentId}`),
+    createContent: async (assessmentId, data) =>
+      await post(`/question-management/assessment/${assessmentId}/contents`, data),
     updateContent: async (contentId, data) =>
       await put(`/question-management/contents/${contentId}`, data),
   }

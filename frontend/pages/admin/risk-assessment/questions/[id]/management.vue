@@ -1847,12 +1847,52 @@ const saveQuestionFactor = async () => {
   }
 
   try {
+    let createdFactor = null
+
     if (data.id) {
       // 更新現有因子
       await updateFactor(data.id, data)
     } else {
       // 建立新因子
-      await createFactor(managingQuestion.value.id, data)
+      const result = await createFactor(managingQuestion.value.id, data)
+      createdFactor = result
+
+      // 新增風險因子後，自動新增對應的題目
+      if (createdFactor && createdFactor.id) {
+        try {
+          console.log('=== 自動新增題目 ===')
+          console.log('Factor ID:', createdFactor.id)
+          console.log('Factor Data:', createdFactor)
+
+          // 準備題目資料
+          const contentData = {
+            category_id: createdFactor.category_id,
+            topic_id: createdFactor.topic_id,
+            factor_id: createdFactor.id,
+            is_required: 1,  // 預設為必填
+            factorDescription: data.description  // 同步描述
+          }
+
+          console.log('Creating content with data:', contentData)
+
+          // 調用 API 新增題目
+          const api = useApi()
+          const contentResult = await api.questionManagement.createContent(
+            managingQuestion.value.id,
+            contentData
+          )
+
+          if (contentResult.success) {
+            console.log('✅ 題目新增成功:', contentResult.data)
+          } else {
+            console.error('❌ 題目新增失敗:', contentResult.error)
+            // 不拋出錯誤，讓風險因子創建成功的通知仍然顯示
+          }
+        } catch (contentError) {
+          console.error('❌ 新增題目時發生錯誤:', contentError)
+          // 不拋出錯誤，讓風險因子創建成功的通知仍然顯示
+        }
+      }
     }
 
     // 重新載入資料
@@ -1864,7 +1904,9 @@ const saveQuestionFactor = async () => {
     // 顯示成功通知
     await showSuccess(
       isEditing ? '更新成功' : '新增成功',
-      `風險因子「${data.factor_name}」已成功${isEditing ? '更新' : '建立'}`
+      isEditing
+        ? `風險因子「${data.factor_name}」已成功更新`
+        : `風險因子「${data.factor_name}」及對應題目已成功建立`
     )
   } catch (error) {
     // 顯示錯誤通知
