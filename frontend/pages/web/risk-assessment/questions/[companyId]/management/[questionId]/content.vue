@@ -453,6 +453,7 @@
 </template>
 
 <script setup>
+import { nextTick } from 'vue'
 import { ArrowPathIcon, DocumentTextIcon, CodeBracketIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 
 definePageMeta({
@@ -723,10 +724,14 @@ watch(companyName, (newValue) => {
 // Load data from database API only with user filtering
 const loadQuestionData = async () => {
   try {
-    console.log('=== Starting loadQuestionData ===')
+    // 等待 store 完全恢復（防止從其他地方調用時 store 資料未就緒）
+    await nextTick()
+
+    console.log('=== loadQuestionData 資料檢查 ===')
     console.log('Question ID:', questionId)
-    console.log('User ID:', externalUserStore.userId)
-    console.log('External ID:', externalUserStore.externalId)
+    console.log('Store userId:', externalUserStore.userId)
+    console.log('Store externalId:', externalUserStore.externalId)
+    console.log('Store isLoaded:', externalUserStore.isLoaded)
 
     // Check if questionId is valid before making API call
     if (isNaN(questionId) || questionId <= 0) {
@@ -1070,15 +1075,33 @@ const debugPersonnelSync = async () => {
 
 
 onMounted(async () => {
+  // 等待下一個 tick，確保 Pinia persist 已恢復資料
+  await nextTick()
+
+  console.log('=== onMounted 資料檢查 ===')
+  console.log('Token:', token.value)
+  console.log('Store userId:', externalUserStore.userId)
+  console.log('Store externalId:', externalUserStore.externalId)
+  console.log('Store isLoaded:', externalUserStore.isLoaded)
+
   // 優先調用用戶資料解密 API 並儲存到 Pinia Store
   if (token.value) {
     try {
       await externalUserStore.fetchExternalUserData(token.value)
+      console.log('✅ Token 驗證成功，用戶資料已更新')
     } catch (error) {
-      console.error('Failed to fetch external user data:', error)
+      console.error('❌ Failed to fetch external user data:', error)
       // 即使用戶資料載入失敗，仍繼續載入頁面
       // 可選：顯示友善的錯誤提示
     }
+  } else if (!externalUserStore.isLoaded) {
+    // 沒有 token 且 store 未載入，可能是首次訪問或 sessionStorage 被清除
+    console.warn('⚠️ 沒有 token 且 store 未載入，將顯示所有資料（無篩選）')
+  } else {
+    // 沒有 token 但 store 已載入（從 sessionStorage 恢復）
+    console.log('✅ 從 sessionStorage 恢復用戶資料，將使用篩選')
+    console.log('恢復的 userId:', externalUserStore.userId)
+    console.log('恢復的 externalId:', externalUserStore.externalId)
   }
 
   try {
