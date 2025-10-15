@@ -615,6 +615,15 @@
           </div>
         </template>
 
+        <!-- Custom Category Name Cell with TextWithTooltip (using teleport) -->
+        <template #cell-category_name="{ item }">
+          <TextWithTooltip
+            :text="item.category_name || '-'"
+            :truncate-length="6"
+            custom-class="text-base font-medium text-gray-900 dark:text-white"
+          />
+        </template>
+
         <!-- Custom Description Cell with HTML rendering and truncation -->
         <template #cell-description="{ item }">
           <HtmlTooltip
@@ -711,6 +720,15 @@
               <TrashIcon class="w-4 h-4" />
             </button>
           </div>
+        </template>
+
+        <!-- Custom Topic Name Cell with TextWithTooltip (using teleport) -->
+        <template #cell-topic_name="{ item }">
+          <TextWithTooltip
+            :text="item.topic_name || '-'"
+            :truncate-length="6"
+            custom-class="text-base font-medium text-gray-900 dark:text-white"
+          />
         </template>
 
         <!-- Custom Description Cell with HTML rendering and truncation -->
@@ -1132,6 +1150,7 @@ import {
 } from '@heroicons/vue/24/outline'
 
 import HtmlTooltip from '~/components/HtmlTooltip.vue'
+import TextWithTooltip from '~/components/TextWithTooltip.vue'
 import RichTextEditor from '~/components/RichTextEditor.vue'
 import * as XLSX from 'xlsx'
 

@@ -424,8 +424,12 @@ class QuestionContentModel extends Model
                 SELECT DISTINCT
                     qc.*,
                     cat.category_name,
+                    cat.sort_order AS category_sort_order,
                     top.topic_name,
+                    top.sort_order AS topic_sort_order,
                     fac.factor_name,
+                    fac.description AS factor_description,
+                    fac.sort_order AS factor_sort_order,
                     (SELECT COUNT(*) FROM question_responses WHERE question_content_id = qc.id) as response_count
                 FROM question_contents qc
                 INNER JOIN personnel_assignments pa ON pa.question_content_id = qc.id
@@ -436,7 +440,7 @@ class QuestionContentModel extends Model
                 WHERE qc.assessment_id = ?
                 AND pa.personnel_id = ?
                 AND pa.assignment_status != 'declined'
-                ORDER BY cat.sort_order ASC, top.sort_order ASC, fac.sort_order ASC, qc.sort_order ASC, qc.id ASC
+                ORDER BY category_sort_order ASC, topic_sort_order ASC, factor_sort_order ASC, qc.sort_order ASC, qc.id ASC
             ";
 
             $results = $this->db->query($sql, [$assessmentId, $userId])->getResultArray();

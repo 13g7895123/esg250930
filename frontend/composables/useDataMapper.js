@@ -34,25 +34,34 @@ export const useDataMapper = () => {
         '',
 
       // ===== Section C: 風險事件 =====
+      // 支援 camelCase (from response_value) 和 snake_case (from database columns)
       hasRiskEvent:
-        apiData.has_risk_event !== undefined && apiData.has_risk_event !== null
+        apiData.riskEventChoice !== undefined && apiData.riskEventChoice !== null
+          ? apiData.riskEventChoice
+          : apiData.has_risk_event !== undefined && apiData.has_risk_event !== null
           ? apiData.has_risk_event
           : '',
       riskEventDescription:
+        apiData.riskEventDescription ||
         apiData.c_placeholder ||
         apiData.risk_event_description ||
         '',
 
       // ===== Section D: 對應作為 =====
+      // 支援 camelCase (from response_value) 和 snake_case (from database columns)
       hasCounterAction:
-        apiData.has_counter_action !== undefined && apiData.has_counter_action !== null
+        apiData.counterActionChoice !== undefined && apiData.counterActionChoice !== null
+          ? apiData.counterActionChoice
+          : apiData.has_counter_action !== undefined && apiData.has_counter_action !== null
           ? apiData.has_counter_action
           : '',
       counterActionDescription:
+        apiData.counterActionDescription ||
         apiData.d_placeholder_1 ||
         apiData.counter_action_description ||
         '',
       counterActionCost:
+        apiData.counterActionCost ||
         apiData.d_placeholder_2 ||
         apiData.counter_action_cost ||
         '',
@@ -178,12 +187,17 @@ export const useDataMapper = () => {
       reference_text: formData.referenceText,
 
       // ===== Section C: 風險事件 (雙重對應) =====
+      riskEventChoice: formData.hasRiskEvent,
       has_risk_event: formData.hasRiskEvent,
+      riskEventDescription: formData.riskEventDescription,
       c_placeholder: formData.riskEventDescription,
       risk_event_description: formData.riskEventDescription,
 
       // ===== Section D: 對應作為 (雙重對應) =====
+      counterActionChoice: formData.hasCounterAction,
       has_counter_action: formData.hasCounterAction,
+      counterActionDescription: formData.counterActionDescription,
+      counterActionCost: formData.counterActionCost,
       d_placeholder_1: formData.counterActionDescription,
       counter_action_description: formData.counterActionDescription,
       d_placeholder_2: formData.counterActionCost,

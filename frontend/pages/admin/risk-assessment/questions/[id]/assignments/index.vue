@@ -8,18 +8,14 @@
       :back-path="assessmentInfo.company_id ? `/admin/risk-assessment/questions/${assessmentInfo.company_id}/management` : '/admin/risk-assessment/questions'"
     >
       <template #actions>
-        <div v-if="assessmentStats" class="flex items-center space-x-4">
+        <div v-if="statistics" class="flex items-center space-x-4">
           <div class="text-center">
-            <div class="text-2xl font-bold text-green-600">{{ assessmentStats.completed }}</div>
-            <div class="text-sm text-gray-500">已完成</div>
+            <div class="text-2xl font-bold text-blue-600">{{ statistics.total_questions }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">總題數</div>
           </div>
           <div class="text-center">
-            <div class="text-2xl font-bold text-yellow-600">{{ assessmentStats.in_progress }}</div>
-            <div class="text-sm text-gray-500">進行中</div>
-          </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-gray-600">{{ assessmentStats.not_started }}</div>
-            <div class="text-sm text-gray-500">未開始</div>
+            <div class="text-2xl font-bold text-purple-600">{{ statistics.total_assigned_users }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">指派人數</div>
           </div>
         </div>
       </template>
@@ -48,17 +44,18 @@
       </div>
     </div>
 
-    <!-- Assignment Status Table -->
-    <div v-else-if="assignments && assignments.length > 0" class="relative z-0">
+    <!-- Questions DataTable -->
+    <div v-else-if="expandedQuestions && expandedQuestions.length > 0" class="space-y-4">
       <DataTable
-        :data="assignments"
+        :data="expandedQuestions"
         :columns="columns"
-        search-placeholder="搜尋人員姓名..."
-        :search-fields="['user_name']"
-        empty-title="尚無指派人員"
-        empty-message="此評估表尚未指派給任何人員"
-        no-search-results-title="沒有找到符合的人員"
+        search-placeholder="搜尋風險因子或人員名稱..."
+        :search-fields="['factor_name', 'user_name', 'department']"
+        empty-title="尚無指派題目"
+        empty-message="此評估表尚未有任何題目被指派"
+        no-search-results-title="沒有找到符合的題目"
         no-search-results-message="請嘗試其他搜尋關鍵字"
+        :page-size="20"
       >
         <!-- Actions Slot - Refresh Button -->
         <template #actions>
@@ -74,36 +71,14 @@
             {{ loading ? '重新整理中...' : '重新整理' }}
           </button>
         </template>
-        <!-- Question Content Cell -->
-        <template #cell-question_content="{ item }">
-          <div class="text-sm">
-            <span class="font-medium">{{ item.completed_questions || 0 }}</span>
-            <span class="text-gray-500 dark:text-gray-400"> / {{ item.total_questions || 0 }}</span>
-            <span class="text-gray-400 dark:text-gray-500 ml-1 text-xs">題</span>
-          </div>
-        </template>
-
-        <!-- Status Cell -->
-        <template #cell-status="{ item }">
-          <span
-            :class="{
-              'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400': item.status === 'completed',
-              'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400': item.status === 'in_progress',
-              'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400': item.status === 'not_started'
-            }"
-            class="px-2 py-1 rounded-full text-xs font-medium"
-          >
-            {{ getStatusText(item.status) }}
-          </span>
-        </template>
 
         <!-- Actions Cell -->
         <template #cell-actions="{ item }">
-          <div class="flex items-center space-x-2">
-            <!-- View Results -->
+          <div class="flex items-center gap-2">
+            <!-- View Response Button - Direct Navigation -->
             <div class="relative group">
               <button
-                @click="viewResults(item)"
+                @click="viewUserResponse(item.content_id, item.user_id, item.user_name)"
                 class="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors duration-200"
               >
                 <EyeIcon class="w-4 h-4" />
@@ -113,6 +88,79 @@
                 <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
               </div>
             </div>
+          </div>
+        </template>
+
+        <!-- Question Content Cell (Factor + Category/Topic) -->
+        <template #cell-question_content="{ item }">
+          <div class="py-2 flex flex-wrap gap-2 items-center">
+            <!-- Category Badge -->
+            <BadgeWithTooltip
+              v-if="item.category_name"
+              :text="item.category_name"
+              variant="category"
+              :truncate-length="6"
+            />
+
+            <!-- Topic Badge -->
+            <BadgeWithTooltip
+              v-if="item.topic_name"
+              :text="item.topic_name"
+              variant="topic"
+              :truncate-length="6"
+            />
+            <span v-else-if="!item.topic_name && item.category_name" class="text-gray-400 dark:text-gray-500 italic text-xs">未設定主題</span>
+
+            <!-- Factor Badge -->
+            <BadgeWithTooltip
+              v-if="item.factor_name"
+              :text="item.factor_name"
+              variant="factor"
+              :truncate-length="6"
+            />
+            <span v-else class="text-gray-400 dark:text-gray-500 italic text-xs">未命名題目</span>
+          </div>
+        </template>
+
+        <!-- Assigned Personnel Cell -->
+        <template #cell-assigned_personnel="{ item }">
+          <div class="text-sm text-gray-700 dark:text-gray-300">
+            <div class="font-medium">{{ item.user_name }}</div>
+            <div v-if="item.department || item.position" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              <span v-if="item.department">{{ item.department }}</span>
+              <span v-if="item.department && item.position"> · </span>
+              <span v-if="item.position">{{ item.position }}</span>
+            </div>
+          </div>
+        </template>
+
+        <!-- Status Cell (Only indicator, no text) -->
+        <template #cell-status="{ item }">
+          <div class="flex justify-center">
+            <!-- Status Indicator - Using review_status based logic -->
+            <div
+              class="w-3 h-3 rounded-full"
+              :class="{
+                'bg-green-500': item.status === 'completed',
+                'bg-red-500': item.status === 'pending',
+                'bg-gray-400': item.status === 'not_started'
+              }"
+              :title="getStatusText(item.status)"
+            ></div>
+          </div>
+        </template>
+
+        <!-- Updated At Cell - Using personal last_updated -->
+        <template #cell-updated_at="{ item }">
+          <div class="text-sm text-gray-700 dark:text-gray-300">
+            {{ formatDateTime(item.last_updated || item.updated_at) }}
+          </div>
+        </template>
+
+        <!-- Created At Cell -->
+        <template #cell-created_at="{ item }">
+          <div class="text-sm text-gray-700 dark:text-gray-300">
+            {{ formatDateTime(item.created_at) }}
           </div>
         </template>
       </DataTable>
@@ -146,6 +194,7 @@ import {
   UsersIcon
 } from '@heroicons/vue/24/outline'
 import DataTable from '~/components/DataTable.vue'
+import BadgeWithTooltip from '~/components/BadgeWithTooltip.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -153,23 +202,61 @@ const router = useRouter()
 const loading = ref(true)
 const error = ref(null)
 const assessmentInfo = ref({})
-const assignments = ref([])
-const assessmentStats = ref(null)
+const questions = ref([])
+const statistics = ref(null)
 
+// 將後端的 questions 展開成每個用戶一筆資料
+const expandedQuestions = computed(() => {
+  const expanded = []
+
+  questions.value.forEach(question => {
+    // 如果沒有被指派的用戶，跳過
+    if (!question.user_responses || question.user_responses.length === 0) {
+      return
+    }
+
+    // 為每個被指派的用戶創建一筆資料
+    question.user_responses.forEach(user => {
+      expanded.push({
+        // 題目資訊
+        content_id: question.content_id,
+        factor_name: question.factor_name,
+        category_name: question.category_name,
+        topic_name: question.topic_name,
+        created_at: question.created_at,
+        updated_at: question.updated_at,
+
+        // 用戶資訊
+        user_id: user.user_id,
+        user_name: user.user_name,
+        department: user.department,
+        position: user.position,
+
+        // 該用戶的個人狀態（不是整體狀態）
+        status: user.status,
+        last_updated: user.last_updated
+      })
+    })
+  })
+
+  return expanded
+})
+
+// DataTable columns definition
 const columns = [
   {
     key: 'actions',
-    label: '動作',
+    label: '操作',
     sortable: false
-  },
-  {
-    key: 'user_name',
-    label: '人員姓名',
-    sortable: true
   },
   {
     key: 'question_content',
     label: '題項內容',
+    sortable: false
+  },
+  {
+    key: 'assigned_personnel',
+    label: '被指派人員',
     sortable: true
   },
   {
@@ -178,13 +265,13 @@ const columns = [
     sortable: true
   },
   {
-    key: 'assigned_at',
-    label: '指派時間',
+    key: 'updated_at',
+    label: '更新時間',
     sortable: true
   },
   {
-    key: 'last_updated',
-    label: '最後更新',
+    key: 'created_at',
+    label: '建立時間',
     sortable: true
   }
 ]
@@ -192,10 +279,28 @@ const columns = [
 const getStatusText = (status) => {
   const statusMap = {
     'completed': '已完成',
-    'in_progress': '進行中',
+    'pending': '待更新',
     'not_started': '未開始'
   }
   return statusMap[status] || '未知'
+}
+
+const formatDateTime = (dateTimeString) => {
+  if (!dateTimeString) return '-'
+
+  try {
+    const date = new Date(dateTimeString)
+    return date.toLocaleString('zh-TW', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
+  } catch (error) {
+    return dateTimeString
+  }
 }
 
 const loadAssignmentData = async () => {
@@ -204,22 +309,25 @@ const loadAssignmentData = async () => {
     error.value = null
 
     const assessmentId = route.params.id
-    console.log('Loading assignment data for assessment:', assessmentId)
+    console.log('Loading assignment data (by question) for assessment:', assessmentId)
 
-    // 調用後端 API 取得詳細的指派資料
-    const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/assignments`)
+    // 調用新的後端 API，以題目為主返回資料
+    const response = await $fetch(`/api/v1/question-management/assessment/${assessmentId}/assignments-by-question`)
 
     console.log('Assignment API response:', response)
 
     if (response.success) {
       assessmentInfo.value = response.data.assessment_info
-      assignments.value = response.data.assignments
-      assessmentStats.value = response.data.statistics
+
+      // 直接使用後端返回的題目資料（後端已經只返回有被指派的題目）
+      questions.value = response.data.questions
+
+      statistics.value = response.data.statistics
 
       console.log('Assignment data loaded successfully:', {
         info: assessmentInfo.value,
-        assignments: assignments.value,
-        stats: assessmentStats.value
+        assignedQuestions: questions.value.length,
+        stats: statistics.value
       })
     } else {
       error.value = response.message || '載入指派資料失敗'
@@ -232,6 +340,7 @@ const loadAssignmentData = async () => {
     loading.value = false
   }
 }
+
 
 const refreshData = async () => {
   try {
@@ -247,35 +356,20 @@ const refreshData = async () => {
   }
 }
 
-const viewResults = async (assignment) => {
-  // 檢查使用者是否已填寫
-  if (assignment.status === 'not_started') {
-    // 使用者尚未填寫，顯示提示
-    const { $swal } = useNuxtApp()
-    $swal.fire({
-      icon: 'warning',
-      title: '系統提示',
-      text: '使用者尚未填寫該題目',
-      showConfirmButton: false,
-      timer: 1500
-    })
-    return
-  }
-
-  // 導航到用戶結果頁面，顯示所有已填答的內容
+const viewUserResponse = (contentId, userId, userName) => {
   const assessmentId = route.params.id
-  const companyId = assignment.company_id
+  const companyId = assessmentInfo.value.company_id
 
-  // 導航到專門的結果查看頁面
+  // 導航到結果查看頁面，並傳入 contentId 以查看特定題目的作答
   router.push({
-    path: `/admin/risk-assessment/questions/${assessmentId}/assignments/${assignment.user_id}/results`,
+    path: `/admin/risk-assessment/questions/${assessmentId}/assignments/${userId}/results`,
     query: {
       companyId: companyId,
-      userName: assignment.user_name
+      userName: userName,
+      contentId: contentId
     }
   })
 }
-
 
 onMounted(() => {
   loadAssignmentData()

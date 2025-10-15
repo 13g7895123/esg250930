@@ -227,8 +227,8 @@
     <DataTable
       :data="questionManagement"
       :columns="columns"
-      search-placeholder="搜尋年份或範本版本..."
-      :search-fields="['year', 'templateVersion']"
+      search-placeholder="搜尋題項名稱、年份或範本版本..."
+      :search-fields="['name', 'year', 'templateVersion']"
       empty-title="沒有被指派的題項"
       empty-message="您目前沒有被指派到任何風險評估題項"
       no-search-results-title="沒有找到符合的項目"
@@ -236,10 +236,20 @@
       @search="(query) => console.log('搜尋查詢:', query)"
       @sort="(field, order) => console.log('排序:', field, order)"
     >
-      <!-- Empty Actions Slot for Web Version -->
+      <!-- Actions Slot for Web Version -->
       <template #actions>
-        <div class="text-gray-500 dark:text-gray-400 text-sm">
-          風險評估題項管理
+        <div class="flex gap-2">
+          <button
+            @click="loadQuestionManagementData"
+            :disabled="isFilteringAssignments"
+            class="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+          >
+            <ArrowPathIcon
+              class="w-4 h-4 mr-2"
+              :class="{ 'animate-spin': isFilteringAssignments }"
+            />
+            重新整理
+          </button>
         </div>
       </template>
 
@@ -293,7 +303,8 @@ definePageMeta({
 
 import {
   DocumentTextIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  ArrowPathIcon
 } from '@heroicons/vue/24/outline'
 
 const route = useRoute()
@@ -494,6 +505,12 @@ const columns = ref([
     key: 'actions',
     label: '功能',
     sortable: false,
+    cellClass: 'text-base text-gray-900 dark:text-white'
+  },
+  {
+    key: 'name',
+    label: '題項名稱',
+    sortable: true,
     cellClass: 'text-base text-gray-900 dark:text-white'
   },
   {

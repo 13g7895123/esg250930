@@ -25,9 +25,9 @@ export const useEditorFeatures = (mode) => {
 
       /**
        * 顯示「儲存」按鈕
-       * preview 模式不顯示儲存功能
+       * preview 和 answer 模式不顯示儲存功能
        */
-      showSaveButton: currentMode !== 'preview',
+      showSaveButton: currentMode !== 'preview' && currentMode !== 'answer',
 
       /**
        * 顯示「預覽」按鈕

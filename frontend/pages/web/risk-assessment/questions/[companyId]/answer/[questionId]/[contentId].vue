@@ -41,7 +41,7 @@ const externalUserStore = useExternalUserStore()
 usePageTitle('風險評估作答')
 
 // 初始化 Composables
-const { backendToForm, formToBackend } = useDataMapper()
+const { backendToForm } = useDataMapper()  // formToBackend 已由 EditorContainer 處理，不需要在此使用
 const editorMode = ref('answer')
 const { getBackPath } = useEditorFeatures(editorMode)
 
@@ -213,7 +213,8 @@ const loadQuestionData = async () => {
 }
 
 // 儲存答案函數
-const saveAnswerData = async (formData) => {
+// 注意：EditorContainer 已經將 formData 轉換成 backendData 再傳進來
+const saveAnswerData = async (backendData) => {
   const { $notify } = useNuxtApp()
 
   console.log('=== 準備送出答案 ===')
@@ -232,21 +233,26 @@ const saveAnswerData = async (formData) => {
     throw new Error('問題ID或內容ID不存在')
   }
 
-  // 使用 DataMapper 轉換表單資料為後端格式
-  const backendData = formToBackend(formData)
+  // ⚠️ 注意：EditorContainer 已經調用過 formToBackend 轉換，這裡收到的已經是後端格式
+  // 不需要再次轉換！直接使用即可
+
+  console.log('=== backendData (EditorContainer 已轉換) ===')
+  console.log('e1_risk_description:', backendData.e1_risk_description)
+  console.log('e2_risk_calculation:', backendData.e2_risk_calculation)
+  console.log('f1_opportunity_description:', backendData.f1_opportunity_description)
+  console.log('f2_opportunity_calculation:', backendData.f2_opportunity_calculation)
+  console.log('完整 backendData:', backendData)
 
   const answerData = {
-    responses: [
-      {
-        question_content_id: parseInt(contentId),
-        response_value: backendData
-      }
-    ],
+    question_content_id: parseInt(contentId),
+    response_value: backendData,
     answered_by: parseInt(externalUserStore.userId)
   }
 
   console.log('=== 送出的資料結構 ===')
-  console.log('資料:', answerData)
+  console.log('完整 answerData:', answerData)
+  console.log('response_value.e1_risk_description:', answerData.response_value.e1_risk_description)
+  console.log('response_value.e2_risk_calculation:', answerData.response_value.e2_risk_calculation)
 
   const response = await $fetch(`/api/v1/question-management/assessment/${questionId}/responses`, {
     method: 'POST',
@@ -258,6 +264,12 @@ const saveAnswerData = async (formData) => {
 
   console.log('=== API 回應 ===')
   console.log('回應資料:', response)
+
+  // 特別顯示 SQL（如果有）
+  if (response.data?.sql_executed) {
+    console.log('=== 執行的 SQL 語句 ===')
+    console.log(response.data.sql_executed)
+  }
 
   if (response.success) {
     console.log('✅ 答案保存成功')

@@ -283,7 +283,9 @@ $routes->group('api/v1/question-management', function($routes) {
     $routes->get('assessment/(:num)/stats', 'Api\V1\QuestionManagement\QuestionManagementController::getAssessmentStats/$1');
     $routes->get('assessment/(:num)/assignment-status', 'Api\V1\QuestionManagement\QuestionManagementController::getAssignmentStatus/$1');
     $routes->get('assessment/(:num)/assignments', 'Api\V1\QuestionManagement\QuestionManagementController::getAssignments/$1');
+    $routes->get('assessment/(:num)/assignments-by-question', 'Api\V1\QuestionManagement\QuestionManagementController::getAssignmentsByQuestion/$1');
     $routes->get('assessment/(:num)/user/(:num)/results', 'Api\V1\QuestionManagement\QuestionManagementController::getUserResults/$1/$2');
+    $routes->get('assessment/(:num)/user/(:num)/contents', 'Api\V1\QuestionManagement\QuestionManagementController::getUserContentList/$1/$2');
     $routes->get('assessment/(:num)/user/(:num)/responses/(:num)', 'Api\V1\QuestionManagement\QuestionManagementController::getUserContentResponse/$1/$2/$3');
     $routes->delete('assessment/(:num)/clear', 'Api\V1\QuestionManagement\QuestionManagementController::clearAssessmentData/$1');
 
@@ -330,6 +332,7 @@ $routes->group('api/v1/question-management', function($routes) {
     $routes->get('assessment/(:num)/responses', 'Api\V1\QuestionManagement\QuestionManagementController::getResponses/$1');
     $routes->post('assessment/(:num)/responses', 'Api\V1\QuestionManagement\QuestionManagementController::saveResponses/$1');
     $routes->put('responses/(:num)', 'Api\V1\QuestionManagement\QuestionManagementController::updateResponse/$1');
+    $routes->put('responses/(:num)/review-status', 'Api\V1\QuestionManagement\QuestionManagementController::updateReviewStatus/$1');
     $routes->delete('responses/(:num)', 'Api\V1\QuestionManagement\QuestionManagementController::deleteResponse/$1');
 
     // CORS Support for Question Management APIs
@@ -349,6 +352,9 @@ $routes->group('api/v1/question-management', function($routes) {
         return service('response')->setStatusCode(200);
     });
     $routes->options('responses/(:any)', function() {
+        return service('response')->setStatusCode(200);
+    });
+    $routes->options('responses/(:num)/review-status', function() {
         return service('response')->setStatusCode(200);
     });
 });

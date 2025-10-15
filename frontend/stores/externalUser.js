@@ -52,6 +52,11 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     return []
   })
 
+  // 檢查用戶是否為管理員（group 中包含 company_agent）
+  const isUserAdmin = computed(() => {
+    return group.value?.includes('company_agent') || false
+  })
+
   // 新的 userId - 通過 externalId 查詢 external_personnel 表獲得的內部ID
   const internalUserId = ref(null)
 
@@ -275,6 +280,7 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     console.log('externalId (computed):', externalId.value)
     console.log('externalCompanyId (computed):', externalCompanyId.value)
     console.log('group (computed):', group.value)
+    console.log('isUserAdmin (computed):', isUserAdmin.value)
     console.log('Token:', tokenValue)
 
     // 查詢並設置內部用戶ID
@@ -444,6 +450,7 @@ export const useExternalUserStore = defineStore('externalUser', () => {
     externalId, // 外部用戶ID（從 token 解密後的 user_id）
     userId, // 內部用戶ID（查詢 external_personnel 表獲得）
     group, // 用戶所屬群組名稱陣列
+    isUserAdmin, // 用戶是否為管理員（group 中包含 company_agent）
     latestAssignedQuestionId: readonly(latestAssignedQuestionId), // 最新被指派的題項ID
     verifiedUrl: readonly(verifiedUrl), // verify API 回傳的 URL
 

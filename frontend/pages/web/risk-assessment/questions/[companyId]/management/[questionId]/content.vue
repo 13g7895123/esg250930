@@ -7,7 +7,7 @@
           風險評估題目
         </h1>
         <p class="text-gray-600 dark:text-gray-400">
-          {{ questionInfo?.year || 2024 }}年度 {{ templateInfo?.versionName || '未知範本' }} - 點擊開始作答按鈕開始填寫
+          {{ questionInfo.year }}年度 {{ questionInfo.versionName }} - 點擊開始作答按鈕開始填寫
         </p>
       </div>
     </div>
@@ -347,10 +347,22 @@
                 <strong>評估ID:</strong> {{ questionId }}
               </p>
               <p class="text-gray-600 dark:text-gray-400 mb-1">
+                <strong>評估年度:</strong> {{ questionInfo.year }}
+              </p>
+              <p class="text-gray-600 dark:text-gray-400 mb-1">
+                <strong>範本名稱:</strong> {{ questionInfo.versionName }}
+              </p>
+              <p class="text-gray-600 dark:text-gray-400 mb-1">
                 <strong>用戶ID (內部):</strong> {{ externalUserStore.userId || '未設置' }}
               </p>
-              <p class="text-gray-600 dark:text-gray-400">
+              <p class="text-gray-600 dark:text-gray-400 mb-1">
                 <strong>外部ID:</strong> {{ externalUserStore.externalId || '未設置' }}
+              </p>
+              <p class="text-gray-600 dark:text-gray-400">
+                <strong>是否為管理員:</strong>
+                <span :class="externalUserStore.isUserAdmin ? 'text-green-600 dark:text-green-400 font-medium' : 'text-gray-500 dark:text-gray-400'">
+                  {{ externalUserStore.isUserAdmin ? '✓ 是 (company_agent)' : '✗ 否' }}
+                </span>
               </p>
             </div>
             <div>
@@ -492,12 +504,28 @@ const companyName = computed(() => getCompanyName(companyId))
 // Get external user data from pinia store
 const externalUserStore = useExternalUserStore()
 
-// Mock question management data (would be fetched from API/store)
-const questionInfo = ref({
-  id: questionId,
-  templateId: questionId, // Use questionId as templateId to show the correct template
-  year: 2024,
-  createdAt: new Date('2024-01-15')
+// Store assessment data (fetched from API)
+const assessmentData = ref(null)
+
+// Computed questionInfo based on assessment data
+const questionInfo = computed(() => {
+  if (!assessmentData.value) {
+    return {
+      id: questionId,
+      templateId: null,
+      year: new Date().getFullYear(),
+      versionName: '載入中...',
+      createdAt: null
+    }
+  }
+
+  return {
+    id: assessmentData.value.id,
+    templateId: assessmentData.value.template_id,
+    year: assessmentData.value.assessment_year,
+    versionName: assessmentData.value.version_name || assessmentData.value.template_version || '未知範本',
+    createdAt: assessmentData.value.created_at
+  }
 })
 
 // Initialize reactive data
@@ -529,11 +557,38 @@ const assignmentDebugInfo = ref({
 const isCheckingAssignments = ref(false)
 const isSyncingPersonnel = ref(false)
 
-// Use templates store to get template info
-const templatesStore = useTemplatesStore()
-const templateInfo = computed(() =>
-  templatesStore.templates.find(t => t.id === questionInfo.value.templateId) || { versionName: '未知範本' }
-)
+// Load assessment data from API
+const loadAssessmentData = async () => {
+  try {
+    console.log('=== Loading assessment data ===')
+    console.log('Assessment ID (questionId):', questionId)
+
+    if (isNaN(questionId) || questionId <= 0) {
+      console.error('Invalid questionId:', questionId)
+      return
+    }
+
+    const response = await $fetch(`/api/v1/risk-assessment/company-assessments/${questionId}`)
+
+    console.log('Assessment API Response:', response)
+
+    if (response.success && response.data) {
+      assessmentData.value = response.data
+      console.log('Assessment data loaded:', assessmentData.value)
+    } else {
+      console.warn('Invalid assessment response:', response)
+    }
+
+  } catch (error) {
+    console.error('=== Error loading assessment data ===')
+    console.error('Error type:', error.constructor.name)
+    console.error('Error message:', error.message)
+    console.error('Error details:', error)
+
+    // Don't show toast error for assessment data as it's not critical
+    // The subtitle will just show default values
+  }
+}
 
 // Mapping test computed properties
 const mappingStats = computed(() => {
@@ -1018,6 +1073,9 @@ onMounted(async () => {
       console.error('Invalid questionId, skipping data loading')
       return
     }
+
+    // Load assessment data first (for subtitle display)
+    await loadAssessmentData()
 
     // Load content data from database API (with user filtering)
     await loadQuestionData()

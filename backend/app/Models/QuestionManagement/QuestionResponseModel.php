@@ -19,6 +19,11 @@ use CodeIgniter\Model;
 class QuestionResponseModel extends Model
 {
     /**
+     * 最後執行的 SQL（用於調試）
+     */
+    private $lastExecutedSQL = '';
+
+    /**
      * 資料表名稱
      */
     protected $table = 'question_responses';
@@ -178,8 +183,9 @@ class QuestionResponseModel extends Model
     {
         $builder = $this->select('
                 question_responses.*,
-                question_factors.description as question_description,
+                question_factors.description as factor_description,
                 question_contents.is_required,
+                question_contents.b_content,
                 question_categories.category_name,
                 question_topics.topic_name,
                 question_factors.factor_name
@@ -260,10 +266,11 @@ class QuestionResponseModel extends Model
         $result = $this->select('
                 question_responses.*,
                 question_contents.title as question_title,
-                question_factors.description as question_description,
+                question_factors.description as factor_description,
                 question_contents.scoring_method,
                 question_contents.weight,
-                question_contents.is_required
+                question_contents.is_required,
+                question_contents.b_content
             ')
             ->join('question_contents', 'question_contents.id = question_responses.question_content_id')
             ->join('question_factors', 'question_factors.id = question_contents.factor_id', 'left')
@@ -352,6 +359,9 @@ class QuestionResponseModel extends Model
         if (is_array($responseValue) || is_object($responseValue)) {
             $responseArray = (array)$responseValue;
 
+            // 記錄收到的原始資料
+            log_message('info', 'QuestionResponseModel::saveResponse - 收到的 responseArray: ' . json_encode($responseArray, JSON_UNESCAPED_UNICODE));
+
             // C區域
             $data['c_risk_event_choice'] = $responseArray['riskEventChoice'] ?? null;
             $data['c_risk_event_description'] = $responseArray['riskEventDescription'] ?? null;
@@ -384,17 +394,50 @@ class QuestionResponseModel extends Model
             // H-1區域 - 接受兩種格式以保持相容性
             $data['h1_positive_impact_level'] = $responseArray['h1_positive_impact_level'] ?? $responseArray['positiveImpactLevel'] ?? null;
             $data['h1_positive_impact_description'] = $responseArray['h1_positive_impact_description'] ?? $responseArray['positiveImpactDescription'] ?? null;
+
+            // 記錄關鍵欄位的映射結果
+            log_message('info', 'QuestionResponseModel::saveResponse - 欄位映射結果:');
+            log_message('info', '  e1_risk_description: ' . ($data['e1_risk_description'] ?? '(null)'));
+            log_message('info', '  e2_risk_probability: ' . ($data['e2_risk_probability'] ?? '(null)'));
+            log_message('info', '  e2_risk_impact: ' . ($data['e2_risk_impact'] ?? '(null)'));
+            log_message('info', '  e2_risk_calculation: ' . ($data['e2_risk_calculation'] ?? '(null)'));
+            log_message('info', '  f1_opportunity_description: ' . ($data['f1_opportunity_description'] ?? '(null)'));
+            log_message('info', '  f2_opportunity_probability: ' . ($data['f2_opportunity_probability'] ?? '(null)'));
+            log_message('info', '  f2_opportunity_impact: ' . ($data['f2_opportunity_impact'] ?? '(null)'));
+            log_message('info', '  f2_opportunity_calculation: ' . ($data['f2_opportunity_calculation'] ?? '(null)'));
         }
 
         if ($existingResponse) {
             // 更新現有回答
             unset($data['assessment_id']); // 不更新關聯欄位
             unset($data['question_content_id']);
-            return $this->update($existingResponse['id'], $data);
+            $result = $this->update($existingResponse['id'], $data);
+
+            // 立即捕獲執行的 SQL
+            $this->lastExecutedSQL = $this->db->getLastQuery()->getQuery();
+            log_message('info', 'QuestionResponseModel::saveResponse - UPDATE SQL: ' . $this->lastExecutedSQL);
+
+            return $result;
         } else {
             // 建立新回答
-            return $this->insert($data);
+            $result = $this->insert($data);
+
+            // 立即捕獲執行的 SQL
+            $this->lastExecutedSQL = $this->db->getLastQuery()->getQuery();
+            log_message('info', 'QuestionResponseModel::saveResponse - INSERT SQL: ' . $this->lastExecutedSQL);
+
+            return $result;
         }
+    }
+
+    /**
+     * 取得最後執行的 SQL（用於調試）
+     *
+     * @return string 最後執行的 SQL 語句
+     */
+    public function getLastExecutedSQL(): string
+    {
+        return $this->lastExecutedSQL;
     }
 
     /**
@@ -458,12 +501,13 @@ class QuestionResponseModel extends Model
      * @param int $assessmentId 評估記錄ID
      * @param array $responses 回答資料陣列 [questionContentId => responseData]
      * @param int|null $answeredBy 回答人員ID
-     * @return array 處理結果 ['success' => count, 'errors' => errors]
+     * @return array 處理結果 ['success' => count, 'errors' => errors, 'sql_executed' => sql]
      */
     public function batchSaveResponses(int $assessmentId, array $responses, ?int $answeredBy = null): array
     {
         $successCount = 0;
         $errors = [];
+        $sqlExecuted = [];
 
         foreach ($responses as $questionContentId => $responseData) {
             try {
@@ -479,17 +523,29 @@ class QuestionResponseModel extends Model
 
                 if ($result) {
                     $successCount++;
+
+                    // 使用 getter 取得最後執行的 SQL
+                    $sql = $this->getLastExecutedSQL();
+                    if (!empty($sql)) {
+                        $sqlExecuted[] = $sql;
+                        log_message('info', 'QuestionResponseModel::batchSaveResponses - 收集 SQL: ' . $sql);
+                    }
                 } else {
                     $errors[] = "Failed to save response for question {$questionContentId}";
                 }
             } catch (\Exception $e) {
                 $errors[] = "Error saving question {$questionContentId}: " . $e->getMessage();
+                log_message('error', 'QuestionResponseModel::batchSaveResponses - 錯誤: ' . $e->getMessage());
             }
         }
 
+        $sqlString = implode(";\n\n", $sqlExecuted);
+        log_message('info', 'QuestionResponseModel::batchSaveResponses - 最終 SQL 字串: ' . $sqlString);
+
         return [
             'success' => $successCount,
-            'errors' => $errors
+            'errors' => $errors,
+            'sql_executed' => $sqlString // 合併所有 SQL 語句
         ];
     }
 

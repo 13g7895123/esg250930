@@ -537,38 +537,68 @@ class QuestionManagementController extends BaseController
             }
 
             $input = $this->request->getJSON(true);
-            if (empty($input['responses'])) {
+
+            // 檢測輸入格式：新格式（單一 object）或舊格式（responses array）
+            $isNewFormat = isset($input['question_content_id']) && isset($input['response_value']);
+            $isOldFormat = isset($input['responses']) && is_array($input['responses']);
+
+            if (!$isNewFormat && !$isOldFormat) {
                 return $this->response->setStatusCode(400)->setJSON([
                     'success' => false,
-                    'message' => '回答資料為必填項目'
+                    'message' => '回答資料格式錯誤：需要 question_content_id 和 response_value，或 responses 陣列'
                 ]);
             }
 
             $answeredBy = $input['answered_by'] ?? null;
-
-            // 轉換前端的索引陣列格式為後端期望的關聯陣列格式
             $formattedResponses = [];
-            foreach ($input['responses'] as $responseItem) {
-                if (isset($responseItem['question_content_id'])) {
-                    $questionContentId = $responseItem['question_content_id'];
-                    $formattedResponses[$questionContentId] = [
-                        'response_value' => $responseItem['response_value'] ?? null,
-                        'score' => $responseItem['score'] ?? null,
-                        'notes' => $responseItem['notes'] ?? null,
-                        'evidence_files' => $responseItem['evidence_files'] ?? null
-                    ];
+
+            if ($isNewFormat) {
+                // 新格式：直接 object
+                log_message('info', 'QuestionManagementController::saveResponses - 使用新格式 (單一 object)');
+                $questionContentId = $input['question_content_id'];
+
+                // 詳細記錄 response_value 的內容
+                $responseValue = $input['response_value'] ?? null;
+                log_message('info', 'QuestionManagementController::saveResponses - response_value 內容: ' . json_encode($responseValue, JSON_UNESCAPED_UNICODE));
+                log_message('info', 'QuestionManagementController::saveResponses - e1_risk_description: ' . ($responseValue['e1_risk_description'] ?? '(無)'));
+                log_message('info', 'QuestionManagementController::saveResponses - e2_risk_calculation: ' . ($responseValue['e2_risk_calculation'] ?? '(無)'));
+                log_message('info', 'QuestionManagementController::saveResponses - f1_opportunity_description: ' . ($responseValue['f1_opportunity_description'] ?? '(無)'));
+                log_message('info', 'QuestionManagementController::saveResponses - f2_opportunity_calculation: ' . ($responseValue['f2_opportunity_calculation'] ?? '(無)'));
+
+                $formattedResponses[$questionContentId] = [
+                    'response_value' => $responseValue,
+                    'score' => $input['score'] ?? null,
+                    'notes' => $input['notes'] ?? null,
+                    'evidence_files' => $input['evidence_files'] ?? null
+                ];
+            } else {
+                // 舊格式：responses 陣列（向後相容）
+                log_message('info', 'QuestionManagementController::saveResponses - 使用舊格式 (responses 陣列)');
+                foreach ($input['responses'] as $responseItem) {
+                    if (isset($responseItem['question_content_id'])) {
+                        $questionContentId = $responseItem['question_content_id'];
+                        $formattedResponses[$questionContentId] = [
+                            'response_value' => $responseItem['response_value'] ?? null,
+                            'score' => $responseItem['score'] ?? null,
+                            'notes' => $responseItem['notes'] ?? null,
+                            'evidence_files' => $responseItem['evidence_files'] ?? null
+                        ];
+                    }
                 }
             }
 
-            log_message('info', 'QuestionManagementController::saveResponses - 原始格式: ' . json_encode($input['responses']));
             log_message('info', 'QuestionManagementController::saveResponses - 轉換後格式: ' . json_encode($formattedResponses));
 
-            // 批次儲存回答
+            // 批次儲存回答（實際上現在只會有一筆）
             $result = $this->responseModel->batchSaveResponses(
                 $assessmentId,
                 $formattedResponses,
                 $answeredBy
             );
+
+            // 記錄返回結果，特別是 SQL
+            log_message('info', 'QuestionManagementController::saveResponses - 批次儲存結果: ' . json_encode($result));
+            log_message('info', 'QuestionManagementController::saveResponses - SQL 執行語句: ' . ($result['sql_executed'] ?? '(無)'));
 
             if (count($result['errors']) > 0) {
                 return $this->response->setStatusCode(400)->setJSON([
@@ -1072,6 +1102,214 @@ class QuestionManagementController extends BaseController
 
         } catch (\Exception $e) {
             log_message('error', 'QuestionManagementController::getAssignments - ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '取得指派資訊時發生錯誤'
+            ]);
+        }
+    }
+
+    /**
+     * 取得指派狀況（以題目為主）
+     * GET /api/v1/question-management/assessment/{assessmentId}/assignments-by-question
+     *
+     * 返回以題目為主的資料結構，每個題目顯示：
+     * - 風險因子、風險類別、風險主題
+     * - 該題目的所有作答狀況（各用戶的完成狀態）
+     *
+     * 只返回有人被指派的題目（根據 personnel_assignments 表）
+     *
+     * @param int|null $assessmentId 評估記錄ID
+     * @return ResponseInterface
+     */
+    public function getAssignmentsByQuestion($assessmentId = null)
+    {
+        try {
+            if (!$assessmentId) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '評估記錄ID為必填項目'
+                ]);
+            }
+
+            // 驗證評估記錄是否存在
+            $assessment = $this->assessmentModel->find($assessmentId);
+            if (!$assessment) {
+                return $this->response->setStatusCode(404)->setJSON([
+                    'success' => false,
+                    'message' => '找不到指定的評估記錄'
+                ]);
+            }
+
+            // 取得評估基本資訊
+            $assessmentInfo = [
+                'id' => $assessment['id'],
+                'templateVersion' => $assessment['template_version'] ?? '預設範本',
+                'year' => $assessment['assessment_year'] ?? date('Y'),
+                'company_id' => $assessment['company_id']
+            ];
+
+            // 取得該評估的所有題目內容（包含風險架構資訊）
+            $contents = $this->contentModel->getContentsByAssessment($assessmentId);
+
+            // 取得該評估的所有指派記錄（根據 question_content_id 分組）
+            $allAssignments = $this->personnelAssignmentModel
+                ->where('assessment_id', $assessmentId)
+                ->where('company_id', $assessment['company_id'])
+                ->findAll();
+
+            // 按 question_content_id 組織指派記錄
+            $assignmentsByContent = [];
+            $allAssignedUsers = []; // 記錄所有被指派的用戶（用於統計）
+
+            foreach ($allAssignments as $assignment) {
+                $contentId = $assignment['question_content_id'];
+                if (!isset($assignmentsByContent[$contentId])) {
+                    $assignmentsByContent[$contentId] = [];
+                }
+                $assignmentsByContent[$contentId][] = $assignment;
+                $allAssignedUsers[$assignment['personnel_id']] = true;
+            }
+
+            // 如果沒有任何指派記錄，返回空列表
+            if (empty($allAssignments)) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'data' => [
+                        'assessment_info' => $assessmentInfo,
+                        'questions' => [],
+                        'statistics' => [
+                            'total_questions' => 0,
+                            'total_assigned_users' => 0
+                        ]
+                    ]
+                ]);
+            }
+
+            $questions = [];
+
+            // 遍歷每個題目，只處理有被指派的題目
+            foreach ($contents as $content) {
+                $contentId = $content['id'];
+
+                // 檢查這個題目是否有被指派給任何人
+                if (!isset($assignmentsByContent[$contentId]) || empty($assignmentsByContent[$contentId])) {
+                    // 這個題目沒有被指派給任何人，跳過
+                    continue;
+                }
+
+                $userResponses = [];
+
+                // 只處理被指派了這個題目的用戶
+                foreach ($assignmentsByContent[$contentId] as $assignment) {
+                    $userId = $assignment['personnel_id'];
+
+                    // 檢查該用戶是否有此題目的回答記錄
+                    $response = $this->responseModel
+                        ->where('assessment_id', $assessmentId)
+                        ->where('question_content_id', $contentId)
+                        ->where('answered_by', $userId)
+                        ->first();
+
+                    // 判斷狀態
+                    $status = 'not_started';
+                    $lastUpdated = null;
+                    $reviewStatus = null;
+
+                    if ($response) {
+                        // 取得審核狀態
+                        $reviewStatus = $response['review_status'] ?? 'pending';
+
+                        // 檢查是否有實際的答案內容
+                        $hasAnswer = false;
+                        $answerFields = [
+                            'c_risk_event_choice', 'c_risk_event_description',
+                            'd_counter_action_choice', 'd_counter_action_description', 'd_counter_action_cost',
+                            'e1_risk_description', 'e2_risk_probability', 'e2_risk_impact', 'e2_risk_calculation',
+                            'f1_opportunity_description', 'f2_opportunity_probability', 'f2_opportunity_impact', 'f2_opportunity_calculation',
+                            'g1_negative_impact_level', 'g1_negative_impact_description',
+                            'h1_positive_impact_level', 'h1_positive_impact_description'
+                        ];
+
+                        foreach ($answerFields as $field) {
+                            if (!empty($response[$field])) {
+                                $hasAnswer = true;
+                                break;
+                            }
+                        }
+
+                        if ($hasAnswer) {
+                            // 根據 review_status 判斷狀態
+                            // approved = 已完成(綠燈), pending = 待更新(紅燈), rejected = 已拒絕(紅燈)
+                            if ($reviewStatus === 'approved') {
+                                $status = 'completed';
+                            } else {
+                                // pending 或 rejected 都顯示為 pending 狀態（紅燈）
+                                $status = 'pending';
+                            }
+                            $lastUpdated = $response['updated_at'];
+                        }
+                    }
+
+                    $userResponses[] = [
+                        'user_id' => $userId,
+                        'user_name' => $assignment['personnel_name'],
+                        'department' => $assignment['personnel_department'],
+                        'position' => $assignment['personnel_position'],
+                        'status' => $status,
+                        'review_status' => $reviewStatus,
+                        'last_updated' => $lastUpdated
+                    ];
+                }
+
+                // 計算該題目的統計資料
+                $completedCount = count(array_filter($userResponses, fn($r) => $r['status'] === 'completed'));
+                $pendingCount = count(array_filter($userResponses, fn($r) => $r['status'] === 'pending'));
+                $notStartedCount = count(array_filter($userResponses, fn($r) => $r['status'] === 'not_started'));
+
+                // 判斷整體狀態：所有人都完成才算完成
+                $overallStatus = 'not_started';
+                if ($completedCount > 0 && $completedCount === count($userResponses)) {
+                    $overallStatus = 'completed';
+                } elseif ($completedCount > 0 || $pendingCount > 0) {
+                    $overallStatus = 'pending';
+                }
+
+                $questions[] = [
+                    'content_id' => $contentId,
+                    'factor_name' => $content['factor_name'] ?? null,
+                    'factor_description' => $content['factor_description'] ?? null,
+                    'category_name' => $content['category_name'] ?? null,
+                    'topic_name' => $content['topic_name'] ?? null,
+                    'is_required' => (bool)$content['is_required'],
+                    'sort_order' => $content['sort_order'],
+                    'overall_status' => $overallStatus,
+                    'created_at' => $content['created_at'] ?? null,
+                    'updated_at' => $content['updated_at'] ?? null,
+                    'user_responses' => $userResponses,
+                    'response_statistics' => [
+                        'completed' => $completedCount,
+                        'pending' => $pendingCount,
+                        'not_started' => $notStartedCount,
+                        'total_assigned' => count($userResponses)
+                    ]
+                ];
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => [
+                    'assessment_info' => $assessmentInfo,
+                    'questions' => $questions,
+                    'statistics' => [
+                        'total_questions' => count($questions),
+                        'total_assigned_users' => count($allAssignedUsers)
+                    ]
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'QuestionManagementController::getAssignmentsByQuestion - ' . $e->getMessage());
             return $this->response->setStatusCode(500)->setJSON([
                 'success' => false,
                 'message' => '取得指派資訊時發生錯誤'
@@ -1869,6 +2107,57 @@ class QuestionManagementController extends BaseController
     }
 
     /**
+     * 取得特定用戶的題目列表（輕量級，不包含完整答案）
+     * GET /api/v1/question-management/assessment/{assessmentId}/user/{userId}/contents
+     *
+     * @param int|null $assessmentId 評估記錄ID
+     * @param int|null $userId 用戶ID
+     * @return ResponseInterface
+     */
+    public function getUserContentList($assessmentId = null, $userId = null)
+    {
+        try {
+            if (!$assessmentId || !$userId) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'success' => false,
+                    'message' => '評估記錄ID和用戶ID為必填項目'
+                ]);
+            }
+
+            // 取得該用戶已回答的題目列表（只返回基本資訊，不包含完整答案）
+            $responses = $this->responseModel
+                ->select('
+                    question_responses.id,
+                    question_responses.question_content_id,
+                    question_responses.answered_at,
+                    question_responses.updated_at,
+                    question_factors.factor_name,
+                    question_categories.category_name,
+                    question_topics.topic_name
+                ')
+                ->join('question_contents', 'question_contents.id = question_responses.question_content_id')
+                ->join('question_categories', 'question_categories.id = question_contents.category_id', 'left')
+                ->join('question_topics', 'question_topics.id = question_contents.topic_id', 'left')
+                ->join('question_factors', 'question_factors.id = question_contents.factor_id', 'left')
+                ->where('question_responses.assessment_id', $assessmentId)
+                ->where('question_responses.answered_by', $userId)
+                ->findAll();
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $responses
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'QuestionManagementController::getUserContentList - ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'success' => false,
+                'message' => '取得題目列表時發生錯誤'
+            ]);
+        }
+    }
+
+    /**
      * 取得特定用戶對特定內容的回答
      * GET /api/v1/question-management/assessment/{assessmentId}/user/{userId}/responses/{contentId}
      *
@@ -1887,12 +2176,27 @@ class QuestionManagementController extends BaseController
                 ]);
             }
 
-            // 查詢特定用戶對特定內容的回答
-            $response = $this->responseModel->where([
-                'assessment_id' => $assessmentId,
-                'question_content_id' => $contentId,
-                'answered_by' => $userId
-            ])->first();
+            // 查詢特定用戶對特定內容的回答，包含題目內容
+            $response = $this->responseModel
+                ->select('
+                    question_responses.*,
+                    question_factors.description as factor_description,
+                    question_contents.b_content,
+                    question_contents.is_required,
+                    question_categories.category_name,
+                    question_topics.topic_name,
+                    question_factors.factor_name
+                ')
+                ->join('question_contents', 'question_contents.id = question_responses.question_content_id')
+                ->join('question_categories', 'question_categories.id = question_contents.category_id', 'left')
+                ->join('question_topics', 'question_topics.id = question_contents.topic_id', 'left')
+                ->join('question_factors', 'question_factors.id = question_contents.factor_id', 'left')
+                ->where([
+                    'question_responses.assessment_id' => $assessmentId,
+                    'question_responses.question_content_id' => $contentId,
+                    'question_responses.answered_by' => $userId
+                ])
+                ->first();
 
             if (!$response) {
                 return $this->response->setJSON([
@@ -1934,16 +2238,25 @@ class QuestionManagementController extends BaseController
             return $this->response->setJSON([
                 'success' => true,
                 'data' => [
-                    'id' => $response['id'],
-                    'assessment_id' => $response['assessment_id'],
-                    'question_content_id' => $response['question_content_id'],
+                    'id' => $response['id'] ?? null,
+                    'assessment_id' => $response['assessment_id'] ?? null,
+                    'question_content_id' => $response['question_content_id'] ?? null,
                     'response_value' => $responseValue,
-                    'answered_by' => $response['answered_by'],
-                    'answered_at' => $response['answered_at'],
-                    'review_status' => $response['review_status'],
-                    'reviewed_by' => $response['reviewed_by'],
-                    'reviewed_at' => $response['reviewed_at'],
-                    'review_comments' => $response['review_comments']
+                    'answered_by' => $response['answered_by'] ?? null,
+                    'answered_at' => $response['answered_at'] ?? null,
+                    'review_status' => $response['review_status'] ?? null,
+                    'reviewed_by' => $response['reviewed_by'] ?? null,
+                    'reviewed_at' => $response['reviewed_at'] ?? null,
+                    'review_comments' => $response['review_comments'] ?? null,
+                    // 加入題目內容 (Section A & B)
+                    'factor_description' => $response['factor_description'] ?? null,
+                    'b_content' => $response['b_content'] ?? null,
+                    'factor_name' => $response['factor_name'] ?? null,
+                    'category_name' => $response['category_name'] ?? null,
+                    'topic_name' => $response['topic_name'] ?? null,
+                    'is_required' => $response['is_required'] ?? false,
+                    'created_at' => $response['created_at'] ?? null,
+                    'updated_at' => $response['updated_at'] ?? null
                 ]
             ]);
 
