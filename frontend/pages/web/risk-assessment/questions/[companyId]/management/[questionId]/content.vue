@@ -1080,9 +1080,31 @@ onMounted(async () => {
 
   console.log('=== onMounted 資料檢查 ===')
   console.log('Token:', token.value)
-  console.log('Store userId:', externalUserStore.userId)
-  console.log('Store externalId:', externalUserStore.externalId)
-  console.log('Store isLoaded:', externalUserStore.isLoaded)
+
+  console.log('\n=== externalUser Store 完整資料 ===')
+  console.log('Store 是否已載入 (isLoaded):', externalUserStore.isLoaded)
+  console.log('最後更新時間 (lastUpdated):', externalUserStore.lastUpdated)
+  console.log('是否有用戶資訊 (hasUserInfo):', externalUserStore.hasUserInfo)
+
+  console.log('\n--- 用戶基本資訊 ---')
+  console.log('用戶名稱 (userName):', externalUserStore.userName)
+  console.log('用戶Email (userEmail):', externalUserStore.userEmail)
+  console.log('用戶群組 (group):', externalUserStore.group)
+  console.log('是否為管理員 (isUserAdmin):', externalUserStore.isUserAdmin)
+
+  console.log('\n--- ID 資訊 ---')
+  console.log('外部用戶ID (externalId):', externalUserStore.externalId)
+  console.log('內部用戶ID (userId):', externalUserStore.userId)
+  console.log('外部公司ID (externalCompanyId):', externalUserStore.externalCompanyId)
+  console.log('內部公司ID (companyId):', externalUserStore.companyId)
+
+  console.log('\n--- 其他資訊 ---')
+  console.log('最新指派題項ID (latestAssignedQuestionId):', externalUserStore.latestAssignedQuestionId)
+  console.log('驗證 URL (verifiedUrl):', externalUserStore.verifiedUrl)
+
+  console.log('\n--- 原始資料（userInfo）---')
+  console.log('userInfo:', externalUserStore.userInfo)
+  console.log('Token:', externalUserStore.token)
 
   // 優先調用用戶資料解密 API 並儲存到 Pinia Store
   if (token.value) {
