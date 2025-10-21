@@ -301,6 +301,7 @@ definePageMeta({
   middleware: 'auth'
 })
 
+import { nextTick } from 'vue'
 import {
   DocumentTextIcon,
   ChartBarIcon,
@@ -450,9 +451,55 @@ const loadQuestionManagementData = async () => {
 
 // Initialize question management for this company
 onMounted(async () => {
+  // 等待下一個 tick，確保 Pinia persist 已恢復資料
+  await nextTick()
+
+  console.log('=== onMounted 資料檢查 ===')
+  console.log('Token:', token.value)
+
+  console.log('\n=== externalUser Store 完整資料 ===')
+  console.log('Store 是否已載入 (isLoaded):', externalUserStore.isLoaded)
+  console.log('最後更新時間 (lastUpdated):', externalUserStore.lastUpdated)
+  console.log('是否有用戶資訊 (hasUserInfo):', externalUserStore.hasUserInfo)
+
+  console.log('\n--- 用戶基本資訊 ---')
+  console.log('用戶名稱 (userName):', externalUserStore.userName)
+  console.log('用戶Email (userEmail):', externalUserStore.userEmail)
+  console.log('用戶群組 (group):', externalUserStore.group)
+  console.log('是否為管理員 (isUserAdmin):', externalUserStore.isUserAdmin)
+
+  console.log('\n--- ID 資訊 ---')
+  console.log('外部用戶ID (externalId):', externalUserStore.externalId)
+  console.log('內部用戶ID (userId):', externalUserStore.userId)
+  console.log('外部公司ID (externalCompanyId):', externalUserStore.externalCompanyId)
+  console.log('內部公司ID (companyId):', externalUserStore.companyId)
+
+  console.log('\n--- 其他資訊 ---')
+  console.log('最新指派題項ID (latestAssignedQuestionId):', externalUserStore.latestAssignedQuestionId)
+  console.log('驗證 URL (verifiedUrl):', externalUserStore.verifiedUrl)
+
+  console.log('\n--- 原始資料（userInfo）---')
+  console.log('userInfo:', externalUserStore.userInfo)
+  console.log('Token:', externalUserStore.token)
+
   // 優先調用用戶資料解密 API 並儲存到 Pinia Store
   if (token.value) {
-    await externalUserStore.fetchExternalUserData(token.value)
+    try {
+      await externalUserStore.fetchExternalUserData(token.value)
+      console.log('✅ Token 驗證成功，用戶資料已更新')
+    } catch (error) {
+      console.error('❌ Failed to fetch external user data:', error)
+      // 即使用戶資料載入失敗，仍繼續載入頁面
+      // 可選：顯示友善的錯誤提示
+    }
+  } else if (!externalUserStore.isLoaded) {
+    // 沒有 token 且 store 未載入，可能是首次訪問或 sessionStorage 被清除
+    console.warn('⚠️ 沒有 token 且 store 未載入，將顯示所有資料（無篩選）')
+  } else {
+    // 沒有 token 但 store 已載入（從 sessionStorage 恢復）
+    console.log('✅ 從 sessionStorage 恢復用戶資料，將使用篩選')
+    console.log('恢復的 userId:', externalUserStore.userId)
+    console.log('恢復的 externalId:', externalUserStore.externalId)
   }
 
   // Load company name first

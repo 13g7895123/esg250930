@@ -131,17 +131,17 @@ class ExternalAccessController extends ResourceController
                 ], 403);
             }
 
-            // 步驟 5: 產生存取網址
-            $url = "/web/risk-assessment/questions/{$systemCompanyId}/management/{$assessmentId}/content";
+            // 步驟 5: 產生存取網址（導航到管理頁面，顯示使用者有權限的題項列表）
+            $url = "/web/risk-assessment/questions/{$systemCompanyId}/management";
 
-            log_message('info', "Access authorized - Generating URL: {$url}");
+            log_message('info', "Access authorized - Generating management URL: {$url}");
             log_message('info', "=== External Access Verification Completed ===");
 
             // 步驟 6: 回傳結果
             return $this->respond([
                 'success' => true,
                 'is_authorized' => true,
-                'message' => '驗證成功，使用者有權限存取',
+                'message' => '驗證成功，使用者有權限存取題項管理頁面',
                 'url' => $url,
                 'company_id' => $systemCompanyId,
                 'user_id' => $systemPersonnelId
